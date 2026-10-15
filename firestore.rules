@@ -17,10 +17,28 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
     }
+    // Co-op lobbies: the host owns the lobby; each guest writes their own connection request,
+    // which only that guest and the host can read.
+    match /lobbies/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.host == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.host == request.auth.uid;
+      match /join/{gid} {
+        allow create: if request.auth != null && request.auth.uid == gid;
+        allow read, update, delete: if request.auth != null && (request.auth.uid == gid
+                                    || get(/databases/$(database)/documents/lobbies/$(code)).data.host == request.auth.uid);
+      }
+    }
     // Public profile (name, friend code, last seen).
     match /users/{uid} {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == uid;
+      // Co-op invites: only a friend can send you one; only you can read or clear them.
+      match /invites/{from} {
+        allow read, delete: if request.auth != null && request.auth.uid == uid;
+        allow create, update: if request.auth != null && request.auth.uid == from
+                              && get(/databases/$(database)/documents/users/$(uid)/friends/$(from)).data.status == 'friends';
+      }
       // Friends list: you manage your own; others may only send a request,
       // accept one you sent them, or remove themselves.
       match /friends/{fid} {
