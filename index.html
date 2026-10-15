@@ -1642,7 +1642,7 @@ steel:{a:'#22262c',b:'#292e35',c:'#2d2822',g:5,pat:'plate',el:[['grate',2,'#5a64
 fairy:{a:'#22302a',b:'#2a3a30',c:'#352935',g:6,el:[['flower',5,'#ffc8ec',0,1],['flower',3,'#c8e8ff',-1,1],['petal',8,['#ffb3e6','#ffe0f4','#e0c8ff'],1,1],['ring',1,'#e8d8f0',0,1],['shroom',3,'#ff9ad8',1,1],['tuft',14,'#5a9a6a',-1,1],['blotch',3,'rgba(255,180,230,.06)',1,1.3],['sparkle',3,'rgba(255,240,250,.45)',0,1]],amb:'fairy'}
 };
 /* decals of one chunk (positions + draw params), shared by neighbours so edge decals continue across seams */
-function flDec(cx,cy){const key=cx*65536+cy;let L=FLD.get(key);if(L)return L;L=[];const B=FLB[BI]||FLB.normal,R=rng((cx*92837111^cy*689287499^BS*7)>>>0);
+function flDec(cx,cy){const key=cx*65536+cy;let L=FLD.get(key);if(L)return L;L=[];const B=curFLB(),R=rng((cx*92837111^cy*689287499^BS*7)>>>0);
  for(const e of B.el){const n=Math.round(e[1]*(.55+R()*.9));for(let i=0;i<n;i++){const px=cx*CS+R()*CS,py=cy*CS+R()*CS,rv=frg(px,py),w=e[3]>0?fsm(.35,.7,rv):e[3]<0?1-fsm(.3,.65,rv):.8,dn=fvn(px/120,py/120,BS+5);if(R()>w*(.45+dn*.9))continue;L.push([e,px,py,(R()*1e9)|0])}}
  if(FLD.size>220)FLD.clear();FLD.set(key,L);return L}
 /* big structured patterns drawn only where the region noise allows (worn paving, plates, dried mud, basalt) */
@@ -1654,14 +1654,14 @@ function flPat(x,B,cx,cy,R){const ox=cx*CS,oy=cy*CS,p=B.pat;if(!p)return;
   for(const[dx,dy]of[[1,0],[0,1],[1,-1]]){const nx=(gx+dx+.2+fvh(gx+dx,gy+dy,BS+51)*.6)*T_,ny=(gy+dy+.2+fvh(gx+dx,gy+dy,BS+52)*.6)*T_,mx=(cxw+nx)/2-ox,my=(cyw+ny)/2-oy,vx=-(ny-cyw),vy=nx-cxw,l=Math.hypot(vx,vy)||1,hl=T_*.42;x.strokeStyle=p==='mud'?`rgba(30,18,10,${.5*a})`:`rgba(0,0,0,${.55*a})`;x.lineWidth=p==='mud'?1.6:2.2;x.beginPath();x.moveTo(mx-vx/l*hl,my-vy/l*hl);x.lineTo(mx+vx/l*hl,my+vy/l*hl);x.stroke();if(p==='basalt'&&fvh(gx,gy+dx*7,BS+53)>.94){x.strokeStyle=`rgba(255,110,40,${.45*a})`;x.lineWidth=1;x.stroke()}}
   if(p==='mud'){x.fillStyle=`rgba(255,220,170,${.04*a})`;x.beginPath();x.arc(cxw-ox,cyw-oy,T_*.3,0,6.283);x.fill()}}}}
 /* build one 300×300 chunk tile: half-res noise ground + grain, big patterns, then decals (incl. overlap from neighbours) */
-function flBuild(cx,cy){const B=FLB[BI]||FLB.normal,c=document.createElement('canvas');c.width=c.height=CS;const x=c.getContext('2d'),N=CS/2+2,id=x.createImageData(N,N),D=id.data,A=frgb(B.a),Bc=frgb(B.b),C=frgb(B.c),ox=cx*CS,oy=cy*CS;
+function flBuild(cx,cy){const B=curFLB(),c=document.createElement('canvas');c.width=c.height=CS;const x=c.getContext('2d'),N=CS/2+2,id=x.createImageData(N,N),D=id.data,A=frgb(B.a),Bc=frgb(B.b),C=frgb(B.c),ox=cx*CS,oy=cy*CS;
  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const wx=ox+(i-1)*2+1,wy=oy+(j-1)*2+1,f=fvn(wx/150,wy/150,BS+1)*.55+fvn(wx/48,wy/48,BS+2)*.3+fvn(wx/14,wy/14,BS+3)*.15,r=fsm(.48,.72,frg(wx,wy))*.9,gr=(fvh(wx>>1,wy>>1,BS+4)-.5)*B.g*2,o=(j*N+i)*4;for(let k=0;k<3;k++){const v=A[k]+(Bc[k]-A[k])*f;D[o+k]=v+(C[k]-v)*r+gr}D[o+3]=255}
  const t=document.createElement('canvas');t.width=t.height=N;t.getContext('2d').putImageData(id,0,0);x.imageSmoothingEnabled=true;x.drawImage(t,1,1,N-2,N-2,0,0,CS,CS);
  flPat(x,B,cx,cy);
  for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){for(const d of flDec(cx+di,cy+dj)){const lx=d[1]-ox,ly=d[2]-oy;if(lx<-50||ly<-50||lx>CS+50||ly>CS+50)continue;const e=d[0],R=srng(d[3]),s=e[4]*(.8+R()*.45);try{FD[e[0]](x,R,lx,ly,s,e[2],e[5])}catch(_){}}}
  return c}
 /* draw visible floor tiles in screen space (rounded to whole pixels so seams never show); builds a few missing tiles per frame */
-function drawFloor(sx,sy){const B=FLB[BI]||FLB.normal,offx=W/2-P.x+sx,offy=H/2-P.y+sy,x0=Math.floor((P.x-sx-W/2)/CS),x1=Math.floor((P.x-sx+W/2)/CS),y0=Math.floor((P.y-sy-H/2)/CS),y1=Math.floor((P.y-sy+H/2)/CS);let built=0;const t0=performance.now(),miss=[];
+function drawFloor(sx,sy){const B=curFLB(),offx=W/2-P.x+sx,offy=H/2-P.y+sy,x0=Math.floor((P.x-sx-W/2)/CS),x1=Math.floor((P.x-sx+W/2)/CS),y0=Math.floor((P.y-sy-H/2)/CS),y1=Math.floor((P.y-sy+H/2)/CS);let built=0;const t0=performance.now(),miss=[];
  ctx.fillStyle=B.a;ctx.fillRect(0,0,W,H);
  for(let j=y0;j<=y1;j++)for(let i=x0;i<=x1;i++){const k=(i+20000)*40009+(j+20000);let c=FLC.get(k);if(!c){miss.push([i,j,k]);continue}FLC.delete(k);FLC.set(k,c);ctx.drawImage(c,Math.round(i*CS+offx),Math.round(j*CS+offy))}
  const pcx=(P.x)/CS-.5,pcy=(P.y)/CS-.5;miss.sort((a,b)=>Math.hypot(a[0]-pcx,a[1]-pcy)-Math.hypot(b[0]-pcx,b[1]-pcy));
@@ -1672,7 +1672,107 @@ function drawFloor(sx,sy){const B=FLB[BI]||FLB.normal,offx=W/2-P.x+sx,offy=H/2-P
 /* ambient life: a light layer of drifting particles in world space (embers, fireflies, snow, fog, cloud shadows …) */
 const AMS={};function ambSpr(c,r,soft){const k=c+r+(soft?'s':'');if(AMS[k])return AMS[k];const s=document.createElement('canvas');s.width=s.height=r*2;const x=s.getContext('2d'),g=x.createRadialGradient(r,r,0,r,r,r);g.addColorStop(0,c);g.addColorStop(soft?.15:.35,fa(c,soft?.6:.9));g.addColorStop(1,fa(c,0));x.fillStyle=g;x.fillRect(0,0,r*2,r*2);return AMS[k]=s}
 const AMB_K={pollen:{n:14,c:'#fff6c0',r:6,vy:-4,vx:8,a:.5,l:7},ember:{n:26,c:'#ff8a3a',r:7,vy:-28,vx:5,a:.85,l:3.5,fl:1},glint:{n:18,c:'#cfefff',r:6,vy:0,vx:0,a:.55,l:1.6,tw:1},spark:{n:12,c:'#fff07a',r:6,vy:0,vx:0,a:.9,l:.5,tw:1},firefly:{n:16,c:'#d8ff7a',r:8,vy:-3,vx:6,a:.75,l:6,wob:1},snow:{n:34,c:'#ffffff',r:4,vy:22,vx:-8,a:.7,l:6,wob:1},petal:{n:12,c:'#f6b8cc',r:4,vy:12,vx:16,a:.8,l:6,wob:1,pet:1},bubble:{n:14,c:'#d48cff',r:5,vy:-6,vx:0,a:.6,l:2.2,bub:1},dust:{n:16,c:'#e0c49a',r:5,vy:-2,vx:18,a:.35,l:5},cloud:{n:4,c:'#0a1420',r:110,vy:4,vx:22,a:.16,l:18,soft:1},twinkle:{n:20,c:'#ffb8f0',r:6,vy:-3,vx:0,a:.85,l:2,tw:1},spore:{n:16,c:'#e6f08a',r:4,vy:-5,vx:5,a:.55,l:6,wob:1},fog:{n:7,c:'#8c84b8',r:120,vy:0,vx:12,a:.09,l:16,soft:1},ember2:{n:18,c:'#b494ff',r:6,vy:-20,vx:3,a:.75,l:4,fl:1},mote:{n:14,c:'#a070ff',r:5,vy:-3,vx:3,a:.5,l:5,wob:1},spark2:{n:8,c:'#ffb050',r:4,vy:30,vx:0,a:.9,l:.8,grav:1},fairy:{n:20,c:'#fff0fa',r:5,vy:-6,vx:4,a:.85,l:3,tw:1,wob:1}};
-function drawAmb(){const dt=Math.max(0,Math.min(.05,T-AMT));AMT=T;const B=FLB[BI]||FLB.normal,K=AMB_K[B.amb];if(!K)return;const hw=W/2+80,hh=H/2+80;const now=T;
+/* ===== per-LOCATION looks (original art in the spirit of each place; hazards/enemies stay tied to the type) =====
+   FLV[type][i] overrides the type's floor (FLB): a/b/c palette, g grain, pat pattern, el decals, amb particles.
+   SCV[type][i] overrides scenery (SCB): [tree style, tree colours, rock style, rock colours].  LFX[type][i] = {vig: cave darkness 0-1, tint: rgba overlay}. */
+Object.assign(AMB_K,{ash:{n:34,c:'#cfcac4',r:4,vy:20,vx:7,a:.6,l:6,wob:1},steam:{n:7,c:'#f0ece8',r:70,vy:-12,vx:5,a:.07,l:9,soft:1},rain:{n:46,c:'#b8d4ff',r:2.5,vy:300,vx:-50,a:.55,l:1.3},
+ mist:{n:7,c:'#a8c8b0',r:120,vy:0,vx:10,a:.08,l:16,soft:1},autumn:{n:14,c:'#e8803a',r:4,vy:14,vx:18,a:.85,l:6,wob:1,pet:1},sand:{n:30,c:'#e6c890',r:4,vy:6,vx:90,a:.5,l:3},
+ stars:{n:26,c:'#e8f0ff',r:5,vy:0,vx:0,a:.9,l:2.4,tw:1},neon:{n:12,c:'#ff4fd8',r:5,vy:-4,vx:0,a:.8,l:1.6,tw:1},drip:{n:10,c:'#9fd8ff',r:3,vy:120,vx:0,a:.7,l:1.2,grav:1},
+ glowc:{n:16,c:'#7affd8',r:7,vy:-4,vx:3,a:.7,l:5,wob:1}});
+const FLV={
+ normal:[null,
+  {a:'#2a4222',b:'#36522a',c:'#4a4228',g:7,pat:'mud',el:[['tuft',20,'#5fa040',0,1],['flower',6,'#f6e070',-1,1],['flower',4,'#ffffff',-1,1],['pebble',10,'#7a7262',1,1],['dot',8,'rgba(210,190,140,.25)',1,1]],amb:'pollen'},
+  {a:'#3a3a1c',b:'#4a4822',c:'#55421f',g:8,el:[['reed',16,'#a8a040',0,1.2],['tuft',22,'#8a9a38',1,1.2],['shrub',6,'#5a6a2a',0,1.1],['blotch',3,'rgba(120,90,40,.2)',1,1.3],['pebble',5,'#7a6a4a',0,1]],amb:'dust'}],
+ fire:[
+  {a:'#3a3532',b:'#4a4440',c:'#2e2522',g:8,el:[['dot',18,'rgba(220,215,210,.35)',0,1],['drift',6,'#bdb6ae',1,1.2],['scorch',4,'#120c0a',0,1.2],['crack',3,0,1,1,'#ff7a2a'],['pebble',8,'#2a2220',0,1]],amb:'ash'},
+  null,
+  {a:'#120a08',b:'#1c100c',c:'#2a0e06',g:6,pat:'mud',el:[['crack',8,0,1,1.2,'#ff8a2a'],['crack',6,'rgba(0,0,0,.6)',0,1],['pebble',10,'#3a2018',0,1],['blotch',4,'rgba(255,90,20,.1)',1,1.5],['stone',5,'#2a1810',0,1]],amb:'spark2'}],
+ water:[
+  {a:'#8a7a58',b:'#a08c62',c:'#6a8a90',g:6,el:[['ripple',6,'rgba(255,255,255,.18)',-1,1.2],['shell',10,'#f2dccc',1,1],['shell',6,'#f6a898',1,.9],['pebble',8,'#c8b898',0,.9],['dot',10,'rgba(255,240,210,.3)',1,1],['weed',4,'#3a8a6a',-1,1]],amb:'glint'},
+  {a:'#1d2a36',b:'#26364a',c:'#2e3e4a',g:7,pat:'mud',el:[['ripple',10,'rgba(170,220,255,.22)',-1,1],['stone',8,'#4a5a6a',0,1.1],['weed',6,'#2a6a5a',-1,1],['crack',5,'rgba(0,0,0,.4)',0,1],['pebble',8,'#5a6a7a',0,1]],amb:'steam'},
+  {a:'#1a3226',b:'#204030',c:'#2a3a3a',g:6,el:[['tuft',16,'#2f7a4a',-1,1],['reed',8,'#4a7a3a',1,1],['ripple',8,'rgba(170,230,255,.18)',-1,1],['pebble',6,'#6a7a7a',0,1],['flower',3,'#ff7a7a',0,1]],amb:'glint'}],
+ electric:[
+  {a:'#1a1c22',b:'#22252c',c:'#2a2a20',g:5,pat:'plate',el:[['grate',3,'#5a6068',0,1],['bolts',8,'#7a808a',0,1],['stripe',2,0,-1,1],['bolt',5,'#ffe040',0,1],['oil',2,0,0,1]],amb:'spark'},
+  {a:'#13241e',b:'#1a3028',c:'#20302a',g:6,el:[['tuft',24,'#2f6e40',-1,1.2],['reed',8,'#3a6a3a',1,1],['ripple',10,'rgba(170,210,255,.22)',-1,1],['pebble',6,'#4a5a5a',0,1],['blotch',3,'rgba(60,120,140,.12)',-1,1.3]],amb:'rain'},
+  {a:'#2a2c30',b:'#34373c',c:'#3a3424',g:5,pat:'plate',el:[['stripe',2,0,-1,1],['bolts',6,'#9aa0aa',0,1],['bolt',4,'#ffe86a',0,1],['shell',4,'#f2dccc',1,1],['dot',8,'rgba(255,240,150,.18)',0,1]],amb:'glint'}],
+ grass:[null,
+  {a:'#123020',b:'#1a4028',c:'#2a3a18',g:7,el:[['fern',14,'#3aa048',-1,1.2],['leaf',14,['#4aa03a','#6ab83a','#2a8a3a'],1,1],['flower',6,'#ff5a5a',0,1],['flower',4,'#ffb030',0,1],['root',4,'#3a2a1a',0,1],['tuft',16,'#3a9a40',-1,1]],amb:'spore'},
+  {a:'#0d1c12',b:'#132418',c:'#1e2014',g:6,el:[['root',8,'#2e2216',0,1.2],['leaf',20,['#4a3a1e','#5a4a24','#2e4a22'],1,1],['twig',8,'#3a2a1a',1,1],['fern',6,'#22582a',-1,1],['shroom',4,'#e8d090',0,1]],amb:'mist'}],
+ ice:[null,
+  {a:'#142434',b:'#1a2e42',c:'#24384e',g:6,pat:'mud',el:[['crack',10,'rgba(200,240,255,.5)',0,1],['frost',8,'rgba(200,240,255,.55)',0,1],['ripple',6,'rgba(170,220,255,.2)',-1,1],['stone',6,'#3a4a5a',0,1],['pebble',6,'#4a5a6a',0,1]],amb:'drip'},
+  {a:'#c8d6e2',b:'#d8e4ee',c:'#b0c4d2',g:5,el:[['drift',12,'#ffffff',1,1.3],['frost',8,'rgba(255,255,255,.7)',0,1],['tuft',8,'#8aa0a8',-1,1],['pebble',5,'#7a8a98',0,.9],['dot',10,'rgba(150,180,210,.35)',0,1]],amb:'snow'}],
+ fighting:[null,
+  {a:'#2a2a28',b:'#34332f',c:'#2a3324',g:7,pat:'flag',el:[['crack',8,'rgba(0,0,0,.45)',0,1],['tuft',10,'#5a7a3a',1,1],['stone',8,'#55504a',0,1.1],['chisel',4,'rgba(255,255,255,.08)',1,1],['blotch',3,'rgba(90,130,60,.14)',-1,1.2]],amb:'dust'},
+  {a:'#4a3420',b:'#584028',c:'#3a2a1a',g:4,pat:'plate',el:[['stripe',1,0,-1,1],['dot',6,'rgba(30,20,10,.3)',0,1],['petal',4,['#f2a8c0','#f6c6d6'],0,1],['scorch',2,'#1a1008',0,1]],amb:'dust'}],
+ poison:[
+  {a:'#24221a',b:'#2e2a1e',c:'#20281a',g:7,pat:'mud',el:[['reed',14,'#5a6a2a',1,1.2],['blotch',5,'rgba(120,90,40,.25)',-1,1.3],['bubble',6,'rgba(200,170,240,.4)',0,1],['tuft',12,'#4a5a28',-1,1],['blotch',3,'rgba(170,70,210,.1)',-1,1.2]],amb:'bubble'},
+  {a:'#2a2032',b:'#34283c',c:'#24302a',g:5,pat:'flag',el:[['flower',5,'#d88aff',0,1],['tuft',10,'#4a7a3a',-1,1],['petal',6,['#c890ff','#e8b8ff'],1,1],['bubble',4,'rgba(200,140,240,.35)',0,1]],amb:'bubble'},
+  {a:'#26242a',b:'#302d34',c:'#2a2620',g:6,pat:'plate',el:[['crack',8,'rgba(0,0,0,.5)',0,1],['oil',3,0,0,1],['blotch',4,'rgba(200,60,200,.12)',1,1.2],['stripe',1,0,-1,1],['pebble',6,'#4a4650',0,1]],amb:'rain'}],
+ ground:[null,
+  {a:'#6a4a26',b:'#7a5830',c:'#5a3a1e',g:8,el:[['dune',10,'rgba(255,230,170,.12)',-1,1.2],['dune',6,'rgba(0,0,0,.14)',-1,1],['pebble',8,'#8a6a40',0,1],['shrub',4,'#7a6a38',0,1],['dot',10,'rgba(230,190,130,.3)',0,1]],amb:'dust'},
+  {a:'#8a7350',b:'#9a8058',c:'#7a6040',g:8,el:[['dune',12,'rgba(255,240,200,.14)',-1,1.3],['dune',6,'rgba(0,0,0,.12)',-1,1],['stone',4,'#a08a62',0,1],['dot',12,'rgba(240,215,170,.35)',0,1]],amb:'sand'}],
+ flying:[
+  {a:'#3a2418',b:'#462c1c',c:'#332018',g:4,pat:'plate',el:[['stripe',1,0,-1,1],['leaf',10,['#e8803a','#d8582a','#f0b040'],1,1],['dot',6,'rgba(20,10,5,.3)',0,1],['feather',3,'#f0e0c8',0,1]],amb:'autumn'},
+  null,
+  {a:'#1e3020',b:'#283c28',c:'#2e3a22',g:6,el:[['leaf',16,['#4a8a3a','#6aa040','#8a6a2a'],1,1],['twig',8,'#4a3622',1,1],['tuft',12,'#3a7a3a',-1,1],['feather',4,'#e8eef4',0,1],['flower',3,'#ffd060',0,1]],amb:'pollen'}],
+ psychic:[null,
+  {a:'#10222a',b:'#142a34',c:'#1e1a34',g:6,el:[['crystal',8,'#5affd8',1,1.1],['crystal',4,'#c07aff',1,1],['swirl',4,'rgba(90,255,220,.14)',0,1],['sparkle',6,'rgba(200,255,240,.45)',0,1],['crack',4,'rgba(0,0,0,.4)',0,1]],amb:'glowc'},
+  {a:'#181c30',b:'#1e233a',c:'#262a40',g:5,pat:'flag',el:[['crack',6,'rgba(0,0,0,.45)',0,1],['sparkle',6,'rgba(220,230,255,.45)',0,1],['ring',2,'rgba(170,190,255,.3)',-1,1],['stone',5,'#3a3e58',0,1]],amb:'stars'}],
+ bug:[null,
+  {a:'#2a3e1e',b:'#344a24',c:'#3e4426',g:7,el:[['tuft',22,'#6aa040',0,1],['flower',8,'#ffffff',-1,1],['flower',5,'#ffe070',-1,1],['clover',8,'#4a8a34',-1,1],['pebble',5,'#7a7462',1,1]],amb:'pollen'},
+  {a:'#122420',b:'#182e28',c:'#22301e',g:7,el:[['web',6,'rgba(230,230,220,.3)',0,1.1],['leaf',16,['#2a6a4a','#3a7a3a','#5a6a2a'],1,1],['twig',8,'#3a3020',0,1],['root',4,'#2a2214',0,1],['tuft',10,'#2a6a3a',-1,1]],amb:'spore'}],
+ rock:[
+  {a:'#2a2826',b:'#34302c',c:'#2c3240',g:8,pat:'mud',el:[['crystal',6,'#8ad8ff',1,1],['crystal',3,'#ff9ae0',1,1],['tuft',8,'#5a7a40',-1,1],['stone',8,'#4a4540',0,1.2],['dot',10,'rgba(120,115,105,.4)',0,1]],amb:'dust'},
+  {a:'#1c1a18',b:'#24211e',c:'#2a2620',g:8,pat:'mud',el:[['stone',10,'#3e3a34',0,1.2],['crack',10,'rgba(0,0,0,.5)',0,1.1],['dot',14,'rgba(140,130,110,.35)',0,1],['pebble',10,'#4a4640',0,1]],amb:'dust'},
+  {a:'#1a1410',b:'#221a14',c:'#2a1e16',g:9,pat:'mud',el:[['stone',10,'#3a2e24',0,1.2],['crack',8,'rgba(0,0,0,.55)',0,1.1],['pebble',12,'#4a3a2e',0,1],['dot',10,'rgba(150,120,90,.3)',0,1]],amb:'dust'}],
+ ghost:[
+  {a:'#1e1c28',b:'#262434',c:'#24202e',g:5,pat:'flag',el:[['crack',6,'rgba(0,0,0,.45)',0,1],['sparkle',4,'rgba(255,220,150,.5)',0,1],['blotch',3,'rgba(140,120,255,.07)',-1,1.4],['bone',2,'#cfc8b8',0,1]],amb:'mote'},
+  null,
+  {a:'#241e2e',b:'#2c2538',c:'#26222e',g:6,pat:'flag',el:[['tuft',10,'#5a5070',0,1],['flower',4,'#c8a8ff',-1,1],['blotch',3,'rgba(160,120,255,.1)',-1,1.4],['pebble',5,'#4a4258',0,1]],amb:'fog'}],
+ dragon:[null,
+  {a:'#0e1e24',b:'#14282e',c:'#1a2430',g:6,pat:'mud',el:[['ripple',10,'rgba(150,220,255,.2)',-1,1],['crystal',5,'#5ac8ff',1,1],['stone',6,'#2a3a44',0,1],['crack',5,'rgba(0,0,0,.45)',0,1]],amb:'glint'},
+  {a:'#3a3a44',b:'#45454f',c:'#3a3a48',g:6,pat:'flag',el:[['crack',8,'rgba(0,0,0,.4)',0,1],['tuft',6,'#6a8a5a',1,1],['stone',6,'#5a5a66',0,1],['chisel',4,'rgba(255,255,255,.1)',1,1]],amb:'cloud'}],
+ dark:[
+  {a:'#14161a',b:'#1a1d22',c:'#181a1e',g:5,el:[['root',8,'#2a2a30',0,1.1],['leaf',14,['#2a3238','#33363a','#24302a'],0,1],['tuft',10,'#2a3430',-1,1],['shroom',3,'#8ab0ff',1,.9],['blotch',4,'rgba(150,160,190,.06)',1,1.4]],amb:'fog'},
+  {a:'#1a161e',b:'#221c28',c:'#1e1824',g:5,pat:'plate',el:[['stripe',2,0,-1,1],['oil',3,0,0,1],['blotch',4,'rgba(255,60,200,.1)',1,1.2],['crack',6,'rgba(0,0,0,.5)',0,1],['bolts',4,'#5a4a6a',0,1]],amb:'neon'},
+  {a:'#0e0c10',b:'#141118',c:'#16121a',g:6,pat:'mud',el:[['stone',8,'#26202c',0,1.2],['crack',8,'rgba(0,0,0,.55)',0,1],['root',4,'#241c28',0,1],['pebble',8,'#2a2430',0,1]],amb:'mote'}],
+ steel:[
+  {a:'#26221e',b:'#2e2924',c:'#302620',g:5,pat:'plate',el:[['grate',3,'#6a5a4a',0,1],['bolts',6,'#8a7a62',0,1],['oil',3,0,0,1],['blotch',4,'rgba(200,110,40,.14)',1,1.1],['stripe',1,0,-1,1]],amb:'steam'},
+  {a:'#1e1a18',b:'#26201c',c:'#2a1e18',g:7,pat:'mud',el:[['stone',8,'#3a2e28',0,1.2],['blotch',5,'rgba(180,80,30,.16)',1,1.2],['crack',6,'rgba(0,0,0,.5)',0,1],['bolts',3,'#6a5a4a',0,1]],amb:'spark2'},
+  {a:'#3a4048',b:'#444a52',c:'#3a4250',g:3,pat:'plate',el:[['stripe',2,0,-1,1],['dot',4,'rgba(255,255,255,.08)',0,1]],amb:null}],
+ fairy:[
+  {a:'#1a1c26',b:'#22242e',c:'#262636',g:7,pat:'mud',el:[['crystal',6,'#e8e0ff',1,1],['sparkle',6,'rgba(255,250,230,.5)',0,1],['stone',8,'#3a3a4a',0,1.1],['crack',6,'rgba(0,0,0,.45)',0,1],['ring',1,'rgba(230,220,255,.35)',0,1]],amb:'stars'},
+  {a:'#121a24',b:'#18222e',c:'#1e1a2e',g:6,el:[['shroom',10,'#7ad8ff',1,1.1],['shroom',8,'#ff8ad8',1,1],['tuft',12,'#2a5a5a',-1,1],['sparkle',6,'rgba(200,240,255,.5)',0,1],['blotch',4,'rgba(120,220,255,.08)',1,1.4]],amb:'glowc'},
+  null]};
+const SCV={
+ normal:[null,['oak',{c1:'#6ac850',c2:'#9ae070',o:'#2a5a1e'},'boulder',{c1:'#9a9488',c2:'#c0bab0',o:'#46423a',tuft:'#6ac850'}],['bush',{c1:'#8a9a3a',c2:'#b0c050',o:'#3a4418'},'mesa',{c1:'#b08a50',c2:'#c8a468',c3:'#8a6a38',o:'#4a3418'}]],
+ fire:[['dead',{c1:'#5a5450',o:'#1a1614',glow:'#ff6a1f'},'boulder',{c1:'#5a5450',c2:'#7a746e',c3:'#3a3532',o:'#1a1614',vein:'#ff6a1f'}],null,['spire',{c1:'#3a1a12',c2:'#5a2a1a',o:'#0e0604'},'pillar',{}]],
+ water:[['palm',{c1:'#4ac060',c2:'#6ae07a',o:'#1a5a2a'},'boulder',{c1:'#c0a880',c2:'#e0cca8',o:'#5a4a30',moss:'#4aa08a'}],['spire',{c1:'#4a5a6a',c2:'#6a7a8a',o:'#1a242e'},'boulder',{c1:'#4a5a6a',c2:'#6a7a8a',o:'#1a242e',moss:'#2a6a5a'}],['pine',{c1:'#2a6a4a',c2:'#3a8a5a',o:'#12301e'},'boulder',{c1:'#6a7a7a',c2:'#90a0a0',o:'#2a3434',moss:'#3a8a4a'}]],
+ electric:[['stack',{},'crate',{}],['oak',{c1:'#2a6a3a',c2:'#3a8a4a',o:'#10301a'},'boulder',{c1:'#4a5a5a',c2:'#6a7a7a',o:'#1e2828',moss:'#2a6a4a'}],['palm',{c1:'#4ab060',c2:'#6ad07a',o:'#1a5a2a'},'crate',{}]],
+ grass:[null,['palm',{c1:'#2fa040',c2:'#5ad060',o:'#145a1e'},'boulder',{c1:'#5a7a4a',c2:'#7a9a6a',o:'#243420',moss:'#3ac040'}],['pine',{c1:'#1a4a2a',c2:'#2a6a3a',o:'#0a2010'},'boulder',{c1:'#4a5040',c2:'#6a7060',o:'#22261c',moss:'#2a6a2a'}]],
+ ice:[null,['crystal',{c1:'#7ac8f0',c2:'#d0f0ff',c3:'#3a7ab0',o:'#1a3a5a'},'ice',{}],['pine',{c1:'#3a6a5a',c2:'#5a8a7a',o:'#18382e',snow:1},'ice',{}]],
+ fighting:[null,['spire',{c1:'#6a6660',c2:'#8a8680',o:'#2a2824'},'pillar',{}],['bamboo',{c1:'#8ab85a',c2:'#aad07a',o:'#2a4a1a'},'crate',{}]],
+ poison:[['bush',{c1:'#5a6a2a',c2:'#7a8a3a',o:'#242c10'},'boulder',{c1:'#5a5040',c2:'#7a7060',o:'#26201a',moss:'#6a7a2a'}],['oak',{c1:'#7a4ab0',c2:'#a070d8',o:'#2a1a40',dots:'#ff8ad8'},'crate',{}],['dead',{c1:'#4a4650',o:'#18161c',glow:'#ff4ae0'},'crate',{}]],
+ ground:[null,['cactus',{c1:'#6ab05a',c2:'#4a8a40',o:'#1e4018'},'mesa',{c1:'#d09a5a',c2:'#e8b878',c3:'#b07a40',o:'#6a4420'}],['spire',{c1:'#a08a62',c2:'#c0aa82',o:'#4a3a22'},'pillar',{}]],
+ flying:[['blossom',{c1:'#e8803a',c2:'#f0b060',o:'#7a3a10',tr:'#4a2a18',tro:'#22140a'},'pillar',{}],null,['oak',{c1:'#3a8a3a',c2:'#5aaa4a',o:'#183a18'},'boulder',{c1:'#7a8a6a',c2:'#a0b090',o:'#33402a',moss:'#4a9a3a'}]],
+ psychic:[null,['crystal',{c1:'#3ad8b8',c2:'#b0fff0',c3:'#1a8a7a',o:'#0a3a34'},'crystal',{c1:'#a06aff',c2:'#e0d0ff',o:'#3a1a7a'}],['spire',{c1:'#3a3e58',c2:'#5a5e78',o:'#14162a'},'pillar',{}]],
+ bug:[null,['oak',{c1:'#5ab84a',c2:'#8ad86a',o:'#2a5a1e'},'boulder',{c1:'#8a8a70',c2:'#b0b098',o:'#3a3a2a',moss:'#5aa040'}],['pine',{c1:'#1e5a3a',c2:'#2e7a4a',o:'#0a2a18'},'boulder',{c1:'#4a5a48',c2:'#6a7a68',o:'#1e281e',shroom:'#e8b820'}]],
+ rock:[['crystal',{c1:'#6ac0f0',c2:'#c8ecff',c3:'#2a6aa0',o:'#123a5a'},'boulder',{c1:'#7a7a80',c2:'#a8a8b0',c3:'#5a5a62',o:'#2a2a30'}],['spire',{c1:'#4a4640',c2:'#6a665e',o:'#1a1814'},'boulder',{c1:'#4a4640',c2:'#6a665e',c3:'#36322c',o:'#1a1814'}],['spire',{c1:'#4a3a2c',c2:'#6a5644',o:'#1a120c'},'boulder',{c1:'#4a3a2c',c2:'#6a5644',c3:'#382a1e',o:'#1a120c'}]],
+ ghost:[['spire',{c1:'#3a3648',c2:'#5a5668',o:'#14121c'},'tomb',{}],null,['dead',{c1:'#5a4a70',o:'#1e1628',glow:'#d8b8ff'},'tomb',{}]],
+ dragon:[null,['crystal',{c1:'#3a9ad8',c2:'#a8e0ff',c3:'#1a5a8a',o:'#0a2a44'},'boulder',{c1:'#2a3a44',c2:'#4a5a64',o:'#0e161c',moss:'#2a6a6a'}],['cloud',{o:'#8aa8d0'},'pillar',{}]],
+ dark:[['pine',{c1:'#2a3a34',c2:'#3a4a44',o:'#0e1612'},'boulder',{c1:'#2a2e34',c2:'#3e424a',o:'#0a0c0e',moss:'#3a4a44'}],['dead',{c1:'#3a2a44',o:'#100a16',glow:'#ff4fd8'},'crate',{}],['spire',{c1:'#26202c',c2:'#3a3242',o:'#0a080e'},'boulder',{c1:'#26202c',c2:'#3a3242',o:'#0a080e',vein:'#8a50e0'}]],
+ steel:[null,['spire',{c1:'#4a3a30',c2:'#6a5444',o:'#1a120c'},'boulder',{c1:'#4a3a30',c2:'#6a5444',c3:'#382a22',o:'#1a120c',vein:'#d0702a'}],['stack',{},'crate',{}]],
+ fairy:[['spire',{c1:'#4a4a5e',c2:'#6a6a80',o:'#1a1a26'},'crystal',{c1:'#d8d0ff',c2:'#ffffff',o:'#5a4a8a'}],['shroom',{c1:'#3a8ab0',c2:'#7ad8ff',o:'#123a4a',sp:'#ff8ad8'},'crystal',{c1:'#7ad8ff',c2:'#e0f8ff',o:'#1a5a7a'}],null]};
+const LFX={fire:[null,null,{vig:.55}],water:[null,{vig:.3},null],electric:[null,{tint:'rgba(40,60,90,.12)'},null],grass:[null,null,{vig:.25}],ice:[null,{vig:.45},null],
+ poison:[null,null,{tint:'rgba(60,40,70,.12)'}],psychic:[null,{tint:'rgba(40,200,170,.06)'},{tint:'rgba(20,30,80,.18)'}],rock:[null,{vig:.55},{vig:.65}],
+ ghost:[{vig:.35},null,{tint:'rgba(120,80,200,.08)'}],dragon:[null,{vig:.45},null],dark:[{tint:'rgba(120,130,150,.06)'},null,{vig:.7}],steel:[null,{vig:.5},null],fairy:[{vig:.45},{vig:.2},null]};
+const FLVC={},SCVC={};
+const curFLB=()=>{const v=(FLV[BI]||[])[LI];if(!v)return FLB[BI]||FLB.normal;const k=BI+LI;return FLVC[k]||(FLVC[k]=Object.assign({},FLB[BI]||FLB.normal,v))};
+const curSCB=()=>{const v=(SCV[BI]||[])[LI];return v||SCB[BI]||SCB.normal};
+function drawLocFX(){const f=(LFX[BI]||[])[LI];if(!f)return;ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
+ if(f.tint){ctx.fillStyle=f.tint;ctx.fillRect(0,0,W,H)}
+ if(f.vig){const r=Math.hypot(W,H)/2,g=ctx.createRadialGradient(W/2,H/2,r*.28,W/2,H/2,r*1.02);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,'+f.vig+')');ctx.fillStyle=g;ctx.fillRect(0,0,W,H)}ctx.restore()}
+function drawAmb(){const dt=Math.max(0,Math.min(.05,T-AMT));AMT=T;const B=curFLB(),K=AMB_K[B.amb];if(!K)return;const hw=W/2+80,hh=H/2+80;const now=T;
  for(let i=AMB.length-1;i>=0;i--){const a=AMB[i];a.t+=dt;if(a.t>a.l||Math.abs(a.x-P.x)>hw+K.r||Math.abs(a.y-P.y)>hh+K.r){AMB.splice(i,1);continue}a.x+=a.vx*dt;a.y+=a.vy*dt;if(K.grav)a.vy+=60*dt}
  while(AMB.length<K.n){const big=K.r>50;AMB.push({x:P.x+(Math.random()*2-1)*hw*(big?1.2:1),y:P.y+(Math.random()*2-1)*hh,vx:K.vx*(.5+Math.random())*(K.grav?(Math.random()-.5)*4:1),vy:K.vy*(.6+Math.random()*.8),t:0,l:K.l*(.6+Math.random()*.8),p:Math.random()*6.283,s:.6+Math.random()*.7})}
  const spr=ambSpr(K.c,K.r,K.soft);
@@ -1974,9 +2074,9 @@ const SCB={
  dark:['dead',{c1:'#2a1a3a',o:'#0a0412',eyes:'#ff4a6a'},'boulder',{c1:'#2a2230',c2:'#3e3448',o:'#0a060e',vein:'#8a50e0'}],
  steel:['stack',{},'crate',{}],
  fairy:['flower',{c1:'#ff8ad4',c2:'#ffc4ec',o:'#a02a70'},'crystal',{c1:'#ffb0dc',c2:'#fff2fb',o:'#a02a70'}]};
-function scnSpr(bi,kind,v){const k=bi+kind+v;if(SCN[k])return SCN[k];const c=scnC(128,128),x=c.getContext('2d'),d=SCB[bi]||SCB.normal,R=srng(v*977+bi.length*31+(kind==='t'?7:3));
+function scnSpr(bi,kind,v){const cur=bi===BI,k=bi+(cur?LI:'')+kind+v;if(SCN[k])return SCN[k];const c=scnC(128,128),x=c.getContext('2d'),d=cur?curSCB():(SCB[bi]||SCB.normal),R=srng(v*977+bi.length*31+(kind==='t'?7:3));
  try{if(kind==='t')(TREE[d[0]]||TREE.oak)(x,R,d[1]);else(ROCK[d[2]]||ROCK.boulder)(x,R,d[3])}catch(e){}return SCN[k]=c}
-function drawObst(b){const v=(Math.abs(Math.floor(b.x*7.3+b.y*3.1))%3);if(b.tree){const s=b.r/14.5;ctx.drawImage(scnSpr(BI,'t',v),b.x-64*s,b.y-104*s,128*s,128*s)}else{const s=b.r/34*(({tomb:1.45,pillar:1.4})[(SCB[BI]||SCB.normal)[2]]||1);ctx.drawImage(scnSpr(BI,'r',v),b.x-64*s,b.y-92*s,128*s,128*s)}}
+function drawObst(b){const v=(Math.abs(Math.floor(b.x*7.3+b.y*3.1))%3);if(b.tree){const s=b.r/14.5;ctx.drawImage(scnSpr(BI,'t',v),b.x-64*s,b.y-104*s,128*s,128*s)}else{const s=b.r/34*(({tomb:1.45,pillar:1.4})[curSCB()[2]]||1);ctx.drawImage(scnSpr(BI,'r',v),b.x-64*s,b.y-92*s,128*s,128*s)}}
 /* ---- hazard pools: textured irregular blobs (256px canvases) ---- */
 function poolSpr(k,v){const key='pool'+k+v;if(SCN[key])return SCN[key];const c=scnC(256,256),x=c.getContext('2d'),R=srng(v*131+k.length*17),C=128,r=120;
  const blob=(rr,amp)=>blobPath(x,C,C,rr,srng(v*131+k.length*17),16,amp);
@@ -2028,10 +2128,10 @@ r:{boulder:[[64,90,26],[44,94,18],[84,94,18],[64,72,16]],ice:[[64,84,26],[42,88,
  mesa:[[64,86,26],[40,90,18],[88,90,18],[64,68,18]]}};
 SHP.t.blossom=SHP.t.oak;
 const RSCM={tomb:1.45,pillar:1.4};
-function obsShape(b){if(b.cB===BI)return b.cs;const d=SCB[BI]||SCB.normal;let L,s,ox,oy;
+function obsShape(b){if(b.cB===BI+LI)return b.cs;const d=curSCB();let L,s,ox,oy;
  if(b.tree){L=SHP.t[d[0]]||SHP.t.oak;s=b.r/14.5;ox=64;oy=104}else{L=SHP.r[d[2]]||SHP.r.boulder;s=b.r/34*(RSCM[d[2]]||1);ox=64;oy=92}
  const cs=L.map(([x,y,r])=>[b.x+(x-ox)*s,b.y+(y-oy)*s,r*s]);let mx=0,my=0;for(const c of cs){mx+=c[0];my+=c[1]}mx/=cs.length;my/=cs.length;let br=0;for(const c of cs)br=Math.max(br,Math.hypot(c[0]-mx,c[1]-my)+c[2]);
- b.cs=cs;b.cB=BI;b.bx=mx;b.by=my;b.br=br;return cs}
+ b.cs=cs;b.cB=BI+LI;b.bx=mx;b.by=my;b.br=br;return cs}
 const VC={},VG={};const visOf=id=>{if(!id||!MV[id]||!opt('fx'))return null;if(texURL(id))return VG[id]||(VG[id]=genVis(id));return VC[id]||(VC[id]=Object.assign(genVis(id),VIS[id]||{}))};
 
 /* ===== settings / pause ===== */
@@ -2372,7 +2472,7 @@ for(const cl of CLN){const c_=pspr(P.cid);ctx.globalAlpha=.5;if(c_){ctx.save();c
 for(const k in SH){const mm=MV[k];if(!mm||!ml[k])continue;const arr=SH[k],n=arr.length;for(let i=0;i<n;i++){const a=P.sa+i*6.283/n,x=P.x+Math.cos(a)*40,y=P.y+Math.sin(a)*40;ctx.globalAlpha=arr[i]>0?.15:.9;ctx.fillStyle=COL[mm.t];ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,12,0,7);ctx.fill();ctx.stroke();if(texURL(k))stamp(k,x,y,20,0,arr[i]>0?.25:1);else astamp(mm.t,'o',x,y,22,T*2,arr[i]>0?.25:1)}ctx.globalAlpha=1}};
 if(COOP){const ci=CUR;drawPC();for(let i=0;i<PL.length;i++){if(i===ci||PL[i].gone)continue;useP(i);drawMe();drawTag()}useP(ci);drawMe();drawTag()}else drawMe();
 annStack();for(const f of FX)if(f.k==='txt'){const q=txtSpr(f.s,f.c);ctx.drawImage(q.c,f.x-q.w/2,f.y-q.a,q.w,q.h)}
-ctx.restore();if(COOP)coopHUD()}
+ctx.restore();drawLocFX();if(COOP)coopHUD()}
 /* floating text (damage numbers etc.) is rendered once per string+colour into a small cached image: fillText every frame is slow on phones */
 const TXC=new Map();function txtSpr(str,col){const k=col+'|'+str+'|'+DPR;let q=TXC.get(k);if(q)return q;if(TXC.size>500){let n=150;for(const kk of TXC.keys()){TXC.delete(kk);if(--n<=0)break}}const c=document.createElement('canvas'),x=c.getContext('2d'),F='bold 14px system-ui';x.font=F;const w=Math.ceil(x.measureText(String(str)).width)+4,h=19;c.width=Math.ceil(w*DPR);c.height=Math.ceil(h*DPR);x.scale(DPR,DPR);x.font=F;x.textAlign='center';x.fillStyle=col;x.fillText(String(str),w/2,14);q={c,w,h,a:14};TXC.set(k,q);return q}
 applyOpt();menuIcons();initCloud();if(TEST)setTimeout(ptInit,0);document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('button'))sfx('click')},true);let last=0;let FPA=16,FPN=0,FPT=0;
