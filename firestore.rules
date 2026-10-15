@@ -12,5 +12,26 @@ service cloud.firestore {
                    && request.resource.data.j is string
                    && request.resource.data.j.size() < 100000;
     }
+    // Friend codes: anyone signed in can look one up; you can only claim a new one for yourself.
+    match /codes/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+    }
+    // Public profile (name, friend code, last seen).
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+      // Friends list: you manage your own; others may only send a request,
+      // accept one you sent them, or remove themselves.
+      match /friends/{fid} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow create: if request.auth != null && request.auth.uid == fid
+                      && request.resource.data.status == 'in';
+        allow update: if request.auth != null && request.auth.uid == fid
+                      && resource.data.status == 'out'
+                      && request.resource.data.status == 'friends';
+        allow delete: if request.auth != null && request.auth.uid == fid;
+      }
+    }
   }
 }
