@@ -892,6 +892,12 @@ const NSKIP=new Set(['h','tg','ref','fn','src','guard','nt','ntT','o','bv','ban'
 function ser(o){const r={};for(const k in o){if(NSKIP.has(k)||(k[0]==='_'&&k!=='_sid'))continue;const v=o[k],t=typeof v;
  if(t==='number'){if(isFinite(v))r[k]=Math.round(v*10)/10}else if(t==='string'||t==='boolean')r[k]=v;
  else if(v&&t==='object'){if(Array.isArray(v)){if(v.length<=12&&v.every(x=>typeof x!=='object'||(x&&!Array.isArray(x)&&Object.keys(x).length<=5)))r[k]=v}else if(!(v instanceof Set||v instanceof Map)){const ks=Object.keys(v);if(ks.length<=5&&ks.every(q=>typeof v[q]!=='object'&&typeof v[q]!=='function'))r[k]=v}}}return r}
+const ESTAT=['fz','su','cm','cf','fe','rt','bt','pt','sl','fl','wu','cwu','ps','pf','dtr'];
+/* enemy -> compact array [id,x,y,r,sprite,type,hp%,extra?]; extra only carries what's active right now */
+function serE(e){const x={};for(const k of ESTAT){const v=e[k];if(v>0)x[k]=Math.round(v*100)/100}for(const k of ['boss','elite','mini','big','ug'])if(e[k])x[k]=1;for(const k of ['rk','sp2','k'])if(e[k])x[k]=e[k];
+ if(e.af&&e.af.length)x.af=e.af;if(e.sh>0)x.sh=Math.round(e.sh/e.mhp*1000)/10;if(e.cwu>0){x.cang=Math.round(e.cang*100)/100;x.sp=Math.round(e.sp)}if(e.wu>0&&e.ca!==undefined)x.ca=Math.round(e.ca*100)/100;if(e.boss){x.ph=e.ph||1;if(e.bd)x.bd={n:e.bd.n,em:e.bd.em}}
+ const a=[e.id,Math.round(e.x),Math.round(e.y),e.r,e._sid||0,e.type,Math.max(0,Math.round(e.hp/e.mhp*100))];for(const k in x){a.push(x);break}return a}
+function deE(a){const e={id:a[0],x:a[1],y:a[2],r:a[3],_sid:a[4]||null,type:a[5],hp:a[6],mhp:100};if(a[7])Object.assign(e,a[7]);if(e._sid===null)delete e._sid;return e}
 const inV=(o,cx,cy,hw,hh)=>Math.abs(o.x-cx)<hw&&Math.abs(o.y-cy)<hh;
 let NDIE=[];
 function snapFor(i,pe_){const me=PL[i].P,hw=(pe_.vw||900)/2+160,hh=(pe_.vh||900)/2+160,cx=me.dead?(PL[camIdx()]||PL[i]).P.x:me.x,cy=me.dead?(PL[camIdx()]||PL[i]).P.y:me.y;
@@ -901,7 +907,7 @@ function snapFor(i,pe_){const me=PL[i].P,hw=(pe_.vw||900)/2+160,hh=(pe_.vh||900)
   OB:c.OB.map(b=>[Math.round(b.x),Math.round(b.y),b.t,b.mv,Math.round(b.rs*10)/10]),CL:c.CLN.map(b=>[Math.round(b.x),Math.round(b.y)]),SH:c.SH,ml:c.ml,pl:c.pl,atk:p.atkT!=null?Math.round((T-p.atkT)*100)/100:9};
   if(j===i){o.lv=p.lv;o.xp=Math.round(p.xp);o.nx=p.nx;o.rc=Math.round(p.rc||0);o.tk=p.tk||0;o.evo=c.evo;o.k=p.k||0;o.pm=p.pm||0;o.pbl=p.pbl||0;o.phs=p.phs||0;o.mg=p.mg||0;o.bat=p.bat||0;o.bel=p.bel||0}return o});
  return JSON.stringify({t:'s',T:Math.round(T*100)/100,BI,BS,kl:kills,en:endless,lvw:state==='lvl'?1:0,P:pls,
-  E:L(E),PR:L(PR),FX:L(FX.filter(f=>f.k!=='flash'||f.l>0)),ZN:L(ZN),EB:L(EB),HZ:L(HZ),G:L(G,g=>[Math.round(g.x),Math.round(g.y),g.v>3?2:g.v?1:0,g.c?1:0,g.tk?1:0]),
+  E:L(E,serE),PR:L(PR),FX:L(FX.filter(f=>f.k!=='flash'||f.l>0)),ZN:L(ZN),EB:L(EB),HZ:L(HZ),G:L(G,g=>[Math.round(g.x),Math.round(g.y),g.v>3?2:g.v?1:0,g.c?1:0,g.tk?1:0]),
   CH:L(CH),CY:L(CY),MC:L(MC),IT:L(IT),PC:PCN?{x:Math.round(PCN.x),y:Math.round(PCN.y),p:Math.round(PCN.p*100)/100}:null,BN:COBAN,DD:NDIE.filter(d=>inV(d,cx,cy,hw,hh)).map(d=>d.id),gu:gust?ser(gust):null})}
 function netHostTick(){if(!NETH||!COOP)return;const now=performance.now();if(now-NETLAST<66)return;NETLAST=now;
  for(const g in NET.peers){const pe_=NET.peers[g];if(pe_.pi==null||!pe_.s)continue;if(pe_.s.bufferedAmount>256e3)continue;chSend(pe_.s,snapFor(pe_.pi,pe_))}NDIE=[]}
@@ -939,7 +945,7 @@ function netApply(m){const now=performance.now();NG.int=NG.last?Math.min(200,Mat
  if(m.BI!==BI){enterBiome(m.BI,false);BS=m.BS;HZP.clear();OBF.clear()}else if(m.BS!==BS){BS=m.BS;HZP.clear();OBF.clear()}
  const old=NG.map,nm=new Map();const keep=(o,ks)=>{const q=o.id!==undefined?old.get(o.id):null;if(q){for(const k of ks)if(q[k]!==undefined)o[k]=q[k];o._ox=q._rx??q.x;o._oy=q._ry??q.y}else{o._ox=o.x;o._oy=o.y}o._tx=o.x;o._ty=o.y;if(o.id!==undefined)nm.set(o.id,o)};
  for(const id of m.DD||[]){const q=old.get(id);if(q&&q._dv)try{addDie(q)}catch(e){}}
- for(const e of m.E)keep(e,['_ph','_fx','_bv','_dv','_sc']);for(const p of m.PR)keep(p,[]);NG.map=nm;
+ m.E=m.E.map(deE);for(const e of m.E)keep(e,['_ph','_fx','_bv','_dv','_sc']);for(const p of m.PR)keep(p,[]);NG.map=nm;
  E=m.E;PR=m.PR;FX=m.FX;ZN=m.ZN;EB=m.EB;HZ=m.HZ;CH=m.CH;CY=m.CY;MC=m.MC;IT=m.IT;G=m.G.map(a=>({x:a[0],y:a[1],v:a[2]===2?5:a[2],c:a[3]?(a[3]):0,tk:a[4]}));gust=m.gu;kills=m.kl;endless=m.en;
  PCN=m.PC;COBAN=m.BN;if(COBAN&&!NG.bn){NG.bn=1}if(!COBAN)NG.bn=0;
  for(let j=0;j<m.P.length;j++){const s=m.P[j],c=PL[j];if(!c)continue;const p=c.P;
@@ -1071,7 +1077,7 @@ chars();shop();
 /* ===== CO-OP core: up to 4 players share one simulation. Each player owns a "context" (stats, moves, items, passives...)
    that is swapped into the game's globals while that player acts, so all single-player code keeps working unchanged. ===== */
 let PL=[],CUR=0,COOP=0,LOCAL=0,XPS=null,PCN=null,COOPF=0,COBAN=null,COSTAND=null;
-const COC={hp:[1,1,2.05,2.9,3.45],rt:[1,1,1.5,1.9,2.03],sw:[1,1,.65,.55,.5],cap:[320,320,360,400,440],xp:[1,1,.6,.45,.36],dm:[1,1,1.6,2.05,2.12]};   /* tuned by bot sweeps: ~55-60% team survival at 5:00 */   /* scaling by player count (index = players) */
+const COC={hp:[1,1,1.4,1.55,1.75],rt:[1,1,1.9,3.2,3.0],sw:[1,1,.65,.55,.5],cap:[320,320,480,640,800],ramp:[30,240],xp:[1,1,.6,.45,.36],dm:[1,1,1.1,1.15,1.15]};   /* tuned by bot sweeps: ~50% team survival at 5:00, enemies on each screen close to solo */   /* scaling by player count (index = players) */
 const PCOL=['#ff5a5a','#4fa3ff','#5be37d','#ffd04a'];
 const OPUSH=function(...a){for(const x of a)if(x&&typeof x==='object'&&x.o===undefined)x.o=CUR;return Array.prototype.push.apply(this,a)};
 const own=a=>{if(COOP&&a&&a.push!==OPUSH)a.push=OPUSH;return a};
@@ -1083,6 +1089,8 @@ const aliveIdx=()=>{const o=[];for(let i=0;i<PL.length;i++)if(pAlive(i))o.push(i
 const rndAlive=()=>{const a=aliveIdx();return a.length?a[Math.random()*a.length|0]:CUR};
 function nearP(e){if(e.ntT>T&&pAlive(e.nt))return e.nt;let b=-1,bd=1e18;for(let i=0;i<PL.length;i++){if(!pAlive(i))continue;const q=PL[i].P,d=(q.x-e.x)**2+(q.y-e.y)**2;if(d<bd){bd=d;b=i}}e.nt=b<0?CUR:b;e.ntT=T+.25;return e.nt}
 function nearIn(o,r){let b=-1,bd=r*r;for(let i=0;i<PL.length;i++){if(!pAlive(i))continue;const q=PL[i].P,d=(q.x-o.x)**2+(q.y-o.y)**2;if(d<bd){bd=d;b=i}}return b}
+/* extra co-op spawn rate ramps in between ramp[0] and ramp[1] seconds, so the early game isn't doubled */
+const coRt=()=>{if(!COOP)return 1;const n=PL.length,u=Math.max(0,Math.min(1,(T-COC.ramp[0])/(COC.ramp[1]-COC.ramp[0])));return 1+(COC.rt[n]-1)*(.3+.7*u)};
 function coH(i,f){if(!COOP||i==null||!PL[i]||i===CUR)return f();const c=CUR;useP(i);f();useP(c)}
 const ULK=()=>Object.keys(UP).concat(GK);
 /* build a player's starting context for character t. prof (optional) = stats sent by a remote player from their own save */
@@ -1094,7 +1102,7 @@ function mkPlayer(t,kind,name,prof){const s0=SEL;SEL=t;setPS(t);let ulv={};for(c
  return {P:p,ml:{[stId(t)]:1},mt:{[stId(t)]:0},evo:{},pl:Object.fromEntries(Object.keys(PASS).map(k=>[k,0])),PS,PSN,SH:{},CLN:[],OB:[],face:{x:1,y:0},DMG:{},DLOG:[],DTOT:{},KB:null,dmx:1,kind,name:name||('Player '+(PL.length+1)),inp:{x:0,y:0},q:[],showing:0,wait:null,gone:0}}
 /* players: [{cid,kind:'local'|'bot'|'net',name,prof}] — the first 'local' (or index 0) is this device */
 function beginCoop(players,dd){const li=Math.max(0,players.findIndex(p=>p.kind==='local'));COOP=0;PL=[];begin(players[li].cid,dd);
- const n=players.length;RUN.hm*=COC.hp[n];RUN.rt*=COC.rt[n];RUN.xm*=COC.xp[n];RUN.dm*=COC.dm[n];
+ const n=players.length;RUN.hm*=COC.hp[n];RUN.xm*=COC.xp[n];RUN.dm*=COC.dm[n];
  const s0=SEL;for(let i=0;i<n;i++){const q=players[i];if(i===li){const c={};cS(c);const s1=SEL;SEL=q.cid;P.ulv={};for(const k of ULK())P.ulv[k]=ul(k);SEL=s1;P.mr=mrank(q.cid);P.k=0;Object.assign(c,{kind:q.kind,name:q.name||'You',inp:{x:0,y:0},q:[],showing:0,wait:null,gone:0});PL.push(c)}else PL.push(mkPlayer(q.cid,q.kind,q.name,q.prof))}
  SEL=s0;cL(PL[li]);CUR=li;LOCAL=li;
  for(let i=0;i<n;i++){const p=PL[i].P,a=i/n*6.283;p.x=Math.cos(a)*45;p.y=Math.sin(a)*45;p.pi=i}
@@ -1573,7 +1581,7 @@ let RLT=0,RLN=0,RL_ON=true,RL_FAR=500,RL_BIAS=.5,RL_SPR=2.2;   /* tuned with bot
 function relocate(dt){if(!RL_ON)return;RLT-=dt;if(RLT>0)return;RLT=.25;const sd=hyp(W,H)/2+40,far=sd+RL_FAR,mvA=!COOP&&P.mv?Math.atan2(face.y,face.x):null;let n=0;
  for(const e of E){if(e.dead||e.ug||e.cm>0||e.wu>0||e.chd>0||e.cdh>0||e.guard)continue;const Q=COOP?PL[nearP(e)].P:P,dx=e.x-Q.x,dy=e.y-Q.y,lim=e.boss?far+400:far;if(dx*dx+dy*dy<lim*lim)continue;
   const a=mvA!==null&&Math.random()<RL_BIAS?mvA+rnd(-RL_SPR,RL_SPR):rnd(0,6.283),r=sd+rnd(0,70);e.x=Q.x+Math.cos(a)*r;e.y=Q.y+Math.sin(a)*r;e.vx=e.vy=0;e.bs=0;e.ps=0;RLN++;if(++n>=30)break}}
-function swarm(){const t=pickT(.7),n=Math.max(0,Math.min(Math.round((22+Math.floor(T/15))*(COOP?COC.sw[PL.length]:1)),90,720-E.length)),sp_=T<480?4.7:6.283,a0=rnd(0,6.283);for(let i=0;i<n;i++)spawn(a0+i/n*sp_,t);FX.push({k:'txt',x:P.x,y:P.y-70,s:'A swarm of '+t+' monsters surrounds you!',c:COL[t],l:3})}
+function swarm(){const t=pickT(.7),n=Math.max(0,Math.min(Math.round((22+Math.floor(T/15))*(COOP?COC.sw[PL.length]:1)),90,720+(COOP?COC.cap[PL.length]-320:0)-E.length)),sp_=T<480?4.7:6.283,a0=rnd(0,6.283);for(let i=0;i<n;i++)spawn(a0+i/n*sp_,t);FX.push({k:'txt',x:P.x,y:P.y-70,s:'A swarm of '+t+' monsters surrounds you!',c:COL[t],l:3})}
 function levelUp(){P.xp-=P.nx;P.lv++;if(!RUN.nh)P.hp=Math.min(P.mhp,P.hp+P.mhp*(P.lv<=20?.06:.015));P.nx=Math.round(P.lv<=13?P.nx*1.22+4:P.nx*1.075+7);choices(true)}
 function opts_(){const opts=[],mc=Object.keys(ml).length,hc=Object.keys(pl).filter(k=>pl[k]>0).length;
 Object.keys(MV).filter(id=>P.ty.includes(MV[id].t)).forEach(k=>{if(!ml[k]){if(mc<2+ul('m3')+ul('m4'))opts.push({id:k,m:1})}else if(ml[k]<10||(evo[k]&&ml[k]<20))opts.push({id:k,m:1,up:1});else if(ml[k]===10&&pl[syn(k)]>0)opts.push({id:k,m:1,ev:1})});
@@ -2182,7 +2190,7 @@ const kk=hzK(BI),kc=Math.min(1,kk),sl_=v=>1-(1-v)*kc,hk=(kk===0||P.ty.includes('
 if(P.dead)return 0;for(const k in ml){mt[k]-=dt;if(mt[k]<=0){useT(k);mt[k]=cdOf(k)*cdM()}}return 0}
 function update(dt){T+=dt;if(TEST&&P.god)P.hp=P.mhp;if(OBM.size>400)OBM.clear();if(HZP.size>600){HZP.clear();OBF.clear()}if(COOP){own(PR);own(FX);own(ZN);own(DL);for(const i of aliveIdx()){useP(i);if(pStep(dt))return finish(won)}pcTick(dt)}else if(pStep(dt))return finish(won);
 for(const d of DL)d.t-=dt;for(const d of DL.filter(d=>d.t<=0)){if(COOP&&d.o!==undefined)useP(d.o);const f0=FX.length,z0=ZN.length,p0=PR.length,d0=DL.length,b0=EB.length,h0=HZ.length,mk=d.mv||'';curMv=mk;d.fn();curMv='';tagNew(FX,f0,mk);tagNew(ZN,z0,mk);tagNew(PR,p0,mk);tagNew(DL,d0,mk);if(d.src){srcNew(EB,b0,d.src);srcNew(HZ,h0,d.src);srcNew(DL,d0,d.src)}}DL=own(DL.filter(d=>d.t>0));candyT-=dt;chestT-=dt;if(candyT<=0){candyT=20;if(Math.random()<.1&&CY.length<3)spawnMap('c')}if(chestT<=0){chestT=30;if(Math.random()<.12&&MC.length<3)spawnMap('m');if(T>=240&&Math.random()<.04+.01*RUN.tier&&!MC.some(m=>m.cur))spawnMap('x')}
-spawnT-=dt;const rate=Math.max(.1,.55-T/1700)/(endless?1+(T-ET)/180:1)/RUN.rt;if(spawnT<=0&&E.length<Math.min(520+(COOP?COC.cap[PL.length]-320:0),(COOP?COC.cap[PL.length]:320)+(endless?(T-ET)/3:0))){const n=1+(((tS()<300?tS()*.7:tS()-90)+55)/110|0);for(let i=0;i<n;i++){if(COOP)useP(rndAlive());spawn()}spawnT=rate} relocate(dt);
+spawnT-=dt;const rate=Math.max(.1,.55-T/1700)/(endless?1+(T-ET)/180:1)/RUN.rt/coRt();if(spawnT<=0&&E.length<Math.min(520+(COOP?COC.cap[PL.length]-320:0),(COOP?COC.cap[PL.length]:320)+(endless?(T-ET)/3:0))){const n=1+(((tS()<300?tS()*.7:tS()-90)+55)/110|0);for(let i=0;i<n;i++){if(COOP)useP(rndAlive());spawn()}spawnT=rate} relocate(dt);
 if(T>=nb&&(boss<RUN.bosses||endless)){if(COOP)useP(rndAlive());spawnBoss()}if(T>=sw){sw+=120;if(COOP){for(const i of aliveIdx()){useP(i);swarm()}}else swarm()}
 for(const e of E){if(COOP)useP(nearP(e));let a=Math.atan2(P.y-e.y,P.x-e.x);if(e.fe>0)a+=Math.PI;
 if(e.cm>0){let bd=1e9,tg=null;for(const o of E){if(o===e||o.dead||o.cm>0)continue;const dd=(o.x-e.x)**2+(o.y-e.y)**2;if(dd<bd){bd=dd;tg=o}}if(tg){a=Math.atan2(tg.y-e.y,tg.x-e.x);if(bd<(e.r+tg.r+4)**2&&(e.cx||0)<=T){e.cx=T+.4;hit(tg,Math.round(e.dm*3),'normal',0,null,'#ffb3e6')}}}
