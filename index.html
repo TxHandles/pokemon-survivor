@@ -1234,7 +1234,7 @@ function routeUI(R,me,pick){R=R||ROUTE;if(!R)return;me=me??LOCAL;pick=pick||(ix=
  let h=`<defs>${ts.map(t=>`<radialGradient id="rg_${t}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="${shadeC(COL[t],.45)}"/><stop offset="1" stop-color="${shadeC(COL[t],-.25)}"/></radialGradient>`).join('')}</defs>`;
  h+=`<rect x="4" y="4" width="${W0-8}" height="${H0-8}" rx="18" fill="#1a1f2e" stroke="#c9b27a" stroke-width="3"/>`;
  for(let i=0;i<26;i++){const x=20+((i*97)%360),y=30+((i*61)%370);h+=`<circle cx="${x}" cy="${y}" r="${2+(i%3)}" fill="#c9b27a" opacity=".12"/>`}
- pos.forEach(([x,y],i)=>{h+=`<path id="rtp${i}" d="M${cx},${cy-30} L${cx},${cy-62} C${cx},${(cy+y)/2} ${x},${(cy+y)/2+40} ${x},${y+40}" fill="none" stroke="#e8d9a8" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 12" opacity="${R.moving&&R.moving.ix!==i?.25:.75}"/>`});
+ pos.forEach(([x,y],i)=>{h+=`<path d="M${cx},${cy-30} L${cx},${cy-62} C${cx},${(cy+y)/2} ${x},${(cy+y)/2+40} ${x},${y+86}" fill="none" stroke="#e8d9a8" stroke-width="5" stroke-linecap="round" stroke-dasharray="1 12" opacity="${R.moving&&R.moving.ix!==i?.25:.75}"/><path id="rtp${i}" d="M${cx},${cy-30} L${cx},${cy-62} C${cx},${(cy+y)/2} ${x},${(cy+y)/2+40} ${x},${y}" fill="none" stroke="none"/>`});
  const tag=t=>{const b=(SV.bu||{})[t];return !b||!b.u?'<tspan fill="#ffd04a">★ NEW</tspan>':b.s?'<tspan fill="#ffd04a">'+'★'.repeat(Math.min(3,b.s))+'</tspan>':'<tspan fill="#9aa4bd">visited</tspan>'};
  const vty=(COOP&&PL[me]?PL[me].P.ty:P&&P.ty)||[],mu=t=>{if(!BHZ[t]||!vty.length)return '';const k=vty.includes(t)?0:typeMul(t,vty);return k===0?' · <tspan fill="#7dff9a">immune</tspan>':k>1?' · <tspan fill="#ff8a8a">weak!</tspan>':k<1?' · <tspan fill="#9fd8ff">resist</tspan>':''};
  R.opts.forEach((o,i)=>{const t=o.t,[x,y]=pos[i],mine=R.votes[me]===i;
@@ -1252,8 +1252,8 @@ function routeUI(R,me,pick){R=R||ROUTE;if(!R)return;me=me??LOCAL;pick=pick||(ix=
 /* walk the mini-figures up the chosen path, then call done() */
 function routeAnim(R,ix,me,done){R.moving={ix};routeUI(R,me,()=>{});const p=$('rtp'+ix),F=[...document.querySelectorAll('#rtmap .fig')];if(!p||!F.length){setTimeout(done,300);return}
  const L=p.getTotalLength(),t0=performance.now(),D=1300,st=F.map(f=>{const m=/translate\(([-\d.]+),([-\d.]+)\)/.exec(f.getAttribute('transform'));return [+m[1],+m[2]]});const id=++RTANIM;sfx('click');
- const step=now=>{if(id!==RTANIM)return;const u=Math.min(1,(now-t0)/D);F.forEach((f,k)=>{const d=Math.max(0,Math.min(1,u*1.12-k*.06)),e=d<.5?2*d*d:1-(-2*d+2)**2/2,q=p.getPointAtLength(e*L),off=(k-(F.length-1)/2)*12*(1-e)+(k-(F.length-1)/2)*14*e,hop=-Math.abs(Math.sin(e*Math.PI*6))*6*(1-e*.3);
-   const sx=st[k][0],sy=st[k][1],bx=q.x+off,by=q.y-12+hop,blend=Math.min(1,d*5);f.setAttribute('transform',`translate(${sx+(bx-sx)*blend},${sy+(by-sy)*blend})`)});
+ const step=now=>{if(id!==RTANIM)return;const u=Math.min(1,(now-t0)/D);F.forEach((f,k)=>{const d=Math.max(0,Math.min(1,u*1.12-k*.06)),e=d<.5?2*d*d:1-(-2*d+2)**2/2,q=p.getPointAtLength(e*L),off=(k-(F.length-1)/2)*(12*(1-e)+9*e),hop=-Math.abs(Math.sin(e*Math.PI*6))*6*(1-e*.3);
+   const sx=st[k][0],sy=st[k][1],bx=q.x+off,by=q.y-12*(1-e)+hop,blend=Math.min(1,d*5);f.setAttribute('transform',`translate(${sx+(bx-sx)*blend},${sy+(by-sy)*blend})`)});
   if(u<1)requestAnimationFrame(step);else setTimeout(done,250)};requestAnimationFrame(step)}
 function routeChoose(ix){if(!ROUTE||ROUTE.moving)return;if(!ROUTE.coop){const o=ROUTE.opts[ix];routeAnim(ROUTE,ix,LOCAL,()=>routeGo(o));return}if(ROUTE.votes[LOCAL]!==undefined)return;routeVote(LOCAL,ix)}
 function routeVote(i,ix){if(!ROUTE||ROUTE.moving||ROUTE.votes[i]!==undefined||!(ix>=0&&ix<ROUTE.opts.length))return;ROUTE.votes[i]=ix;if(COROUTE)COROUTE('votes',ROUTE);routeUI();routeCheck()}
