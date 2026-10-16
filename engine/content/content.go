@@ -84,6 +84,21 @@ type SpriteSet struct {
 	Portrait string      `json:"portrait"`
 }
 
+// Ability is one Pokémon ability; P holds its effect parameters (read by engine/sim).
+type Ability struct {
+	ID   string         `json:"-"`
+	Name string         `json:"n"`
+	Desc string         `json:"d"`
+	P    map[string]any `json:"p"`
+	Tier int            `json:"-"` // 1 starting, 2 hidden, 3 legendary
+}
+
+type AbilitySet struct {
+	T1  []Ability `json:"t1"`
+	T2  []Ability `json:"t2"`
+	Leg Ability   `json:"leg"`
+}
+
 type World struct {
 	Locations map[string][]string `json:"locations"`
 }
@@ -99,6 +114,7 @@ type DB struct {
 	Sprites   map[string]*SpriteSet
 	World     World
 	Stats     map[string]Stats // final stats per Pokemon (type base x type balance x evolution multiplier)
+	Abilities map[string]*AbilitySet
 	children  map[string][]string
 }
 
@@ -122,15 +138,16 @@ func Load(f fs.FS) (*DB, error) {
 	var mv struct{ Moves []*Move }
 	var ls struct{ Learnsets map[string]*Learnset }
 	var sp struct{ Sprites map[string]*SpriteSet }
+	var ab struct{ Abilities map[string]*AbilitySet }
 	for _, x := range []struct {
 		n string
 		v any
-	}{{"pokemon.json", &pk}, {"moves.json", &mv}, {"learnsets.json", &ls}, {"balance.json", &db.Balance}, {"sprites/sprites.json", &sp}, {"world.json", &db.World}} {
+	}{{"pokemon.json", &pk}, {"moves.json", &mv}, {"learnsets.json", &ls}, {"balance.json", &db.Balance}, {"sprites/sprites.json", &sp}, {"world.json", &db.World}, {"abilities.json", &ab}} {
 		if err := readJSON(f, x.n, x.v); err != nil {
 			return nil, err
 		}
 	}
-	db.Pokemon, db.MoveList, db.Learnsets, db.Sprites = pk.Pokemon, mv.Moves, ls.Learnsets, sp.Sprites
+	db.Pokemon, db.MoveList, db.Learnsets, db.Sprites, db.Abilities = pk.Pokemon, mv.Moves, ls.Learnsets, sp.Sprites, ab.Abilities
 	for _, p := range db.Pokemon {
 		db.ByID[p.ID] = p
 		if p.EvolvesFrom != "" {
@@ -315,4 +332,57 @@ func (db *DB) EnemyPool(t string) []string {
 		}
 	}
 	return out
+}
+
+func abHash(s string) uint32 {
+	h := uint32(2166136261)
+	for _, c := range utf16(s) {
+		h ^= uint32(c)
+		h *= 16777619
+	}
+	return h
+}
+
+func utf16(s string) []uint16 {
+	var out []uint16
+	for _, r := range s {
+		if r >= 0x10000 {
+			r -= 0x10000
+			out = append(out, uint16(0xD800+(r>>10)), uint16(0xDC00+(r&0x3FF)))
+		} else {
+			out = append(out, uint16(r))
+		}
+	}
+	return out
+}
+
+// AbilityPair returns the starting and hidden ability of a Pokémon (web abList): the line root's assignment
+// (pokemon.json "abilities") picks one tier-1 and one tier-2 ability of the Pokémon's primary type;
+// legendaries get their type's legendary ability as the second one.
+func (db *DB) AbilityPair(id string) [2]Ability {
+	p := db.ByID[id]
+	ty := p.Types[0]
+	set := db.Abilities[ty]
+	if set == nil {
+		set = db.Abilities["normal"]
+	}
+	root := db.LineRoot(id)
+	i1, i2 := 0, 0
+	if r := db.ByID[root]; r != nil && r.Abilities != nil {
+		i1, i2 = r.Abilities.Starting, r.Abilities.Hidden
+	} else {
+		h := abHash(root)
+		i1, i2 = int(h%3), int((h>>5)%3)
+	}
+	a := set.T1[i1%len(set.T1)]
+	a.ID, a.Tier = fmt.Sprintf("%s:t1:%d", ty, i1), 1
+	var b Ability
+	if p.Legendary {
+		b = set.Leg
+		b.ID, b.Tier = ty+":leg", 3
+	} else {
+		b = set.T2[i2%len(set.T2)]
+		b.ID, b.Tier = fmt.Sprintf("%s:t2:%d", ty, i2), 2
+	}
+	return [2]Ability{a, b}
 }

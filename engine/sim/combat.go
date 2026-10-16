@@ -86,7 +86,10 @@ func (w *World) applyStatus(e *Enemy, k string, dur, d float64) {
 		e.BurnD = math.Max(e.BurnD, math.Max(1.5, d*.3))
 	case "ps":
 		e.Psn = math.Max(e.Psn, dur)
-		e.PsnD = math.Max(e.PsnD, math.Max(1.5, d*.22))
+		e.PsnD = math.Max(e.PsnD, math.Max(1.5, d*.22)*b2f(w.PS.F("corr") > 0, 1.3, 1))
+		if w.PS.F("puppet") > 0 && !e.Boss {
+			e.Conf = math.Max(e.Conf, 1.5)
+		}
 	case "sl":
 		e.Slow = math.Max(e.Slow, dur)
 	case "cm":
@@ -163,7 +166,7 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 			e.Sh = 0
 		}
 	}
-	em := eff(t, e.Type)
+	em := w.abEm(eff(t, e.Type))
 	m := em
 	if em > 1.15 {
 		m = em * (1 + .25*w.pe("belt"))
@@ -184,26 +187,30 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 		}
 		mv *= w.itMv(s)
 	}
-	cr := w.rng.Float64() < .08*w.pe("lens")+.03*w.pe("razor")+q.F("cr", 0)
+	cc := .08*w.pe("lens") + .03*w.pe("razor") + q.F("cr", 0) + w.PS.F("crit")
+	if e.Psn > 0 {
+		cc += w.PS.F("critVsPsn")
+	}
+	cr := w.ab.agT > w.T || w.rng.Float64() < cc
 	crit := 1.0
 	if cr {
-		crit = 2 + .2*w.pe("razor")
+		crit = 2 + .2*w.pe("razor") + w.PS.F("critMul")
 	}
 	heat := 1.0
 	if w.pe("heat") > 0 && (e.Burn > 0 || e.Psn > 0) {
 		heat = 1 + .04*w.pe("heat")
 	}
-	d := math.Round(base * m * w.dmgM() * mv * crit * heat)
+	d := math.Round(base * m * w.dmgM() * mv * crit * heat * w.abHitMul(e, t, em))
 	if v := q.F("pct", 0); v > 0 && !e.Boss && !e.Elite {
 		d = math.Max(d, math.Round(e.HP*v))
 	}
 	if d < 1 {
 		d = 1
 	}
-	if e.Arm && q.F("iarm", 0) == 0 {
+	if e.Arm && q.F("iarm", 0) == 0 && w.PS.F("ignArm") == 0 {
 		d = math.Max(1, math.Round(d*.6))
 	}
-	if e.Sh > 0 {
+	if e.Sh > 0 && w.PS.F("ignArm") == 0 {
 		a := math.Min(e.Sh, d)
 		e.Sh -= a
 		d -= a
@@ -225,12 +232,14 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 		e.knock(fx, fy, ks*kl)
 	}
 	if e.HP > 0 {
-		if st, ok := typeStatus[t]; ok && w.rng.Float64() < st.p {
+		sheer := w.PS.F("sheer") > 0
+		if st, ok := typeStatus[t]; ok && !sheer && w.rng.Float64() < st.p*w.serene() {
 			w.applyStatus(e, st.k, st.v, d)
 		}
-		if st := q.St(); st != nil && w.rng.Float64() < st.P {
+		if st := q.St(); st != nil && !sheer && w.rng.Float64() < st.P*w.serene() {
 			w.applyStatus(e, st.K, st.Dur, d)
 		}
+		w.abProc(e, t, d)
 		if v := w.pe("heat"); v > 0 && w.rng.Float64() < .05*v {
 			w.applyStatus(e, "bn", 3, d)
 		}
@@ -293,17 +302,12 @@ func (w *World) kill(e *Enemy) {
 	w.Gems = append(w.Gems, &Gem{X: e.X, Y: e.Y, V: v * (1 + w.T/300)})
 	w.addFX(&FX{Kind: "pop", X: e.X, Y: e.Y, R: e.R, Life: .3, Type: e.Type})
 	w.onDeath(e)
+	w.abKill(e)
+	w.coinDrop(e)
 	if e.Boss {
-		w.bossClear(e)
 		w.Bosses++
 		w.Shake = .5
-		if w.Bosses == 3 && !w.Won {
-			w.Won = true
-			w.message("VICTORY! Endless mode begins...")
-		} else {
-			w.message("Boss defeated!")
-		}
-		w.P.XP += w.P.NX // boss chest: free level
+		w.afterBoss(e)
 	}
 }
 
@@ -317,25 +321,45 @@ func (w *World) healCapped(v float64) { w.heal(math.Min(v, w.P.MHP*.03)) }
 const hurtK = .93
 
 // hurt applies damage of type t to the player.
-func (w *World) hurt(d float64, t string) {
-	if w.P.Dead {
+func (w *World) hurt(d float64, t string) { w.hurtS(d, hurtSrc{t: t}) }
+
+// hurtS applies damage to the player (web hurt): type multiplier, ability reductions, items, then
+// last-chance saves (Focus Sash, Sturdy, Power Construct, revive).
+func (w *World) hurtS(d float64, s hurtSrc) {
+	P := w.P
+	if P.Dead {
 		return
 	}
-	h0 := w.P.HP
-	d *= TypeMul(t, w.P.Types) * hurtK
-	w.P.HP -= d * math.Pow(.93, w.pe("metal")) / w.P.Stats.Def
-	if h0-w.P.HP > .6 {
-		w.P.HurtT = w.T
+	h0 := P.HP
+	tm := TypeMul(s.t, P.Types)
+	d *= tm * hurtK * w.abRed(d, s, tm)
+	red := w.PS.F("red")
+	if P.Still > 1 {
+		red += w.PS.F("redStill")
 	}
-	if w.P.HP <= 0 && w.pe("sash") > 0 && w.P.SashT <= w.T {
-		w.P.HP, w.P.Inv = 1, 2
-		w.P.SashT = w.T + math.Max(60, 150-12*w.pe("sash"))
+	P.HP -= d * math.Pow(.93, w.pe("metal")) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
+	w.abHurt(h0 - P.HP)
+	if h0-P.HP > .6 {
+		P.HurtT = w.T
+	}
+	if P.HP <= 0 && w.pe("sash") > 0 && P.SashT <= w.T {
+		P.HP, P.Inv = 1, 2
+		P.SashT = w.T + math.Max(60, 150-12*w.pe("sash"))
 		w.Shake = .3
-		w.addFX(&FX{Kind: "txt", X: w.P.X, Y: w.P.Y - 50, Life: 2, Text: "Focus Sash!", Col: "gold"})
+		w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 50, Life: 2, Text: "Focus Sash!", Col: "gold"})
 	}
-	if w.P.HP <= 0 {
-		w.P.HP = 0
-		w.P.Dead = true
+	if P.HP <= 0 {
+		w.abSave()
+	}
+	if P.HP <= 0 && w.PS.F("revive") > 0 && !w.ab.rv {
+		w.ab.rv = true
+		P.HP, P.Inv = P.MHP*.5, 2.5
+		w.Shake = .4
+		w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 50, Life: 2.5, Text: "Spirit Return!", Col: "conf"})
+	}
+	if P.HP <= 0 {
+		P.HP = 0
+		P.Dead = true
 		w.State = StateDead
 	}
 }

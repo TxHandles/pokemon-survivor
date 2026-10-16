@@ -38,6 +38,10 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	camX, camY := math.Round(w.P.X-sw/2+shx), math.Round(w.P.Y-sh/2+shy)
 	sx := func(x float64) float64 { return x - camX }
 	sy := func(y float64) float64 { return y - camY }
+	if g.floorN != w.BiomeN { // travelled to a new biome
+		g.floor = NewFloor(w.Biome, w.Seed+int64(w.BiomeN)*7919)
+		g.floorN = w.BiomeN
+	}
 	g.floor.Draw(dst, camX, camY)
 
 	// zones (ground effects)
@@ -94,10 +98,18 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	for _, it := range w.Items {
 		drawPickup(dst, it.K, sx(it.X), sy(it.Y)+math.Sin(w.T*3+it.X)*2, it.T)
 	}
+	g.drawChests(dst, sx, sy)
 	// gems
 	for _, gm := range w.Gems {
 		x, y := sx(gm.X), sy(gm.Y)
 		if x < -20 || y < -20 || x > sw+20 || y > sh+20 {
+			continue
+		}
+		if gm.C > 0 && gm.V == 0 { // coin
+			bob := math.Sin(w.T*4+gm.X*.1) * 1.5
+			soft(dst, x, y+2, 9, 9, c(255, 208, 74, 70))
+			disc(dst, x, y+bob, 4.5, c(230, 170, 40, 255))
+			disc(dst, x, y+bob, 3.2, c(255, 214, 90, 255))
 			continue
 		}
 		col := c(110, 200, 255, 255)

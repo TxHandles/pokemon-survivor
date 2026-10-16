@@ -25,8 +25,9 @@ func main() {
 	who := flag.String("who", "", "comma-separated Pokémon ids (default: every type base form)")
 	biome := flag.String("biome", "random", "biome type, \"own\" for the Pokémon's own type, or \"random\" (like the web balance sweeps)")
 	workers := flag.Int("j", 2, "parallel workers")
-	harness := flag.Bool("harness", true, "use the web balance harness leash (260 / .8 / 1.75) instead of the game's")
+	harness := flag.Bool("harness", true, "match the web balance harness: tighter leash (260 / .8 / 1.75) and its 900x700 window")
 	verbose := flag.Bool("v", false, "print each run")
+	abil := flag.String("ability", "mix", "ability: 0 (starting), 1 (hidden), or mix (alternate, like the web sweeps)")
 	stepDT := flag.Float64("dt", 1.0/60, "simulation step (the web balance harness used 0.05)")
 	flag.Parse()
 
@@ -44,6 +45,7 @@ func main() {
 		t         float64
 		lv, kills int
 		dmg       map[string]float64
+		won       bool
 	}
 	jobs := make(chan [2]int)
 	out := make(chan res)
@@ -62,7 +64,11 @@ func main() {
 				case "random":
 					b = content.Types[(j[1]*7+j[0]*13+j[1]*j[0])%len(content.Types)]
 				}
-				w, err := sim.New(db, id, b, int64(j[1]*7919+j[0]*104729+1))
+				ai := j[1] % 2
+				if *abil == "0" || *abil == "1" {
+					ai = int((*abil)[0] - '0')
+				}
+				w, err := sim.NewRun(db, id, b, int64(j[1]*7919+j[0]*104729+1), ai)
 				if err != nil {
 					fmt.Fprintln(os.Stderr, err)
 					os.Exit(1)
@@ -70,17 +76,18 @@ func main() {
 				w.AutoDash = true
 				if *harness {
 					w.LeashFar, w.LeashBias, w.LeashSpread = 260, .8, 1.75
+					w.ViewW, w.ViewH = 900, 700 // the web harness's browser window (spawn ring distance)
 				}
 				bot := sim.NewBot(w, int64(j[1]*31+j[0]))
 				dt := *stepDT
 				for w.State != sim.StateDead && w.T < *mins*60 {
-					if w.State == sim.StateLevelUp {
-						w.Choose(w.BotPick())
+					if w.Waiting() {
+						w.BotDecide()
 						continue
 					}
 					w.Step(dt, bot.Input(dt))
 				}
-				out <- res{id, w.T, w.P.Lv, w.Kills, w.DMG}
+				out <- res{id, w.T, w.P.Lv, w.Kills, w.DMG, w.Won}
 			}
 		}()
 	}
@@ -100,7 +107,11 @@ func main() {
 		dmg                 map[string]float64
 	}
 	A := map[string]*agg{}
+	wins := 0
 	for r := range out {
+		if r.won {
+			wins++
+		}
 		a := A[r.id]
 		if a == nil {
 			a = &agg{dmg: map[string]float64{}}
@@ -146,5 +157,6 @@ func main() {
 		}
 		fmt.Printf("%-10s %5.0f%% %6.0fs %5.1f %6d %s\n", id, float64(a.alive)/float64(a.n)*100, a.t/float64(a.n), float64(a.lv)/float64(a.n), a.kills/a.n, top)
 	}
-	fmt.Printf("\nsurvived %.0f:00 — %d/%d = %.0f%%   (%.1fs)\n", *mins, alive, tot, float64(alive)/float64(max(tot, 1))*100, time.Since(start).Seconds())
+	fmt.Printf("\nwon (beat the 3rd boss): %d\n", wins)
+	fmt.Printf("survived %s — %d/%d = %.0f%%   (%.1fs)\n", fmt.Sprintf("%d:%02d", int(*mins*60)/60, int(*mins*60)%60), alive, tot, float64(alive)/float64(max(tot, 1))*100, time.Since(start).Seconds())
 }

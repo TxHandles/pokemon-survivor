@@ -33,8 +33,12 @@ func TestEveryMove(t *testing.T) {
 			}
 			b := NewBot(w, 1)
 			for w.T < 40 && w.State != StateDead {
-				if w.State == StateLevelUp {
-					w.State = StatePlay // keep the loadout fixed
+				if w.Waiting() {
+					if w.State == StateLevelUp {
+						w.State = StatePlay // keep the loadout fixed
+					} else {
+						w.BotDecide()
+					}
 					continue
 				}
 				w.Step(1.0/60, b.Input(1.0/60))
@@ -55,8 +59,8 @@ func TestDeterministic(t *testing.T) {
 		w.AutoDash = true
 		b := NewBot(w, 9)
 		for w.T < 120 && w.State != StateDead {
-			if w.State == StateLevelUp {
-				w.Choose(w.BotPick())
+			if w.Waiting() {
+				w.BotDecide()
 				continue
 			}
 			w.Step(1.0/60, b.Input(1.0/60))

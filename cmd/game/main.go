@@ -13,6 +13,7 @@ import (
 	"github.com/TxHandles/pokemon-survivor/data"
 	"github.com/TxHandles/pokemon-survivor/engine/client"
 	"github.com/TxHandles/pokemon-survivor/engine/content"
+	"github.com/TxHandles/pokemon-survivor/engine/sim"
 )
 
 func main() {
@@ -24,13 +25,27 @@ func main() {
 	g := client.New(data.FS, db)
 	if opts["demo"] != "" { // the bot plays: ?demo=fire  (optionally &biome=water&seed=3&t=40 to fast-forward)
 		g.Demo(true)
+		if opts["ab"] == "1" {
+			g.SetAbility(1)
+		}
 		seed, _ := strconv.ParseInt(opts["seed"], 10, 64)
 		if seed == 0 {
 			seed = rand.Int63()
 		}
 		g.Start(opts["demo"], opts["biome"], seed)
+		if opts["hold"] != "" {
+			g.Hold = true
+		}
 		if t, _ := strconv.ParseFloat(opts["t"], 64); t > 0 {
-			g.FastForward(t)
+			switch opts["until"] {
+			case "route":
+				g.FastForwardUntil(t, sim.StateRoute)
+			case "shrine":
+				g.FastForward(t)
+				g.W.OpenShrineNow()
+			default:
+				g.FastForward(t)
+			}
 		}
 	}
 	ebiten.SetWindowTitle("Pokémon Survivor")

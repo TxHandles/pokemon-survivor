@@ -52,13 +52,15 @@ func (w *World) pe(k string) float64 {
 	return v
 }
 
-func (w *World) gv() int      { return int(math.Ceil(w.pe("glove") / 2)) }
-func (w *World) rgm() float64 { return 1 + .15*w.pe("focus") }
-func (w *World) cdM() float64 { return math.Pow(.92, w.pe("claw")) * b2f(w.P.Bat > 0, .75, 1) }
+func (w *World) gv() int      { return int(math.Ceil(w.pe("glove")/2)) + int(w.PS.F("cnt")) }
+func (w *World) rgm() float64 { return (1 + .15*w.pe("focus")) * (1 + w.PS.F("rng")) }
+func (w *World) cdM() float64 {
+	return math.Pow(.92, w.pe("claw")) * b2f(w.P.Bat > 0, .75, 1) * b2f(w.P.Phs > 0, .8, 1) * (1 - w.abCd())
+}
 
 // dmgM: player damage multiplier (.66 x items x attack stat; shop/mastery bonuses come with the meta phase).
 func (w *World) dmgM() float64 {
-	return .66 * b2f(w.P.Bel > 0, 1.25, 1) * (1 + .12*w.pe("band")) * (1 + .1*w.pe("lifeorb")) * w.P.Stats.Atk
+	return .66 * b2f(w.P.Bel > 0, 1.25, 1) * (1 + .12*w.pe("band")) * (1 + .1*w.pe("lifeorb")) * b2f(w.P.Pm > 0, 1.3, 1) * b2f(w.P.Pbl > 0, 1.5, 1) * w.psD() * w.P.Stats.Atk
 }
 
 // itMv: per-move item multipliers (Muscle Band, Wise Glasses, Choice Band, Metronome).

@@ -33,9 +33,13 @@ type Game struct {
 	sw, sh int
 
 	// title
-	roster []string
-	sel    int
-	biome  int // index into content.Types, -1 = Pokémon's own type
+	roster  []string
+	sel     int
+	biome   int // index into content.Types, -1 = Pokémon's own type
+	ability int // 0 starting, 1 hidden
+	// Hold keeps demo choice screens open (for screenshots)
+	Hold   bool
+	floorN int
 	// level-up
 	lvSel   int
 	lvDelay float64
@@ -62,20 +66,20 @@ func (g *Game) Start(id, biome string, seed int64) {
 	if biome == "" {
 		biome = g.db.ByID[id].Types[0]
 	}
-	w, err := sim.New(g.db, id, biome, seed)
+	w, err := sim.NewRun(g.db, id, biome, seed, g.ability)
 	if err != nil {
 		panic(err)
 	}
 	w.ViewW, w.ViewH = float64(g.sw), float64(g.sh)
 	g.W = w
 	g.floor = NewFloor(biome, seed)
+	g.floorN = w.BiomeN
 	g.pa = playerAnim{}
 	g.scr = scPlay
 	g.bot = sim.NewBot(w, seed+1)
 	if g.auto {
 		w.AutoDash = true
 	}
-	w.Msg, w.MsgT = "Welcome to the "+biomeName(biome)+"!", 3
 }
 
 // Demo makes the bot play (used for screenshots and an attract mode).
@@ -272,6 +276,9 @@ func (g *Game) updateTitle() {
 	if dy != 0 {
 		g.sel = ((g.sel+dy*cols)%n + n) % n
 	}
+	if keyJust(ebiten.KeyE, ebiten.KeyQ) || padBtn(ebiten.StandardGamepadButtonRightTop) {
+		g.ability ^= 1
+	}
 	if keyJust(ebiten.KeyTab, ebiten.KeyB) || padBtn(ebiten.StandardGamepadButtonFrontTopLeft) {
 		g.biome++
 		if g.biome >= len(content.Types) {
@@ -307,15 +314,19 @@ func (g *Game) updatePlay() {
 		return
 	}
 	switch w.State {
-	case sim.StateLevelUp:
+	case sim.StateLevelUp, sim.StateRoute, sim.StateShrine:
 		g.lvDelay += 1.0 / 60
-		if g.auto {
-			w.Choose(w.BotPick())
+		if g.auto && !g.Hold {
+			if g.lvDelay > .6 {
+				w.BotDecide()
+				g.lvDelay = 0
+			}
 			return
 		}
+		n := g.choiceCount()
 		dx, dy := nav()
-		g.lvSel = (g.lvSel + dx + dy + len(w.Opts)) % len(w.Opts)
-		for i := 0; i < len(w.Opts); i++ {
+		g.lvSel = (g.lvSel + dx + dy + n) % n
+		for i := 0; i < n; i++ {
 			if keyJust(ebiten.Key1+ebiten.Key(i)) || keyJust(ebiten.KeyNumpad1+ebiten.Key(i)) {
 				g.pick(i)
 				return
@@ -340,8 +351,26 @@ func (g *Game) updatePlay() {
 	w.Step(1.0/60, g.playInput())
 }
 
+// choiceCount: cards on the current choice screen (shrines add "Leave it").
+func (g *Game) choiceCount() int {
+	switch g.W.State {
+	case sim.StateRoute:
+		return len(g.W.Route)
+	case sim.StateShrine:
+		return len(g.W.Boons) + 1
+	}
+	return len(g.W.Opts)
+}
+
 func (g *Game) pick(i int) {
-	g.W.Choose(i)
+	switch g.W.State {
+	case sim.StateRoute:
+		g.W.ChooseRoute(i)
+	case sim.StateShrine:
+		g.W.ChooseBoon(i)
+	default:
+		g.W.Choose(i)
+	}
 	g.lvSel = 0
 	g.lvDelay = 0
 }
@@ -353,8 +382,13 @@ func (g *Game) Draw(dst *ebiten.Image) {
 	case scPlay, scPause, scOver:
 		g.drawWorld(dst)
 		g.drawHUD(dst)
-		if g.W.State == sim.StateLevelUp {
+		switch g.W.State {
+		case sim.StateLevelUp:
 			g.drawLevelUp(dst)
+		case sim.StateRoute:
+			g.drawRoute(dst)
+		case sim.StateShrine:
+			g.drawShrine(dst)
 		}
 		if g.scr == scPause {
 			g.drawPause(dst)
@@ -369,12 +403,21 @@ func fmtT(t float64) string { return fmt.Sprintf("%d:%02d", int(t)/60, int(t)%60
 
 // FastForward runs the simulation (bot-driven) for t seconds without drawing; used to jump a demo
 // into the action for screenshots.
-func (g *Game) FastForward(t float64) {
+func (g *Game) FastForward(t float64) { g.FastForwardUntil(t, -1) }
+
+// FastForwardUntil runs the bot until time t, or until the run reaches state stop (route / shrine).
+func (g *Game) FastForwardUntil(t float64, stop sim.State) {
 	for g.W.T < t && g.W.State != sim.StateDead {
-		if g.W.State == sim.StateLevelUp {
-			g.W.Choose(g.W.BotPick())
+		if g.W.State == stop {
+			return
+		}
+		if g.W.Waiting() {
+			g.W.BotDecide()
 			continue
 		}
 		g.W.Step(1.0/60, g.bot.Input(1.0/60))
 	}
 }
+
+// SetAbility picks the starting (0) or hidden (1) ability for the next run.
+func (g *Game) SetAbility(i int) { g.ability = i & 1 }

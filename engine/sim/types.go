@@ -15,6 +15,8 @@ const (
 	StatePlay State = iota
 	StateLevelUp
 	StateDead
+	StateRoute  // route map open: choose the next biome (World.Route)
+	StateShrine // shrine open: choose a boon (World.Boons)
 )
 
 // Input is one frame of player intent.
@@ -100,28 +102,29 @@ type DashState struct {
 }
 
 type Player struct {
-	ID, Name     string
-	Types        []string
-	Stats        content.Stats
-	X, Y         float64
-	VX, VY       float64
-	HP, MHP, Sp  float64
-	Lv           int
-	XP, NX       float64
-	Inv, HurtT   float64
-	FX, FY       float64 // facing
-	Moving, Dead bool
-	Still        float64
-	Dash         *DashState
-	DQ           float64 // time the dash was requested (-1 = none)
-	adA          *float64
-	SpdT, SashT  float64
-	AtkT         float64 // last time a move fired (for the attack animation)
-	Bat, Bel     float64 // battery (-25% cooldowns) / strength belt (+25% damage) timers
-	WebT         float64 // webbed: slowed
-	WX, WY       float64 // wind push
-	gw           float64
-	Hazard       string // hazard under the player this frame
+	ID, Name          string
+	Types             []string
+	Stats             content.Stats
+	X, Y              float64
+	VX, VY            float64
+	HP, MHP, Sp       float64
+	Lv                int
+	XP, NX            float64
+	Inv, HurtT        float64
+	FX, FY            float64 // facing
+	Moving, Dead      bool
+	Still             float64
+	Dash              *DashState
+	DQ                float64 // time the dash was requested (-1 = none)
+	adA               *float64
+	SpdT, SashT       float64
+	AtkT              float64 // last time a move fired (for the attack animation)
+	Bat, Bel          float64 // battery (-25% cooldowns) / strength belt (+25% damage) timers
+	WebT              float64 // webbed: slowed
+	WX, WY            float64 // wind push
+	gw                float64
+	Hazard            string  // hazard under the player this frame
+	Pm, Pbl, Phs, Pgr float64 // shrine boons / pacts (seconds left)
 }
 
 type Enemy struct {
@@ -169,6 +172,9 @@ type Enemy struct {
 	at, wu, chd, ca, tt float64
 	trl                 bool
 	c3                  int
+	pb                  float64 // Perish Body countdown
+	aslT, aslS          float64 // ability slow aura
+	Cursed              bool    // cursed-chest guardian
 }
 
 type Proj struct {
@@ -219,7 +225,8 @@ type Zone struct {
 
 type Gem struct {
 	X, Y, V float64
-	Mag     bool // flying to the player (magnet)
+	Mag     bool    // flying to the player (magnet)
+	C       float64 // coin value (coins instead of XP)
 	ms      float64
 }
 
@@ -292,6 +299,22 @@ type World struct {
 	spawnHold                        float64
 	magnetAll                        bool
 	noDrop                           bool
+	PS                               *PS // active ability
+	ab                               abState
+	Ability                          int // 0 starting, 1 hidden
+	Coins                            float64
+	Endless                          bool
+	ET                               float64 // when endless mode began
+	Route                            []RouteOpt
+	RouteChoices                     int
+	LI                               int // location index in the current biome
+	BiomeN                           int // biomes visited (the client reloads the floor when it changes)
+	routeT                           float64
+	chestT, shT                      float64
+	MC                               []*MapChest
+	Chests                           []Chest
+	Boons                            []Boon
+	bossesSpawned                    int
 }
 
 func hyp(x, y float64) float64 { return math.Hypot(x, y) }

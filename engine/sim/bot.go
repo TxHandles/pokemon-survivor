@@ -91,8 +91,31 @@ func (b *Bot) steer() {
 			gs, gt, it = v, nil, p
 		}
 	}
+	var cx2, cy2 float64
+	hasChest := false
+	if len(near) < 40 && hpf > .5 {
+		for _, m := range w.MC {
+			if m.Cursed && hpf < .8 {
+				continue
+			}
+			if d := dist(m.X, m.Y, P.X, P.Y); d < 600 {
+				if v := 5 / (1 + d/120); v > gs {
+					gs, it, gt, hasChest, cx2, cy2 = v, nil, nil, true, m.X, m.Y
+				}
+			}
+		}
+		for _, c := range w.Chests {
+			if d := dist(c.X, c.Y, P.X, P.Y); d < 600 {
+				if v := 6 / (1 + d/120); v > gs {
+					gs, it, gt, hasChest, cx2, cy2 = v, nil, nil, true, c.X, c.Y
+				}
+			}
+		}
+	}
 	tx, ty, hasT := 0.0, 0.0, false
-	if it != nil {
+	if hasChest && it == nil && gt == nil {
+		tx, ty, hasT = cx2, cy2, true
+	} else if it != nil {
 		tx, ty, hasT = it.X, it.Y, true
 	} else if gt != nil {
 		tx, ty, hasT = gt.X, gt.Y, true

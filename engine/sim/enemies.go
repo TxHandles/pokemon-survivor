@@ -21,6 +21,7 @@ type Hazard struct {
 	Col                string // "r,g,b" tint, "" = default red
 	Gone               bool
 	Fl                 float64
+	Bio                string // biome event hazard (storm / rockfall): type immunity applies
 }
 
 // Pickup is a map item: magnet, berry, battery, belt, bomb, candy.
@@ -108,17 +109,22 @@ func (w *World) assignRole(e *Enemy) {
 }
 
 func (w *World) minion(x, y float64, t string) {
-	sc := w.tsc()
+	sc := w.tsc() * w.ef()
 	e := &Enemy{X: x, Y: y, Type: t, R: 9, HP: 12 * sc, MHP: 12 * sc, Sp: w.rnd(70, 100), Dm: 5 * w.dmS(), Seed: w.rng.Float64()}
 	e.PokeID = w.enemySprite(t, "")
 	w.E = append(w.E, e)
 }
 
-func (w *World) spawnElite(mini bool) {
+func (w *World) spawnElite(mini bool) { w.spawnEliteAt(mini, math.NaN(), 0, false) }
+
+func (w *World) spawnEliteAt(mini bool, x, y float64, cursed bool) {
 	t := w.pickT(.5)
 	sc := w.tsc()
 	a := w.rnd(0, 6.283)
 	d := w.spawnDist() + 20
+	if math.IsNaN(x) {
+		x, y = w.P.X+math.Cos(a)*d, w.P.Y+math.Sin(a)*d
+	}
 	n := 1
 	if mini {
 		n = 2
@@ -130,7 +136,7 @@ func (w *World) spawnElite(mini bool) {
 	if mini {
 		hp, r, dm = 270*sc, 24, 20
 	}
-	e := &Enemy{Elite: true, Mini: mini, Big: true, X: w.P.X + math.Cos(a)*d, Y: w.P.Y + math.Sin(a)*d, Type: t, R: r, HP: hp, MHP: hp,
+	e := &Enemy{Elite: true, Mini: mini, Cursed: cursed, Big: true, X: x, Y: y, Type: t, R: r, HP: hp, MHP: hp,
 		Sp: w.rnd(55, 72), Dm: dm * w.dmS(), Af: keys[:n], Seed: w.rng.Float64()}
 	for _, k := range e.Af {
 		switch k {
@@ -213,7 +219,7 @@ func (w *World) dropItem(x, y float64) {
 }
 
 var ItemText = map[string]string{"magnet": "Magnet: all XP flies to you", "berry": "Berry: +50% HP", "battery": "Battery: -25% cooldowns for 10s",
-	"belt": "Strength Belt: +25% damage for 10s", "bomb": "Bomb: wipes the screen", "candy": "Rare Candy! Level up"}
+	"belt": "Strength Belt: +25% damage for 10s", "bomb": "Bomb: wipes the screen", "candy": "Rare Candy! Level up", "harvest": "Berry: +15% HP"}
 
 func (w *World) useItem(k string) {
 	P := w.P
@@ -246,6 +252,8 @@ func (w *World) useItem(k string) {
 		w.addFX(&FX{Kind: "flash", Life: .35})
 	case "candy":
 		P.XP += P.NX
+	case "harvest":
+		w.heal(P.MHP * .15)
 	}
 	w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 40, Life: 2, Text: ItemText[k], Col: "gold"})
 }
@@ -505,13 +513,26 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 }
 
 // eHit: an enemy attack (contact, bullet, blast) lands on the player.
-func (w *World) eHit(d float64, t string) {
+func (w *World) eHit(d float64, t string) { w.eHitS(d, hurtSrc{t: t}) }
+
+func (w *World) eHitS(d float64, s hurtSrc) {
 	if w.P.Inv > 0 || w.P.Dead || w.State != StatePlay {
 		return
 	}
-	w.hurt(d, t)
-	w.P.Inv = .5
+	if !w.dodge() {
+		w.hurtS(d, s)
+	}
+	w.P.Inv = .5 + w.PS.F("inv")
 	w.Shake = .12
+}
+
+// dodge rolls the ability's dodge chance.
+func (w *World) dodge() bool {
+	if dg := w.abDodge(); dg > 0 && w.rng.Float64() < dg {
+		w.addFX(&FX{Kind: "txt", X: w.P.X, Y: w.P.Y - 30, Life: .8, Text: "Dodged!", Col: "se"})
+		return true
+	}
+	return false
 }
 
 func (w *World) eRing(e *Enemy, n int, o, sp, k float64) {
@@ -757,10 +778,12 @@ func (w *World) stepEnemyAttacks(dt float64) {
 		b.L -= dt
 		if b.L > 0 && dist(b.X, b.Y, P.X, P.Y) < b.R+12 {
 			b.L = 0
-			if b.Web && !has(P.Types, "flying") {
-				P.WebT = 1.8
+			if !w.abProj(b) {
+				if b.Web && !has(P.Types, "flying") && !w.abSlowImm() {
+					P.WebT = 1.8
+				}
+				w.eHitS(b.Dm, hurtSrc{t: b.Type, proj: true})
 			}
-			w.eHit(b.Dm, b.Type)
 		}
 		if b.L > 0 {
 			keep = append(keep, b)
@@ -774,7 +797,19 @@ func (w *World) stepEnemyAttacks(dt float64) {
 			h.Gone, h.Fl = true, .25
 			w.Shake = math.Max(w.Shake, .15)
 			if dist(h.X, h.Y, P.X, P.Y) < h.R+10 && h.Dm > 0 {
-				w.eHit(h.Dm, h.Type)
+				kz := 1.0
+				if h.Bio != "" {
+					kz = w.hzK()
+					if w.abHzImm(h.Bio) {
+						kz = 0
+					}
+				}
+				if h.Bio == "storm" && w.PS.S("hzHeal") == "storm" {
+					w.heal(P.MHP * .08)
+					w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 30, Life: .9, Text: "Absorbed!", Col: "se"})
+				} else if kz > 0 {
+					w.eHit(h.Dm*kz, h.Type)
+				}
 			}
 		}
 		if h.Gone {
@@ -867,6 +902,9 @@ func (w *World) biomeEvents(dt float64) {
 		P.gw -= dt
 		if P.gw <= 0 && w.Gust != nil {
 			g := 30 * math.Min(1, w.hzK())
+			if w.abGustImm() {
+				g = 0
+			}
 			P.WX, P.WY = math.Cos(w.Gust.A)*g, math.Sin(w.Gust.A)*g
 			w.Gust.T = 2.5
 		}
@@ -901,6 +939,9 @@ func (w *World) biomeEvents(dt float64) {
 			a, d := w.rnd(0, 6.283), w.rnd(d0, d1)
 			w.hz(P.X+math.Cos(a)*d, P.Y+math.Sin(a)*d, r, t, dm, "", col)
 		}
+		for _, h := range w.HZ[len(w.HZ)-n-1:] {
+			h.Bio = k
+		}
 		_ = typ
 	case "gust":
 		w.bioT = 9 + w.rnd(0, 4)
@@ -917,8 +958,19 @@ func (w *World) biomeEvents(dt float64) {
 func (w *World) playerTerrain(dt float64) (spd float64, hk string) {
 	P := w.P
 	kk := w.hzK()
+	if w.abHzImm(BiomeHazard[w.Biome]) {
+		kk = 0
+	}
 	kc := math.Min(1, kk)
-	sl := func(v float64) float64 { return 1 - (1-v)*kc }
+	sl := func(v float64) float64 {
+		if w.abSlowImm() {
+			return 1
+		}
+		return 1 - (1-v)*kc
+	}
+	if w.PS.S("hzHeal") == "deep" && BiomeHazard[w.Biome] == "deep" && w.HazAt(P.X, P.Y) == "deep" {
+		w.heal(1.5 * dt)
+	}
 	if kk != 0 && !has(P.Types, "flying") && !has(P.Types, "ghost") {
 		hk = w.HazAt(P.X, P.Y)
 	}
@@ -939,7 +991,9 @@ func (w *World) playerTerrain(dt float64) (spd float64, hk string) {
 		w.hurt(P.MHP*.025*dt*kk, "")
 	}
 	if P.WebT > 0 {
-		spd *= .65
+		if !w.abSlowImm() {
+			spd *= .65
+		}
 		P.WebT -= dt
 	}
 	return

@@ -1,0 +1,319 @@
+package sim
+
+import (
+	"math"
+)
+
+// ---- run structure: route map, endless mode, map chests, shrines, coins (web routeOpen / spawnMap / shrine) ----
+
+const (
+	RunLength = 900 // 15:00
+	RunBosses = 3
+)
+
+// RouteOpt is one destination on the route map.
+type RouteOpt struct {
+	Type string
+	LI   int // location index (0-2) into world.json locations
+}
+
+// MapChest is a chest, shrine or cursed chest you open by standing next to it for 5 seconds.
+type MapChest struct {
+	X, Y, P, T     float64
+	Shrine, Cursed bool
+}
+
+// Chest is a reward chest you walk over (boss and cursed-guardian chests).
+type Chest struct{ X, Y float64 }
+
+// Boon is a shrine choice.
+type Boon struct {
+	Name, Desc, Curse string
+	apply             func(w *World)
+}
+
+var safeBoons = []Boon{
+	{"Shrine of Might", "+30% damage for 90 seconds.", "", func(w *World) { w.P.Pm = 90 }},
+	{"Shrine of Vigor", "+15% max HP and restore HP.", "", func(w *World) { w.P.MHP = math.Round(w.P.MHP * 1.15); w.P.HP = w.P.MHP }},
+	{"Shrine of Plenty", "A free level up and bonus coins.", "", func(w *World) { w.P.XP += w.P.NX; w.Coins += 40 }},
+}
+
+var pacts = []Boon{
+	{"Pact of Blood", "+50% damage for 90 seconds.", "You take double damage.", func(w *World) { w.P.Pbl = 90 }},
+	{"Pact of Haste", "+25% move speed and -20% cooldowns for 90 seconds.", "Enemies move 30% faster.", func(w *World) { w.P.Phs = 90 }},
+	{"Pact of Greed", "Enemies drop double coins for 90 seconds.", "New enemies have +50% HP.", func(w *World) { w.P.Pgr = 90 }},
+}
+
+// ef: endless-mode scaling (1 before the final boss falls).
+func (w *World) ef() float64 {
+	if !w.Endless {
+		return 1
+	}
+	return math.Pow(1.2, (w.T-w.ET)/60)
+}
+
+func (w *World) spS() float64 { return math.Min(1.8, math.Pow(w.ef(), .15)) }
+
+// LocName is a biome location's display name.
+func (w *World) LocName(t string, li int) string {
+	if l := w.DB.World.Locations[t]; li >= 0 && li < len(l) {
+		return l[li]
+	}
+	return t
+}
+
+func (w *World) openRoute() {
+	var ts []string
+	for _, t := range typesList {
+		if t != w.Biome {
+			ts = append(ts, t)
+		}
+	}
+	w.rng.Shuffle(len(ts), func(i, j int) { ts[i], ts[j] = ts[j], ts[i] })
+	n := w.RouteChoices
+	if n < 2 {
+		n = 2
+	}
+	w.Route = nil
+	for _, t := range ts[:n] {
+		w.Route = append(w.Route, RouteOpt{t, w.rng.Intn(3)})
+	}
+	w.State = StateRoute
+}
+
+// ChooseRoute travels to route option i.
+func (w *World) ChooseRoute(i int) {
+	if w.State != StateRoute || i < 0 || i >= len(w.Route) {
+		return
+	}
+	o := w.Route[i]
+	w.Route = nil
+	w.State = StatePlay
+	w.enterBiome(o.Type, o.LI, false)
+}
+
+func (w *World) enterBiome(t string, li int, first bool) {
+	w.Biome, w.LI = t, li
+	w.pools = map[[2]int][]Pool{}
+	w.Gust = nil
+	w.P.WX, w.P.WY, w.P.gw = 0, 0, 0
+	w.bioT = 6
+	w.BiomeN++
+	if first {
+		w.spawnHold = 0
+	} else {
+		w.spawnHold = 2.5
+		w.addFX(&FX{Kind: "flash", Life: .35})
+	}
+	msg := "Entering: " + w.LocName(t, li) + " (" + t + ")"
+	if hz := BiomeHazard[t]; hz != "" {
+		note := ""
+		switch k := w.hzK(); {
+		case k == 0 || w.abHzImm(hz):
+			note = " (Your type is immune!)"
+		case k < 1:
+			note = " (Your type resists it.)"
+		case k > 1:
+			note = " (Your type is weak to it!)"
+		}
+		msg += " — " + HazardText[hz] + note
+	} else {
+		msg += " — a calm biome with no hazards"
+	}
+	w.message(msg)
+}
+
+// afterBoss: boss chest, then the field clears and the route map opens (or victory → endless).
+func (w *World) afterBoss(e *Enemy) {
+	w.Coins += 25
+	w.P.XP += w.P.NX // boss chest: free level up
+	w.bossClear(e)
+	if w.Bosses >= RunBosses && !w.Endless {
+		w.Endless, w.Won, w.ET = true, true, w.T
+		w.message("VICTORY! Endless mode begins...")
+	} else {
+		w.message("Boss defeated! Choose your next destination...")
+	}
+	w.spawnHold = 1e9
+	w.routeT = 1.3
+}
+
+func (w *World) spawnMap(kind string) {
+	a, d := w.rnd(0, 6.283), w.rnd(180, 320)
+	x, y := w.P.X+math.Cos(a)*d, w.P.Y+math.Sin(a)*d
+	w.push(&x, &y, 16)
+	switch kind {
+	case "c":
+		w.Items = append(w.Items, &Pickup{X: x, Y: y, K: "candy"})
+	default:
+		w.MC = append(w.MC, &MapChest{X: x, Y: y, Shrine: kind == "s", Cursed: kind == "x"})
+		if kind == "s" {
+			w.message("An ancient shrine appeared nearby!")
+		}
+		if kind == "x" {
+			w.message("A cursed chest appeared nearby...")
+		}
+	}
+}
+
+func (w *World) stepRun(dt float64) {
+	P := w.P
+	if w.routeT > 0 {
+		w.routeT -= dt
+		if w.routeT <= 0 {
+			w.routeT = 0
+			w.openRoute()
+			return
+		}
+	}
+	w.chestT -= dt
+	if w.chestT <= 0 {
+		w.chestT = 30
+		if w.rng.Float64() < .12 && len(w.MC) < 3 {
+			w.spawnMap("m")
+		}
+		if w.T >= 240 && w.rng.Float64() < .04 {
+			cur := false
+			for _, m := range w.MC {
+				cur = cur || m.Cursed
+			}
+			if !cur {
+				w.spawnMap("x")
+			}
+		}
+	}
+	w.shT -= dt
+	if w.shT <= 0 {
+		w.shT = 60
+		sh := false
+		for _, m := range w.MC {
+			sh = sh || m.Shrine
+		}
+		if w.T >= 200 && w.rng.Float64() < .45 && !sh {
+			w.spawnMap("s")
+		}
+	}
+	keep := w.MC[:0]
+	for _, c := range w.MC {
+		c.T += dt
+		if dist(c.X, c.Y, P.X, P.Y) < 46 {
+			c.P += dt
+		} else {
+			c.P = math.Max(0, c.P-dt*.5)
+		}
+		if c.P >= 5 && w.State == StatePlay {
+			w.openChest(c)
+			continue
+		}
+		if dist(c.X, c.Y, P.X, P.Y) < 1800 {
+			keep = append(keep, c)
+		}
+	}
+	w.MC = keep
+	ck := w.Chests[:0]
+	for _, c := range w.Chests {
+		if dist(c.X, c.Y, P.X, P.Y) < 28 {
+			cn := 25.0
+			w.Coins += cn
+			P.XP += P.NX
+			w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 40, Life: 2.5, Text: "CHEST! +25 coins, free level up", Col: "gold"})
+			continue
+		}
+		ck = append(ck, c)
+	}
+	w.Chests = ck
+}
+
+func (w *World) openChest(c *MapChest) {
+	switch {
+	case c.Shrine:
+		w.Boons = []Boon{safeBoons[w.rng.Intn(3)]}
+		p := []int{0, 1, 2}
+		w.rng.Shuffle(3, func(i, j int) { p[i], p[j] = p[j], p[i] })
+		w.Boons = append(w.Boons, pacts[p[0]], pacts[p[1]])
+		w.State = StateShrine
+	case c.Cursed:
+		w.spawnEliteAt(true, c.X, c.Y, true)
+		for i := 0; i < 18; i++ {
+			a := float64(i) / 18 * 6.283
+			if len(w.E) < 500 {
+				w.minion(w.P.X+math.Cos(a)*260, w.P.Y+math.Sin(a)*260, typesList[w.rng.Intn(18)])
+			}
+		}
+		w.message("CURSED! Defeat the guardian for a bounty!")
+		w.Shake = .4
+	default:
+		for i := 0; i < 5; i++ {
+			w.Gems = append(w.Gems, &Gem{X: c.X + w.rnd(-30, 30), Y: c.Y + w.rnd(-30, 30), C: 5})
+		}
+		for i := 0; i < 6; i++ {
+			w.Gems = append(w.Gems, &Gem{X: c.X + w.rnd(-30, 30), Y: c.Y + w.rnd(-30, 30), V: w.P.NX * .12})
+		}
+		w.addFX(&FX{Kind: "txt", X: c.X, Y: c.Y - 30, Life: 2, Text: "Chest opened!", Col: "gold"})
+	}
+}
+
+// ChooseBoon takes shrine boon i (or leaves with -1 / out of range).
+func (w *World) ChooseBoon(i int) {
+	if w.State != StateShrine {
+		return
+	}
+	if i >= 0 && i < len(w.Boons) {
+		b := w.Boons[i]
+		b.apply(w)
+		w.addFX(&FX{Kind: "txt", X: w.P.X, Y: w.P.Y - 50, Life: 2, Text: b.Name + "!", Col: "gold"})
+	}
+	w.Boons = nil
+	w.State = StatePlay
+	if w.P.XP >= w.P.NX {
+		w.levelUp()
+	}
+}
+
+// coinDrop: enemies sometimes drop coins (web hit() death drops).
+func (w *World) coinDrop(e *Enemy) {
+	cm := b2f(w.P.Pgr > 0, 2, 1)
+	if e.Boss {
+		return
+	}
+	if w.rng.Float64() < b2f(e.MHP > 40, .4, .12) {
+		w.Gems = append(w.Gems, &Gem{X: e.X + 5, Y: e.Y, C: cm})
+	}
+	if e.Elite {
+		n, v := 5, 2.0
+		if e.Mini {
+			n, v = 10, 3
+		}
+		for i := 0; i < n; i++ {
+			w.Gems = append(w.Gems, &Gem{X: e.X + w.rnd(-24, 24), Y: e.Y + w.rnd(-24, 24), C: v * cm})
+		}
+		if e.Cursed {
+			w.Chests = append(w.Chests, Chest{e.X, e.Y}, Chest{e.X + 30, e.Y})
+		} else if e.Mini && w.rng.Float64() < .25 {
+			w.Chests = append(w.Chests, Chest{e.X, e.Y})
+		}
+	}
+}
+
+var typesList = []string{"normal", "fire", "water", "electric", "grass", "ice", "fighting", "poison", "ground", "flying", "psychic", "bug", "rock", "ghost", "dragon", "dark", "steel", "fairy"}
+
+// Waiting reports whether the run is paused on a choice (level-up, route map, shrine).
+func (w *World) Waiting() bool {
+	return w.State == StateLevelUp || w.State == StateRoute || w.State == StateShrine
+}
+
+// BotDecide makes the pending choice the way the web balance bot does: best-scored card, a random
+// route, the safe shrine boon.
+func (w *World) BotDecide() {
+	switch w.State {
+	case StateLevelUp:
+		w.Choose(w.BotPick())
+	case StateRoute:
+		w.ChooseRoute(w.rng.Intn(len(w.Route)))
+	case StateShrine:
+		w.ChooseBoon(0)
+	}
+}
+
+// OpenShrineNow opens a shrine immediately (debug / screenshots).
+func (w *World) OpenShrineNow() { w.openChest(&MapChest{Shrine: true}) }

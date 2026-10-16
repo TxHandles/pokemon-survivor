@@ -75,8 +75,17 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	bar(dst, 70, 44, 220, 12, hpf, hc, c(40, 46, 60, 255))
 	drawText(dst, fmt.Sprintf("%.0f / %.0f", P.HP, P.MHP), 180, 58, 11, true, dim, text.AlignCenter, false)
 	// timer / biome / kills
-	drawText(dst, fmtT(w.T), sw/2, 16, 26, true, white, text.AlignCenter, true)
-	drawText(dst, biomeName(w.Biome)+"  ·  "+fmt.Sprintf("%d KOs", w.Kills), sw/2, 48, 13, false, dim, text.AlignCenter, true)
+	tm := fmtT(w.T) + " / " + fmtT(sim.RunLength)
+	if w.Endless {
+		tm = "ENDLESS  " + fmtT(w.T)
+	}
+	drawText(dst, tm, sw/2, 16, 26, true, b2c(w.Endless, c(255, 130, 130, 255), white), text.AlignCenter, true)
+	drawText(dst, fmt.Sprintf("%d coins", int(w.Coins)), 22, 82, 13, true, gold, text.AlignStart, true)
+	drawText(dst, "Ability: "+w.PS.A.Name, 22, 100, 12, false, dim, text.AlignStart, true)
+	if bt := buffText(w); bt != "" {
+		drawText(dst, bt, 22, 118, 12, true, c(127, 224, 255, 255), text.AlignStart, true)
+	}
+	drawText(dst, w.LocName(w.Biome, w.LI)+"  ·  "+fmt.Sprintf("%d KOs", w.Kills), sw/2, 48, 13, false, dim, text.AlignCenter, true)
 	if nb := 300 * math.Ceil((w.T+.01)/300); nb-w.T < 20 && w.Bosses < int(nb/300) {
 		drawText(dst, fmt.Sprintf("Boss in %.0fs", nb-w.T), sw/2, 68, 13, true, c(255, 120, 120, 255), text.AlignCenter, true)
 	}
@@ -139,7 +148,7 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 		x -= 6
 	}
 	// message
-	if w.MsgT > 0 {
+	if w.MsgT > 0 && !w.Waiting() {
 		a := math.Min(1, w.MsgT/.6)
 		drawText(dst, w.Msg, sw/2, float64(g.sh)*.24, 20, true, alpha(gold, a), text.AlignCenter, true)
 	}
@@ -158,8 +167,11 @@ func b2c(b bool, t, f color.NRGBA) color.NRGBA {
 // ---- level up ----
 
 func (g *Game) cardRects() [][4]float64 {
-	n := len(g.W.Opts)
+	n := g.choiceCount()
 	cw, ch := 300.0, 260.0
+	if n > 3 {
+		cw = 250
+	}
 	gap := 22.0
 	if tot := float64(n)*cw + float64(n-1)*gap; tot > float64(g.sw)-40 {
 		cw = (float64(g.sw) - 40 - float64(n-1)*gap) / float64(n)
@@ -272,9 +284,9 @@ func (g *Game) drawLevelUp(dst *ebiten.Image) {
 
 func (g *Game) titleGrid() (x0, y0, cell float64) {
 	cols := g.titleCols()
-	cell = math.Min(104, (float64(g.sw)-80)/float64(cols))
+	cell = math.Min(88, (float64(g.sw)-80)/float64(cols))
 	x0 = (float64(g.sw) - cell*float64(cols)) / 2
-	y0 = 170
+	y0 = 136
 	return
 }
 
@@ -295,8 +307,8 @@ func (g *Game) drawTitle(dst *ebiten.Image) {
 		x := math.Mod(float64(i)*173+t*12, float64(g.sw)+200) - 100
 		soft(dst, x, 120+math.Sin(float64(i)*1.7+t*.3)*90+float64(i%5)*120, 160, 120, alpha(tc(content.Types[i%18]), .07))
 	}
-	drawText(dst, "POKÉMON SURVIVOR", float64(g.sw)/2, 52, 46, true, gold, text.AlignCenter, true)
-	drawText(dst, "Go build · early preview", float64(g.sw)/2, 110, 15, false, dim, text.AlignCenter, true)
+	drawText(dst, "POKÉMON SURVIVOR", float64(g.sw)/2, 34, 44, true, gold, text.AlignCenter, true)
+	drawText(dst, "Go build · early preview", float64(g.sw)/2, 88, 15, false, dim, text.AlignCenter, true)
 	x0, y0, cell := g.titleGrid()
 	cols := g.titleCols()
 	mx, my := ebiten.CursorPosition()
@@ -326,10 +338,10 @@ func (g *Game) drawTitle(dst *ebiten.Image) {
 			op.Filter = ebiten.FilterLinear
 			dst.DrawImage(s.Front.Frame(fr), op)
 		}
-		drawText(dst, p.Name, cx+cell/2, cy+cell-28, 11, true, b2c(sel, white, dim), text.AlignCenter, false)
+		drawText(dst, p.Name, cx+cell/2, cy+cell-24, 10, true, b2c(sel, white, dim), text.AlignCenter, false)
 	}
 	rows := (len(g.roster) + cols - 1) / cols
-	by := y0 + float64(rows)*cell + 20
+	by := y0 + float64(rows)*cell + 14
 	p := g.db.ByID[g.roster[g.sel]]
 	types := ""
 	for i, t := range p.Types {
@@ -346,6 +358,22 @@ func (g *Game) drawTitle(dst *ebiten.Image) {
 	}
 	sm := g.db.StartMove(p.ID)
 	drawText(dst, "Starts with "+g.db.Moves[sm].Name+"  ·  Biome: "+bio+"  (Tab / LB to change)", float64(g.sw)/2, by+28, 13, false, dim, text.AlignCenter, true)
+	ab := g.db.AbilityPair(p.ID)
+	for i, a := range ab {
+		kind := "Starting ability"
+		if a.Tier == 2 {
+			kind = "Hidden ability"
+		} else if a.Tier == 3 {
+			kind = "Legendary ability"
+		}
+		col := dim
+		mark := "   "
+		if i == g.ability {
+			col, mark = white, "> "
+		}
+		drawText(dst, mark+kind+": "+a.Name+" — "+a.Desc, float64(g.sw)/2, by+54+float64(i)*20, 13, i == g.ability, col, text.AlignCenter, true)
+	}
+	drawText(dst, "(E / Y to switch ability)", float64(g.sw)/2, by+96, 12, false, alpha(dim, .8), text.AlignCenter, true)
 	drawText(dst, "Enter / A to start  ·  WASD / stick to move  ·  Shift / RB to dash  ·  Esc to pause", float64(g.sw)/2, float64(g.sh)-34, 13, false, dim, text.AlignCenter, true)
 }
 
@@ -389,4 +417,24 @@ func (g *Game) drawOver(dst *ebiten.Image) {
 	if g.overT > .8 {
 		drawText(dst, "Enter / A / click to return to the title", cx, yy+24, 14, false, dim, text.AlignCenter, true)
 	}
+}
+
+func buffText(w *sim.World) string {
+	P := w.P
+	s := ""
+	add := func(t float64, n string) {
+		if t > 0 {
+			if s != "" {
+				s += "  "
+			}
+			s += fmt.Sprintf("%s %ds", n, int(math.Ceil(t)))
+		}
+	}
+	add(P.Pm, "Might")
+	add(P.Pbl, "Blood pact")
+	add(P.Phs, "Haste pact")
+	add(P.Pgr, "Greed pact")
+	add(P.Bat, "Battery")
+	add(P.Bel, "Belt")
+	return s
 }
