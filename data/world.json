@@ -1,0 +1,127 @@
+{
+ "_about": "Three locations per biome type (order matters: index 0, 1, 2). music: \"biome:index\" -> file in music/ with loop points in samples at 44.1 kHz.",
+ "locations": {
+  "normal": [
+   "Wild Area",
+   "Route 1",
+   "Safari Zone"
+  ],
+  "fire": [
+   "Mt. Chimney",
+   "Mt. Ember",
+   "Fiery Path"
+  ],
+  "water": [
+   "Undella Bay",
+   "Whirl Islands",
+   "Lake of Rage"
+  ],
+  "electric": [
+   "Power Plant",
+   "Route 119",
+   "Sunyshore"
+  ],
+  "grass": [
+   "Eterna Forest",
+   "Lush Jungle",
+   "Ilex Forest"
+  ],
+  "ice": [
+   "Glaseado Mountain",
+   "Seafoam Islands",
+   "Frostpoint Field"
+  ],
+  "fighting": [
+   "Master Dojo",
+   "Tower of Two Fists",
+   "Fighting Dojo"
+  ],
+  "poison": [
+   "Great Marsh",
+   "Fuchsia City",
+   "Po Town"
+  ],
+  "ground": [
+   "Desert Resort",
+   "Asado Desert",
+   "Haina Desert"
+  ],
+  "flying": [
+   "Tin Tower",
+   "Skyarrow Bridge",
+   "Fortree City"
+  ],
+  "psychic": [
+   "Dreamyard",
+   "Area Zero",
+   "Spear Pillar"
+  ],
+  "bug": [
+   "Viridian Forest",
+   "National Park",
+   "Tagtree Thicket"
+  ],
+  "rock": [
+   "Ten Carat Hill",
+   "Granite Cave",
+   "Rock Tunnel"
+  ],
+  "ghost": [
+   "Celestial Tower",
+   "Mt. Pyre",
+   "Lavender Town"
+  ],
+  "dragon": [
+   "Dragonspiral Tower",
+   "Dragon's Den",
+   "Sky Pillar"
+  ],
+  "dark": [
+   "Slumbering Weald",
+   "Spikemuth",
+   "Dark Cave"
+  ],
+  "steel": [
+   "Motostoke",
+   "Iron Island",
+   "Silph Co."
+  ],
+  "fairy": [
+   "Mt. Moon",
+   "Glimwood Tangle",
+   "Ballonlea"
+  ]
+ },
+ "music": {
+  "fire:0": {
+   "file": "mt_chimney.mp3",
+   "loopStartSample": 511593,
+   "loopEndSample": 4497025
+  },
+  "fire:1": {
+   "file": "mt_ember.mp3",
+   "loopStartSample": 2454097,
+   "loopEndSample": 5135776
+  },
+  "fire:2": {
+   "file": "fiery_path.mp3",
+   "loopStartSample": 1513885,
+   "loopEndSample": 3109050
+  },
+  "water:0": {
+   "file": "undella_bay.mp3",
+   "loopStartSample": 1436339,
+   "loopEndSample": 2797139
+  },
+  "water:1": {
+   "file": "whirl_islands.mp3",
+   "loopStartSample": 2670619,
+   "loopEndSample": 5150409
+  },
+  "water:2": {
+   "file": "lake_of_rage.mp3",
+   "loopStartSample": 1328411,
+   "loopEndSample": 5565440
+  }
+ }
+}

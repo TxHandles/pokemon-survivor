@@ -1,0 +1,1823 @@
+{
+ "_about": "Every playable Pokemon, in roster order. See CONTENT.md for the fields.",
+ "pokemon": [
+  {
+   "id": "grass",
+   "name": "Bulbasaur",
+   "dex": 1,
+   "types": [
+    "grass"
+   ],
+   "baseStats": {
+    "hp": 0.912,
+    "atk": 0.95,
+    "def": 0.828,
+    "spd": 0.95
+   },
+   "tickets": 0,
+   "abilities": {
+    "starting": 0,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "grass2",
+   "name": "Ivysaur",
+   "dex": 2,
+   "types": [
+    "grass"
+   ],
+   "evolvesFrom": "grass",
+   "statsFrom": "grass",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 16,
+    "line": "grass"
+   },
+   "unlockText": "Reach Mastery Rank 16 with the Bulbasaur line",
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.78
+  },
+  {
+   "id": "grass3",
+   "name": "Venusaur",
+   "dex": 3,
+   "types": [
+    "grass",
+    "poison"
+   ],
+   "evolvesFrom": "grass2",
+   "statsFrom": "grass",
+   "statMult": 1.07,
+   "unlock": {
+    "mastery": 36,
+    "line": "grass"
+   },
+   "unlockText": "Reach Mastery Rank 36 with the Bulbasaur line",
+   "tag": "Evolution 3 · +7% stats · Grass/Poison",
+   "spriteScale": 0.58
+  },
+  {
+   "id": "fire",
+   "name": "Charmander",
+   "dex": 4,
+   "types": [
+    "fire"
+   ],
+   "baseStats": {
+    "hp": 1.092,
+    "atk": 1.15,
+    "def": 1.036,
+    "spd": 1
+   },
+   "tickets": 0,
+   "abilities": {
+    "starting": 0,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "fire2",
+   "name": "Charmeleon",
+   "dex": 5,
+   "types": [
+    "fire"
+   ],
+   "evolvesFrom": "fire",
+   "statsFrom": "fire",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 16,
+    "line": "fire"
+   },
+   "unlockText": "Reach Mastery Rank 16 with the Charmander line",
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.74
+  },
+  {
+   "id": "fire3",
+   "name": "Charizard",
+   "dex": 6,
+   "types": [
+    "fire",
+    "flying"
+   ],
+   "evolvesFrom": "fire2",
+   "statsFrom": "fire",
+   "statMult": 1.07,
+   "unlock": {
+    "mastery": 36,
+    "line": "fire"
+   },
+   "unlockText": "Reach Mastery Rank 36 with the Charmander line",
+   "tag": "Evolution 3 · +7% stats · Fire/Flying",
+   "spriteScale": 0.56
+  },
+  {
+   "id": "water",
+   "name": "Squirtle",
+   "dex": 7,
+   "types": [
+    "water"
+   ],
+   "baseStats": {
+    "hp": 0.92,
+    "atk": 0.95,
+    "def": 0.84,
+    "spd": 0.95
+   },
+   "tickets": 0,
+   "abilities": {
+    "starting": 0,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "water2",
+   "name": "Wartortle",
+   "dex": 8,
+   "types": [
+    "water"
+   ],
+   "evolvesFrom": "water",
+   "statsFrom": "water",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 16,
+    "line": "water"
+   },
+   "unlockText": "Reach Mastery Rank 16 with the Squirtle line",
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.74
+  },
+  {
+   "id": "water3",
+   "name": "Blastoise",
+   "dex": 9,
+   "types": [
+    "water"
+   ],
+   "evolvesFrom": "water2",
+   "statsFrom": "water",
+   "statMult": 1.07,
+   "unlock": {
+    "mastery": 36,
+    "line": "water"
+   },
+   "unlockText": "Reach Mastery Rank 36 with the Squirtle line",
+   "tag": "Evolution 3 · +7% stats",
+   "spriteScale": 0.62
+  },
+  {
+   "id": "cater",
+   "name": "Caterpie",
+   "dex": 10,
+   "types": [
+    "bug"
+   ],
+   "statsFrom": "bug",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "tag": "Starter",
+   "abilities": {
+    "starting": 1,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "cater2",
+   "name": "Metapod",
+   "dex": 11,
+   "types": [
+    "bug"
+   ],
+   "evolvesFrom": "cater",
+   "statsFrom": "bug",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 7,
+    "line": "cater"
+   },
+   "unlockText": "Reach Mastery Rank 7 with the Caterpie line",
+   "tag": "Evolution 2 · +3% stats",
+   "spriteScale": 0.9
+  },
+  {
+   "id": "cater3",
+   "name": "Butterfree",
+   "dex": 12,
+   "types": [
+    "bug",
+    "flying"
+   ],
+   "evolvesFrom": "cater2",
+   "statsFrom": "bug",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 10,
+    "line": "cater"
+   },
+   "unlockText": "Reach Mastery Rank 10 with the Caterpie line",
+   "tag": "Evolution 3 · +5% stats · Bug/Flying",
+   "spriteScale": 0.64
+  },
+  {
+   "id": "bug",
+   "name": "Weedle",
+   "dex": 13,
+   "types": [
+    "bug",
+    "poison"
+   ],
+   "baseStats": {
+    "hp": 0.8,
+    "atk": 0.95,
+    "def": 0.78,
+    "spd": 1.15
+   },
+   "tickets": 1,
+   "abilities": {
+    "starting": 0,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "bug2",
+   "name": "Kakuna",
+   "dex": 14,
+   "types": [
+    "bug",
+    "poison"
+   ],
+   "evolvesFrom": "bug",
+   "statsFrom": "bug",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 7,
+    "line": "bug"
+   },
+   "unlockText": "Reach Mastery Rank 7 with the Weedle line",
+   "tag": "Evolution 2 · +3% stats · Bug/Poison",
+   "spriteScale": 0.9
+  },
+  {
+   "id": "bug3",
+   "name": "Beedrill",
+   "dex": 15,
+   "types": [
+    "bug",
+    "poison"
+   ],
+   "evolvesFrom": "bug2",
+   "statsFrom": "bug",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 10,
+    "line": "bug"
+   },
+   "unlockText": "Reach Mastery Rank 10 with the Weedle line",
+   "tag": "Evolution 3 · +5% stats · Bug/Poison",
+   "spriteScale": 0.62
+  },
+  {
+   "id": "flying",
+   "name": "Pidgey",
+   "dex": 16,
+   "types": [
+    "flying"
+   ],
+   "baseStats": {
+    "hp": 0.835,
+    "atk": 0.95,
+    "def": 0.835,
+    "spd": 1.15
+   },
+   "tickets": 1,
+   "abilities": {
+    "starting": 1,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "flying2",
+   "name": "Pidgeotto",
+   "dex": 17,
+   "types": [
+    "flying"
+   ],
+   "evolvesFrom": "flying",
+   "statsFrom": "flying",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 18,
+    "line": "flying"
+   },
+   "unlockText": "Reach Mastery Rank 18 with the Pidgey line",
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.74
+  },
+  {
+   "id": "flying3",
+   "name": "Pidgeot",
+   "dex": 18,
+   "types": [
+    "flying"
+   ],
+   "evolvesFrom": "flying2",
+   "statsFrom": "flying",
+   "statMult": 1.07,
+   "unlock": {
+    "mastery": 36,
+    "line": "flying"
+   },
+   "unlockText": "Reach Mastery Rank 36 with the Pidgey line",
+   "tag": "Evolution 3 · +7% stats",
+   "spriteScale": 0.52
+  },
+  {
+   "id": "normal",
+   "name": "Rattata",
+   "dex": 19,
+   "types": [
+    "normal"
+   ],
+   "baseStats": {
+    "hp": 0.973,
+    "atk": 1,
+    "def": 0.973,
+    "spd": 1
+   },
+   "tickets": 1,
+   "abilities": {
+    "starting": 0,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "normal2",
+   "name": "Raticate",
+   "dex": 20,
+   "types": [
+    "normal"
+   ],
+   "evolvesFrom": "normal",
+   "statsFrom": "normal",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 20,
+    "line": "normal"
+   },
+   "unlockText": "Reach Mastery Rank 20 with the Rattata line",
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "spear",
+   "name": "Spearow",
+   "dex": 21,
+   "types": [
+    "flying",
+    "normal"
+   ],
+   "statsFrom": "flying",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "tag": "Starter",
+   "abilities": {
+    "starting": 0,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "spear2",
+   "name": "Fearow",
+   "dex": 22,
+   "types": [
+    "flying",
+    "normal"
+   ],
+   "evolvesFrom": "spear",
+   "statsFrom": "flying",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 20,
+    "line": "spear"
+   },
+   "unlockText": "Reach Mastery Rank 20 with the Spearow line",
+   "tag": "Evolution 2 · +5% stats · Flying/Normal",
+   "spriteScale": 0.55
+  },
+  {
+   "id": "ekans",
+   "name": "Ekans",
+   "dex": 23,
+   "types": [
+    "poison"
+   ],
+   "statsFrom": "poison",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "tag": "Starter",
+   "abilities": {
+    "starting": 2,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "ekans2",
+   "name": "Arbok",
+   "dex": 24,
+   "types": [
+    "poison"
+   ],
+   "evolvesFrom": "ekans",
+   "statsFrom": "poison",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 22,
+    "line": "ekans"
+   },
+   "unlockText": "Reach Mastery Rank 22 with the Ekans line",
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.56
+  },
+  {
+   "id": "electric",
+   "name": "Pichu",
+   "dex": 172,
+   "types": [
+    "electric"
+   ],
+   "baseStats": {
+    "hp": 0.93,
+    "atk": 1,
+    "def": 0.92,
+    "spd": 1.12
+   },
+   "tickets": 0,
+   "abilities": {
+    "starting": 0,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "electric2",
+   "name": "Pikachu",
+   "dex": 25,
+   "types": [
+    "electric"
+   ],
+   "evolvesFrom": "electric",
+   "statsFrom": "electric",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 10,
+    "line": "electric"
+   },
+   "unlockText": "Reach Mastery Rank 10 with the Pichu line",
+   "tag": "Evolution 2 · +3% stats",
+   "spriteScale": 0.87
+  },
+  {
+   "id": "electric3",
+   "name": "Raichu",
+   "dex": 26,
+   "types": [
+    "electric"
+   ],
+   "evolvesFrom": "electric2",
+   "statsFrom": "electric",
+   "statMult": 1.07,
+   "unlock": {
+    "mastery": 25,
+    "line": "electric"
+   },
+   "unlockText": "Reach Mastery Rank 25 with the Pichu line",
+   "tag": "Evolution 3 · +7% stats",
+   "spriteScale": 0.58
+  },
+  {
+   "id": "sand",
+   "name": "Sandshrew",
+   "dex": 27,
+   "types": [
+    "ground"
+   ],
+   "statsFrom": "ground",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "tag": "Starter",
+   "abilities": {
+    "starting": 2,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "sand2",
+   "name": "Sandslash",
+   "dex": 28,
+   "types": [
+    "ground"
+   ],
+   "evolvesFrom": "sand",
+   "statsFrom": "ground",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 22,
+    "line": "sand"
+   },
+   "unlockText": "Reach Mastery Rank 22 with the Sandshrew line",
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.62
+  },
+  {
+   "id": "asand",
+   "name": "Alolan Sandshrew",
+   "dex": 27,
+   "types": [
+    "ice",
+    "steel"
+   ],
+   "regionalOf": "sand",
+   "form": "Alolan",
+   "statsFrom": "ice",
+   "statMult": 1.03,
+   "unlock": {
+    "boss": true,
+    "flag": "asand",
+    "biome": "ice",
+    "asLine": "sand"
+   },
+   "unlockText": "Defeat a boss in the Ice biome with Sandshrew or Sandslash",
+   "tag": "Alolan Form · +3% stats · Ice/Steel",
+   "abilities": {
+    "starting": 2,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "asand2",
+   "name": "Alolan Sandslash",
+   "dex": 28,
+   "types": [
+    "ice",
+    "steel"
+   ],
+   "evolvesFrom": "asand",
+   "regionalOf": "sand2",
+   "form": "Alolan",
+   "statsFrom": "ice",
+   "statMult": 1.07,
+   "unlock": {
+    "boss": true,
+    "flag": "asand2",
+    "as": [
+     "asand"
+    ]
+   },
+   "unlockText": "Defeat a boss with Alolan Sandshrew",
+   "tag": "Alolan Form · +7% stats · Ice/Steel",
+   "spriteScale": 0.62
+  },
+  {
+   "id": "nidof",
+   "name": "Nidoran♀",
+   "dex": 29,
+   "types": [
+    "poison"
+   ],
+   "statsFrom": "poison",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "tag": "Starter",
+   "abilities": {
+    "starting": 0,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "nidof2",
+   "name": "Nidorina",
+   "dex": 30,
+   "types": [
+    "poison"
+   ],
+   "evolvesFrom": "nidof",
+   "statsFrom": "poison",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 16,
+    "line": "nidof"
+   },
+   "unlockText": "Reach Mastery Rank 16 with the Nidoran♀ line",
+   "tag": "Evolution 2 · +3% stats",
+   "spriteScale": 0.8
+  },
+  {
+   "id": "nidof3",
+   "name": "Nidoqueen",
+   "dex": 31,
+   "types": [
+    "poison",
+    "ground"
+   ],
+   "evolvesFrom": "nidof2",
+   "statsFrom": "poison",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 36,
+    "line": "nidof"
+   },
+   "unlockText": "Reach Mastery Rank 36 with the Nidoran♀ line",
+   "tag": "Evolution 3 · +5% stats · Poison/Ground",
+   "spriteScale": 0.58
+  },
+  {
+   "id": "nidom",
+   "name": "Nidoran♂",
+   "dex": 32,
+   "types": [
+    "poison"
+   ],
+   "statsFrom": "poison",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "tag": "Starter",
+   "abilities": {
+    "starting": 0,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "nidom2",
+   "name": "Nidorino",
+   "dex": 33,
+   "types": [
+    "poison"
+   ],
+   "evolvesFrom": "nidom",
+   "statsFrom": "poison",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 16,
+    "line": "nidom"
+   },
+   "unlockText": "Reach Mastery Rank 16 with the Nidoran♂ line",
+   "tag": "Evolution 2 · +3% stats",
+   "spriteScale": 0.8
+  },
+  {
+   "id": "nidom3",
+   "name": "Nidoking",
+   "dex": 34,
+   "types": [
+    "poison",
+    "ground"
+   ],
+   "evolvesFrom": "nidom2",
+   "statsFrom": "poison",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 36,
+    "line": "nidom"
+   },
+   "unlockText": "Reach Mastery Rank 36 with the Nidoran♂ line",
+   "tag": "Evolution 3 · +5% stats · Poison/Ground",
+   "spriteScale": 0.58
+  },
+  {
+   "id": "fairy",
+   "name": "Cleffa",
+   "dex": 173,
+   "types": [
+    "fairy"
+   ],
+   "baseStats": {
+    "hp": 0.85,
+    "atk": 1,
+    "def": 0.77,
+    "spd": 1.05
+   },
+   "tickets": 3,
+   "abilities": {
+    "starting": 0,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "fairy2",
+   "name": "Clefairy",
+   "dex": 35,
+   "types": [
+    "fairy"
+   ],
+   "evolvesFrom": "fairy",
+   "statsFrom": "fairy",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 10,
+    "line": "fairy"
+   },
+   "unlockText": "Reach Mastery Rank 10 with the Cleffa line",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Evolution 2 · +3% stats",
+   "spriteScale": 0.85
+  },
+  {
+   "id": "fairy3",
+   "name": "Clefable",
+   "dex": 36,
+   "types": [
+    "fairy"
+   ],
+   "evolvesFrom": "fairy2",
+   "statsFrom": "fairy",
+   "statMult": 1.07,
+   "unlock": {
+    "mastery": 30,
+    "line": "fairy"
+   },
+   "unlockText": "Reach Mastery Rank 30 with the Cleffa line",
+   "tag": "Evolution 3 · +7% stats",
+   "spriteScale": 0.66
+  },
+  {
+   "id": "vul",
+   "name": "Vulpix",
+   "dex": 37,
+   "types": [
+    "fire"
+   ],
+   "statsFrom": "fire",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "tag": "Starter",
+   "abilities": {
+    "starting": 2,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "vul2",
+   "name": "Ninetales",
+   "dex": 38,
+   "types": [
+    "fire"
+   ],
+   "evolvesFrom": "vul",
+   "statsFrom": "fire",
+   "statMult": 1.07,
+   "unlock": {
+    "mastery": 30,
+    "line": "vul"
+   },
+   "unlockText": "Reach Mastery Rank 30 with the Vulpix line",
+   "tag": "Evolution 2 · +7% stats",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "avul",
+   "name": "Alolan Vulpix",
+   "dex": 37,
+   "types": [
+    "ice"
+   ],
+   "regionalOf": "vul",
+   "form": "Alolan",
+   "statsFrom": "ice",
+   "statMult": 1.03,
+   "unlock": {
+    "boss": true,
+    "flag": "avul",
+    "biome": "ice",
+    "as": [
+     "vul"
+    ]
+   },
+   "unlockText": "Defeat a boss in the Ice biome with Vulpix",
+   "tag": "Alolan Form · +3% stats",
+   "abilities": {
+    "starting": 0,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "avul2",
+   "name": "Alolan Ninetales",
+   "dex": 38,
+   "types": [
+    "ice",
+    "fairy"
+   ],
+   "evolvesFrom": "avul",
+   "regionalOf": "vul2",
+   "form": "Alolan",
+   "statsFrom": "ice",
+   "statMult": 1.07,
+   "unlock": {
+    "boss": true,
+    "flag": "avul2",
+    "bossType": "fairy",
+    "as": [
+     "avul"
+    ]
+   },
+   "unlockText": "Defeat a Fairy boss with Alolan Vulpix",
+   "tag": "Alolan Form · +7% stats · Ice/Fairy",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "igg",
+   "name": "Igglybuff",
+   "dex": 174,
+   "types": [
+    "normal",
+    "fairy"
+   ],
+   "statsFrom": "normal",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter · Normal/Fairy",
+   "abilities": {
+    "starting": 1,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "igg2",
+   "name": "Jigglypuff",
+   "dex": 39,
+   "types": [
+    "normal",
+    "fairy"
+   ],
+   "evolvesFrom": "igg",
+   "statsFrom": "normal",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 12,
+    "line": "igg"
+   },
+   "unlockText": "Reach Mastery Rank 12 with the Igglybuff line",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Evolution 2 · +3% stats · Normal/Fairy",
+   "spriteScale": 0.85
+  },
+  {
+   "id": "igg3",
+   "name": "Wigglytuff",
+   "dex": 40,
+   "types": [
+    "normal",
+    "fairy"
+   ],
+   "evolvesFrom": "igg2",
+   "statsFrom": "normal",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 24,
+    "line": "igg"
+   },
+   "unlockText": "Reach Mastery Rank 24 with the Igglybuff line",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 3 · +5% stats · Normal/Fairy",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "zub",
+   "name": "Zubat",
+   "dex": 41,
+   "types": [
+    "poison",
+    "flying"
+   ],
+   "statsFrom": "poison",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 2
+   },
+   "unlockText": "Unlock with 2 🎟️ boss-chest tickets",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter · Poison/Flying",
+   "abilities": {
+    "starting": 1,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "zub2",
+   "name": "Golbat",
+   "dex": 42,
+   "types": [
+    "poison",
+    "flying"
+   ],
+   "evolvesFrom": "zub",
+   "statsFrom": "poison",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 22,
+    "line": "zub"
+   },
+   "unlockText": "Reach Mastery Rank 22 with the Zubat line",
+   "enemyPool": [
+    "mini"
+   ],
+   "tag": "Evolution 2 · +5% stats · Poison/Flying",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "zub3",
+   "name": "Crobat",
+   "dex": 169,
+   "types": [
+    "poison",
+    "flying"
+   ],
+   "evolvesFrom": "zub2",
+   "statsFrom": "poison",
+   "statMult": 1.1,
+   "unlock": {
+    "all": [
+     {
+      "mastery": 22,
+      "line": "zub"
+     },
+     {
+      "bosses": 5,
+      "counter": "zubb",
+      "doneFlag": "zubb5",
+      "as": [
+       "zub",
+       "zub2"
+      ]
+     }
+    ]
+   },
+   "unlockText": "Reach Mastery Rank 22 with the Zubat line and defeat 5 bosses as Zubat or Golbat",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 3 · +10% stats · Poison/Flying",
+   "dexNote": "⭐ Mastery 22<br>+ beat 5 bosses as Zubat/Golbat",
+   "spriteScale": 0.55
+  },
+  {
+   "id": "odd",
+   "name": "Oddish",
+   "dex": 43,
+   "types": [
+    "grass",
+    "poison"
+   ],
+   "statsFrom": "grass",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 2
+   },
+   "unlockText": "Unlock with 2 🎟️ boss-chest tickets",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter · Grass/Poison",
+   "abilities": {
+    "starting": 1,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "odd2",
+   "name": "Gloom",
+   "dex": 44,
+   "types": [
+    "grass",
+    "poison"
+   ],
+   "evolvesFrom": "odd",
+   "statsFrom": "grass",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 21,
+    "line": "odd"
+   },
+   "unlockText": "Reach Mastery Rank 21 with the Oddish line",
+   "enemyPool": [
+    "mini"
+   ],
+   "tag": "Evolution 2 · +3% stats · Grass/Poison",
+   "spriteScale": 0.8
+  },
+  {
+   "id": "odd3",
+   "name": "Vileplume",
+   "dex": 45,
+   "types": [
+    "grass",
+    "poison"
+   ],
+   "evolvesFrom": "odd2",
+   "statsFrom": "grass",
+   "statMult": 1.05,
+   "unlock": {
+    "all": [
+     {
+      "mastery": 21,
+      "line": "odd"
+     },
+     {
+      "boss": true,
+      "flag": "odd3",
+      "bossType": "grass",
+      "as": [
+       "odd",
+       "odd2",
+       "bell"
+      ]
+     }
+    ]
+   },
+   "unlockText": "Reach Mastery Rank 21 with the Oddish line and defeat a Grass boss as Oddish, Gloom or Bellossom",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 3 · +5% stats · Grass/Poison",
+   "dexNote": "⭐ Mastery 21<br>+ beat a Grass boss",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "bell",
+   "name": "Bellossom",
+   "dex": 182,
+   "types": [
+    "grass"
+   ],
+   "evolvesFrom": "odd2",
+   "statsFrom": "grass",
+   "statMult": 1.1,
+   "unlock": {
+    "all": [
+     {
+      "mastery": 21,
+      "line": "odd"
+     },
+     {
+      "boss": true,
+      "flag": "bell",
+      "bossType": "fire",
+      "as": [
+       "odd",
+       "odd2",
+       "odd3"
+      ]
+     }
+    ]
+   },
+   "unlockText": "Reach Mastery Rank 21 with the Oddish line and defeat a Fire boss as Oddish, Gloom or Vileplume",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Branch Evolution · +10% stats",
+   "dexNote": "⭐ Mastery 21<br>+ beat a Fire boss",
+   "spriteScale": 0.62
+  },
+  {
+   "id": "paras",
+   "name": "Paras",
+   "dex": 46,
+   "types": [
+    "bug",
+    "grass"
+   ],
+   "statsFrom": "bug",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter · Bug/Grass",
+   "abilities": {
+    "starting": 1,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "paras2",
+   "name": "Parasect",
+   "dex": 47,
+   "types": [
+    "bug",
+    "grass"
+   ],
+   "evolvesFrom": "paras",
+   "statsFrom": "bug",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 24,
+    "line": "paras"
+   },
+   "unlockText": "Reach Mastery Rank 24 with the Paras line",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 2 · +5% stats · Bug/Grass",
+   "spriteScale": 0.62
+  },
+  {
+   "id": "veno",
+   "name": "Venonat",
+   "dex": 48,
+   "types": [
+    "bug",
+    "poison"
+   ],
+   "statsFrom": "bug",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter · Bug/Poison",
+   "abilities": {
+    "starting": 2,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "veno2",
+   "name": "Venomoth",
+   "dex": 49,
+   "types": [
+    "bug",
+    "poison"
+   ],
+   "evolvesFrom": "veno",
+   "statsFrom": "bug",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 31,
+    "line": "veno"
+   },
+   "unlockText": "Reach Mastery Rank 31 with the Venonat line",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 2 · +5% stats · Bug/Poison",
+   "spriteScale": 0.55
+  },
+  {
+   "id": "ground",
+   "name": "Diglett",
+   "dex": 50,
+   "types": [
+    "ground"
+   ],
+   "baseStats": {
+    "hp": 1.235,
+    "atk": 1.05,
+    "def": 1.132,
+    "spd": 0.95
+   },
+   "tickets": 1,
+   "abilities": {
+    "starting": 1,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "ground2",
+   "name": "Dugtrio",
+   "dex": 51,
+   "types": [
+    "ground"
+   ],
+   "evolvesFrom": "ground",
+   "statsFrom": "ground",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 26,
+    "line": "ground"
+   },
+   "unlockText": "Reach Mastery Rank 26 with the Diglett line",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.7
+  },
+  {
+   "id": "adig",
+   "name": "Alolan Diglett",
+   "dex": 50,
+   "types": [
+    "ground",
+    "steel"
+   ],
+   "regionalOf": "ground",
+   "form": "Alolan",
+   "statsFrom": "ground",
+   "statMult": 1.03,
+   "unlock": {
+    "boss": true,
+    "flag": "adig",
+    "bossType": "steel",
+    "biome": "steel",
+    "as": [
+     "ground"
+    ]
+   },
+   "unlockText": "Defeat a Steel boss in a Steel location with Diglett",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Alolan Form · +3% stats · Ground/Steel",
+   "abilities": {
+    "starting": 0,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "adig2",
+   "name": "Alolan Dugtrio",
+   "dex": 51,
+   "types": [
+    "ground",
+    "steel"
+   ],
+   "evolvesFrom": "adig",
+   "regionalOf": "ground2",
+   "form": "Alolan",
+   "statsFrom": "ground",
+   "statMult": 1.07,
+   "unlock": {
+    "all": [
+     {
+      "mastery": 26,
+      "line": "ground"
+     },
+     {
+      "bosses": 3,
+      "counter": "adigb",
+      "doneFlag": "adigb3",
+      "as": [
+       "adig"
+      ]
+     }
+    ]
+   },
+   "unlockText": "Reach Mastery Rank 26 with Diglett and defeat 3 bosses as Alolan Diglett",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Alolan Form · +7% stats · Ground/Steel",
+   "dexNote": "⭐ Diglett Mastery 26<br>+ beat 3 bosses as Alolan Diglett",
+   "spriteScale": 0.62
+  },
+  {
+   "id": "meow",
+   "name": "Meowth",
+   "dex": 52,
+   "types": [
+    "normal"
+   ],
+   "statsFrom": "normal",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter",
+   "abilities": {
+    "starting": 2,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "meow2",
+   "name": "Persian",
+   "dex": 53,
+   "types": [
+    "normal"
+   ],
+   "evolvesFrom": "meow",
+   "statsFrom": "normal",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 28,
+    "line": "meow"
+   },
+   "unlockText": "Reach Mastery Rank 28 with the Meowth line",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "psy",
+   "name": "Psyduck",
+   "dex": 54,
+   "types": [
+    "water"
+   ],
+   "statsFrom": "water",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 1
+   },
+   "unlockText": "Unlock with 1 🎟️ boss-chest ticket",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter",
+   "abilities": {
+    "starting": 2,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "psy2",
+   "name": "Golduck",
+   "dex": 55,
+   "types": [
+    "water"
+   ],
+   "evolvesFrom": "psy",
+   "statsFrom": "water",
+   "statMult": 1.07,
+   "unlock": {
+    "mastery": 33,
+    "line": "psy"
+   },
+   "unlockText": "Reach Mastery Rank 33 with the Psyduck line",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 2 · +7% stats",
+   "spriteScale": 0.58
+  },
+  {
+   "id": "mank",
+   "name": "Mankey",
+   "dex": 56,
+   "types": [
+    "fighting"
+   ],
+   "statsFrom": "fighting",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 2
+   },
+   "unlockText": "Unlock with 2 🎟️ boss-chest tickets",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter",
+   "abilities": {
+    "starting": 2,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "mank2",
+   "name": "Primeape",
+   "dex": 57,
+   "types": [
+    "fighting"
+   ],
+   "evolvesFrom": "mank",
+   "statsFrom": "fighting",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 28,
+    "line": "mank"
+   },
+   "unlockText": "Reach Mastery Rank 28 with the Mankey line",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "growl",
+   "name": "Growlithe",
+   "dex": 58,
+   "types": [
+    "fire"
+   ],
+   "statsFrom": "fire",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 2
+   },
+   "unlockText": "Unlock with 2 🎟️ boss-chest tickets",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter",
+   "abilities": {
+    "starting": 1,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "growl2",
+   "name": "Arcanine",
+   "dex": 59,
+   "types": [
+    "fire"
+   ],
+   "evolvesFrom": "growl",
+   "statsFrom": "fire",
+   "statMult": 1.07,
+   "unlock": {
+    "bosses": 5,
+    "counter": "growlb",
+    "as": [
+     "growl"
+    ]
+   },
+   "unlockText": "Defeat 5 bosses as Growlithe",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 2 · +7% stats",
+   "dexNote": "✨ Beat 5 bosses<br>as Growlithe",
+   "spriteScale": 0.6
+  },
+  {
+   "id": "poli",
+   "name": "Poliwag",
+   "dex": 60,
+   "types": [
+    "water"
+   ],
+   "statsFrom": "water",
+   "statMult": 1,
+   "unlock": {
+    "tickets": 2
+   },
+   "unlockText": "Unlock with 2 🎟️ boss-chest tickets",
+   "enemyPool": [
+    "reg"
+   ],
+   "tag": "Starter",
+   "abilities": {
+    "starting": 1,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "poli2",
+   "name": "Poliwhirl",
+   "dex": 61,
+   "types": [
+    "water"
+   ],
+   "evolvesFrom": "poli",
+   "statsFrom": "water",
+   "statMult": 1.03,
+   "unlock": {
+    "mastery": 25,
+    "line": "poli"
+   },
+   "unlockText": "Reach Mastery Rank 25 with the Poliwag line",
+   "enemyPool": [
+    "mini"
+   ],
+   "tag": "Evolution 2 · +3% stats",
+   "spriteScale": 0.8
+  },
+  {
+   "id": "poli3",
+   "name": "Poliwrath",
+   "dex": 62,
+   "types": [
+    "water",
+    "fighting"
+   ],
+   "evolvesFrom": "poli2",
+   "statsFrom": "water",
+   "statMult": 1.07,
+   "unlock": {
+    "all": [
+     {
+      "mastery": 25,
+      "line": "poli"
+     },
+     {
+      "bosses": 5,
+      "counter": "polif",
+      "bossType": "fighting",
+      "doneFlag": "polif5",
+      "as": [
+       "poli",
+       "poli2"
+      ]
+     }
+    ]
+   },
+   "unlockText": "Reach Mastery Rank 25 with the Poliwag line and defeat 5 Fighting-type bosses as Poliwag or Poliwhirl",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 3 · +7% stats · Water/Fighting",
+   "dexNote": "⭐ Mastery 25<br>+ beat 5 Fighting bosses",
+   "spriteScale": 0.58
+  },
+  {
+   "id": "psychic",
+   "name": "Abra",
+   "dex": 63,
+   "types": [
+    "psychic"
+   ],
+   "baseStats": {
+    "hp": 1.1,
+    "atk": 1.1,
+    "def": 1.05,
+    "spd": 1.05
+   },
+   "tickets": 2,
+   "abilities": {
+    "starting": 0,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "psychic2",
+   "name": "Kadabra",
+   "dex": 64,
+   "types": [
+    "psychic"
+   ],
+   "evolvesFrom": "psychic",
+   "statsFrom": "psychic",
+   "statMult": 1.05,
+   "unlock": {
+    "mastery": 16,
+    "line": "psychic"
+   },
+   "unlockText": "Reach Mastery Rank 16 with the Abra line",
+   "enemyPool": [
+    "mini"
+   ],
+   "tag": "Evolution 2 · +5% stats",
+   "spriteScale": 0.8
+  },
+  {
+   "id": "psychic3",
+   "name": "Alakazam",
+   "dex": 65,
+   "types": [
+    "psychic"
+   ],
+   "evolvesFrom": "psychic2",
+   "statsFrom": "psychic",
+   "statMult": 1.07,
+   "unlock": {
+    "all": [
+     {
+      "mastery": 16,
+      "line": "psychic"
+     },
+     {
+      "bosses": 10,
+      "counter": "abrab",
+      "doneFlag": "abrab10",
+      "as": [
+       "psychic",
+       "psychic2"
+      ]
+     }
+    ]
+   },
+   "unlockText": "Reach Mastery Rank 16 with the Abra line and defeat 10 bosses as Abra or Kadabra",
+   "enemyPool": [
+    "boss"
+   ],
+   "tag": "Evolution 3 · +7% stats",
+   "dexNote": "⭐ Mastery 16<br>+ beat 10 bosses as Abra/Kadabra",
+   "spriteScale": 0.55
+  },
+  {
+   "id": "poison",
+   "name": "Grimer",
+   "dex": 88,
+   "types": [
+    "poison"
+   ],
+   "baseStats": {
+    "hp": 1.03,
+    "atk": 1.05,
+    "def": 1.03,
+    "spd": 1.05
+   },
+   "tickets": 2,
+   "abilities": {
+    "starting": 1,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "rock",
+   "name": "Geodude",
+   "dex": 74,
+   "types": [
+    "rock"
+   ],
+   "baseStats": {
+    "hp": 1.239,
+    "atk": 1,
+    "def": 1.346,
+    "spd": 0.9
+   },
+   "tickets": 2,
+   "abilities": {
+    "starting": 0,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "ice",
+   "name": "Snorunt",
+   "dex": 361,
+   "types": [
+    "ice"
+   ],
+   "baseStats": {
+    "hp": 0.98,
+    "atk": 1.1,
+    "def": 1.1,
+    "spd": 1
+   },
+   "tickets": 2,
+   "abilities": {
+    "starting": 1,
+    "hidden": 2
+   }
+  },
+  {
+   "id": "fighting",
+   "name": "Machop",
+   "dex": 66,
+   "types": [
+    "fighting"
+   ],
+   "baseStats": {
+    "hp": 0.85,
+    "atk": 1.15,
+    "def": 0.85,
+    "spd": 0.95
+   },
+   "tickets": 2,
+   "abilities": {
+    "starting": 0,
+    "hidden": 1
+   }
+  },
+  {
+   "id": "dark",
+   "name": "Poochyena",
+   "dex": 261,
+   "types": [
+    "dark"
+   ],
+   "baseStats": {
+    "hp": 0.914,
+    "atk": 1.15,
+    "def": 0.914,
+    "spd": 1.1
+   },
+   "tickets": 3,
+   "abilities": {
+    "starting": 1,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "steel",
+   "name": "Beldum",
+   "dex": 374,
+   "types": [
+    "steel"
+   ],
+   "baseStats": {
+    "hp": 0.986,
+    "atk": 0.95,
+    "def": 1.222,
+    "spd": 0.92
+   },
+   "tickets": 3,
+   "abilities": {
+    "starting": 0,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "ghost",
+   "name": "Gastly",
+   "dex": 92,
+   "types": [
+    "ghost"
+   ],
+   "baseStats": {
+    "hp": 1.06,
+    "atk": 1.1,
+    "def": 1,
+    "spd": 1.1
+   },
+   "tickets": 3,
+   "abilities": {
+    "starting": 0,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "dragon",
+   "name": "Dratini",
+   "dex": 147,
+   "types": [
+    "dragon"
+   ],
+   "baseStats": {
+    "hp": 1.25,
+    "atk": 1.15,
+    "def": 1.3,
+    "spd": 1
+   },
+   "tickets": 4,
+   "abilities": {
+    "starting": 0,
+    "hidden": 0
+   }
+  },
+  {
+   "id": "fireleg",
+   "name": "Ho-oh",
+   "dex": 250,
+   "types": [
+    "fire",
+    "flying"
+   ],
+   "statsFrom": "fire",
+   "statMult": 1.1,
+   "legendary": true,
+   "unlock": {
+    "clearTier": 1,
+    "biome": "fire"
+   },
+   "unlockText": "Clear Tier 1 of the Fire biome",
+   "tag": "Legendary · +10% stats · Fire/Flying",
+   "spriteScale": 0.5,
+   "abilities": {
+    "starting": 2,
+    "hidden": 0
+   }
+  }
+ ]
+}

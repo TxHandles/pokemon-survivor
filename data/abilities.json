@@ -1,0 +1,1284 @@
+{
+ "_about": "Abilities per type (t1 = starting, t2 = hidden, leg = legendary). Assignments live on each Pokemon in pokemon.json.",
+ "abilities": {
+  "normal": {
+   "t1": [
+    {
+     "n": "Run Away",
+     "d": "After taking a hit, +35% move speed for 2s.",
+     "p": {
+      "hurtSpd": [
+       0.35,
+       2
+      ]
+     }
+    },
+    {
+     "n": "Pickup",
+     "d": "+25% pickup range. Defeated enemies have a 10% chance to drop a bonus coin.",
+     "p": {
+      "mag": 0.25,
+      "pickCoin": 0.1
+     }
+    },
+    {
+     "n": "Keen Eye",
+     "d": "+10% crit chance and +10% range.",
+     "p": {
+      "crit": 0.1,
+      "rng": 0.1
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Adaptability",
+     "d": "Moves that match your own types deal +17% more (same-type bonus 1.5× → 1.75×).",
+     "p": {
+      "stab": 0.25
+     }
+    },
+    {
+     "n": "Serene Grace",
+     "d": "Doubles the chance of every status effect your moves cause (burn, poison, freeze, paralysis…).",
+     "p": {
+      "serene": 1
+     }
+    },
+    {
+     "n": "Hustle",
+     "d": "+25% damage, but attacks are 8% slower.",
+     "p": {
+      "dmg": 0.25,
+      "cd": -0.08
+     }
+    }
+   ],
+   "leg": {
+    "n": "Multitype",
+    "d": "Your hits are never resisted, and super-effective hits deal +40%.",
+    "p": {
+     "noRes": 1,
+     "seB": 0.4
+    }
+   }
+  },
+  "fire": {
+   "t1": [
+    {
+     "n": "Blaze",
+     "d": "+12% damage, +35% more below 35% HP, and take 5% less damage.",
+     "p": {
+      "dmg": 0.12,
+      "dmgLow": 0.35,
+      "red": 0.05
+     }
+    },
+    {
+     "n": "Flash Fire",
+     "d": "Fire-type projectiles and special attacks heal you instead of hurting. Each burning enemy you defeat gives +2% damage for 6s (up to +20%).",
+     "p": {
+      "absorbT": "fire",
+      "kStackBurn": [
+       0.02,
+       6,
+       10
+      ]
+     }
+    },
+    {
+     "n": "Flame Body",
+     "d": "Enemies that touch you take fire damage, with a 50% chance to burn.",
+     "p": {
+      "thorn": 0.9,
+      "cSt": [
+       "bn",
+       0.5,
+       3
+      ]
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Drought",
+     "d": "Every 10s the sun blazes for 5s: Fire moves deal +30%.",
+     "p": {
+      "win": [
+       10,
+       5,
+       "sun"
+      ]
+     }
+    },
+    {
+     "n": "Solar Power",
+     "d": "+25% damage and +10% range, but you lose 0.3 HP/sec.",
+     "p": {
+      "dmg": 0.25,
+      "rng": 0.1,
+      "reg": -0.3
+     }
+    },
+    {
+     "n": "Flare Boost",
+     "d": "After taking damage, +30% damage for 4s.",
+     "p": {
+      "hurtDmg": [
+       0.3,
+       4
+      ]
+     }
+    }
+   ],
+   "leg": {
+    "n": "Turboblaze",
+    "d": "Your hits are never resisted, and every 8th hit erupts in blue flame around the target.",
+    "p": {
+     "noRes": 1,
+     "nthBlast": 8
+    }
+   }
+  },
+  "water": {
+   "t1": [
+    {
+     "n": "Torrent",
+     "d": "Regenerate 0.5 HP/sec. Below 50% HP: +25% damage and 13% faster attacks.",
+     "p": {
+      "reg": 0.5,
+      "dmgLow": 0.25,
+      "dmgLowT": 0.5,
+      "cdLow": 0.13
+     }
+    },
+    {
+     "n": "Water Absorb",
+     "d": "Regenerate 0.8 HP/sec. Deep water heals you instead of slowing you, and Water-type projectiles and special attacks heal you instead of hurting.",
+     "p": {
+      "reg": 0.8,
+      "hzImm": [
+       "deep"
+      ],
+      "hzHeal": "deep",
+      "absorbT": "water"
+     }
+    },
+    {
+     "n": "Swift Swim",
+     "d": "+12% move speed, and +30% more in Water locations.",
+     "p": {
+      "spd": 0.12,
+      "loc": [
+       "water"
+      ],
+      "lSpd": 0.3
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Drizzle",
+     "d": "Every 10s it rains for 5s: Water moves +20%, +15% move speed, and heal 1% max HP/sec.",
+     "p": {
+      "win": [
+       10,
+       5,
+       "rain"
+      ]
+     }
+    },
+    {
+     "n": "Storm Drain",
+     "d": "Water and Ice projectiles that reach you are absorbed. +15% damage.",
+     "p": {
+      "projAbsorb": [
+       "water",
+       "ice"
+      ],
+      "dmg": 0.15
+     }
+    },
+    {
+     "n": "Cloud Nine",
+     "d": "Immune to every location hazard (pools, quicksand, ice, webs, gusts, strikes). +10% damage.",
+     "p": {
+      "hzImm": [
+       "all"
+      ],
+      "dmg": 0.1
+     }
+    }
+   ],
+   "leg": {
+    "n": "Primordial Sea",
+    "d": "Water moves deal +30%, Fire-type enemies deal 50% less, and a tidal wave hits nearby enemies every 5s.",
+    "p": {
+     "tdm": {
+      "water": 0.3
+     },
+     "redT": {
+      "fire": 0.5
+     },
+     "pulse": [
+      5,
+      140,
+      1.2
+     ]
+    }
+   }
+  },
+  "electric": {
+   "t1": [
+    {
+     "n": "Static",
+     "d": "Enemies that touch you take damage, with a 25% chance to be paralyzed for 1s.",
+     "p": {
+      "thorn": 0.8,
+      "cSt": [
+       "su",
+       0.25,
+       1
+      ]
+     }
+    },
+    {
+     "n": "Motor Drive",
+     "d": "Each kill gives +30% move speed for 2s. Attacks are 8% faster.",
+     "p": {
+      "kspd": 0.3,
+      "cd": 0.08
+     }
+    },
+    {
+     "n": "Volt Absorb",
+     "d": "Regenerate 0.6 HP/sec. Lightning strikes heal you, and Electric-type projectiles and special attacks heal you instead of hurting.",
+     "p": {
+      "reg": 0.6,
+      "hzImm": [
+       "storm"
+      ],
+      "hzHeal": "storm",
+      "absorbT": "electric"
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Electric Surge",
+     "d": "Every 8s electric terrain charges you for 4s: attacks are 30% faster.",
+     "p": {
+      "win": [
+       8,
+       4,
+       "elec"
+      ]
+     }
+    },
+    {
+     "n": "Transistor",
+     "d": "Electric moves deal +30%.",
+     "p": {
+      "tdm": {
+       "electric": 0.3
+      }
+     }
+    },
+    {
+     "n": "Plus",
+     "d": "+12% damage, plus +12% for each co-op ally near you.",
+     "p": {
+      "plus": 0.12
+     }
+    }
+   ],
+   "leg": {
+    "n": "Teravolt",
+    "d": "8% of your hits chain lightning to 3 more enemies for 40% damage. Your hits are never resisted.",
+    "p": {
+     "chain": [
+      0.08,
+      3,
+      0.4
+     ],
+     "noRes": 1
+    }
+   }
+  },
+  "grass": {
+   "t1": [
+    {
+     "n": "Overgrow",
+     "d": "+10% damage (+35% more below 35% HP) and regenerate 0.5 HP/sec.",
+     "p": {
+      "dmg": 0.1,
+      "dmgLow": 0.35,
+      "reg": 0.5
+     }
+    },
+    {
+     "n": "Chlorophyll",
+     "d": "+12% move speed, and +30% more in Grass and Fire locations.",
+     "p": {
+      "spd": 0.12,
+      "loc": [
+       "grass",
+       "fire"
+      ],
+      "lSpd": 0.3
+     }
+    },
+    {
+     "n": "Leaf Guard",
+     "d": "Slows, sticky webs and hazard slowdowns don't affect you. Take 6% less damage.",
+     "p": {
+      "slowImm": 1,
+      "red": 0.06
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Grassy Surge",
+     "d": "Regenerate 1.2 HP/sec, and deal +10% damage while standing still.",
+     "p": {
+      "reg": 1.2,
+      "dmgStill": 0.1
+     }
+    },
+    {
+     "n": "Effect Spore",
+     "d": "Enemies that touch you have a 30% chance to be poisoned, paralyzed or put to sleep.",
+     "p": {
+      "cSt": [
+       "multi",
+       0.3,
+       1.5
+      ]
+     }
+    },
+    {
+     "n": "Harvest",
+     "d": "A berry grows near you every 20s; collect it to heal 15% max HP.",
+     "p": {
+      "harvest": 20
+     }
+    }
+   ],
+   "leg": {
+    "n": "Embody Aspect",
+    "d": "+10% damage, move speed and max HP. Every 15s, a 3s surge of +40% damage.",
+    "p": {
+     "dmg": 0.1,
+     "spd": 0.1,
+     "hpM": 0.1,
+     "win": [
+      15,
+      3,
+      "aspect"
+     ]
+    }
+   }
+  },
+  "ice": {
+   "t1": [
+    {
+     "n": "Snow Cloak",
+     "d": "10% dodge, and +12% more in Ice locations.",
+     "p": {
+      "dodge": 0.1,
+      "loc": [
+       "ice"
+      ],
+      "lDodge": 0.12
+     }
+    },
+    {
+     "n": "Ice Body",
+     "d": "Regenerate 0.6 HP/sec, doubled in Ice locations.",
+     "p": {
+      "reg": 0.6,
+      "loc": [
+       "ice"
+      ],
+      "lReg": 0.6
+     }
+    },
+    {
+     "n": "Thick Fat",
+     "d": "Take 25% less damage from Fire- and Ice-type enemies.",
+     "p": {
+      "redT": {
+       "fire": 0.25,
+       "ice": 0.25
+      }
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Snow Warning",
+     "d": "A hailstorm follows you: every 2s hail strikes every enemy on screen.",
+     "p": {
+      "chip": [
+       2,
+       0.12,
+       "hail"
+      ]
+     }
+    },
+    {
+     "n": "Slush Rush",
+     "d": "+15% move speed, and +30% more in Ice locations.",
+     "p": {
+      "spd": 0.15,
+      "loc": [
+       "ice"
+      ],
+      "lSpd": 0.3
+     }
+    },
+    {
+     "n": "Refrigerate",
+     "d": "+20% damage, and 8% of your hits freeze the enemy.",
+     "p": {
+      "dmg": 0.2,
+      "pFrz": 0.08
+     }
+    }
+   ],
+   "leg": {
+    "n": "Chilling Neigh",
+    "d": "Each kill gives +3% damage for 8s (stacks 10×). Frozen enemies you defeat shatter, hitting those around them.",
+    "p": {
+     "kStack": [
+      0.03,
+      8,
+      10
+     ],
+     "shatter": 1
+    }
+   }
+  },
+  "fighting": {
+   "t1": [
+    {
+     "n": "Guts",
+     "d": "+20% damage below 50% HP. Slows and sticky webs don't affect you.",
+     "p": {
+      "dmgLow": 0.2,
+      "dmgLowT": 0.5,
+      "slowImm": 1
+     }
+    },
+    {
+     "n": "Inner Focus",
+     "d": "Gusts can't push you around. +8% crit chance.",
+     "p": {
+      "kbImm": 1,
+      "crit": 0.08
+     }
+    },
+    {
+     "n": "Iron Fist",
+     "d": "Fighting and Normal moves deal +20%.",
+     "p": {
+      "tdm": {
+       "fighting": 0.2,
+       "normal": 0.2
+      }
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Justified",
+     "d": "+10% damage, and +35% more against Dark-type enemies.",
+     "p": {
+      "dmg": 0.1,
+      "vsT": {
+       "dark": 0.35
+      }
+     }
+    },
+    {
+     "n": "No Guard",
+     "d": "+20% damage and +12% range, but you take 10% more damage.",
+     "p": {
+      "dmg": 0.2,
+      "rng": 0.12,
+      "red": -0.1
+     }
+    },
+    {
+     "n": "Anger Point",
+     "d": "Taking a hit worth more than 15% of your HP makes every hit a critical hit for 4s.",
+     "p": {
+      "angerPt": 1
+     }
+    }
+   ],
+   "leg": {
+    "n": "Unseen Fist",
+    "d": "+25% damage to elites and bosses, ignoring their armor and shields.",
+    "p": {
+     "vsElite": 0.25,
+     "ignArm": 1
+    }
+   }
+  },
+  "poison": {
+   "t1": [
+    {
+     "n": "Poison Point",
+     "d": "Enemies that touch you take damage, with a 50% chance to be poisoned.",
+     "p": {
+      "thorn": 0.8,
+      "cSt": [
+       "ps",
+       0.5,
+       4
+      ]
+     }
+    },
+    {
+     "n": "Stench",
+     "d": "10% of your hits make the enemy flinch (stunned for 0.5s). Enemies that touch you take damage.",
+     "p": {
+      "pStun": 0.1,
+      "thorn": 0.8
+     }
+    },
+    {
+     "n": "Corrosion",
+     "d": "Poison you inflict deals +30% damage.",
+     "p": {
+      "corr": 1
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Poison Touch",
+     "d": "15% of your hits poison the enemy.",
+     "p": {
+      "pPsn": 0.15
+     }
+    },
+    {
+     "n": "Merciless",
+     "d": "+40% crit chance against poisoned enemies.",
+     "p": {
+      "critVsPsn": 0.4
+     }
+    },
+    {
+     "n": "Toxic Debris",
+     "d": "When you're hit, toxic spikes burst around you, damaging and poisoning nearby enemies.",
+     "p": {
+      "hurtBurst": "toxic"
+     }
+    }
+   ],
+   "leg": {
+    "n": "Poison Puppeteer",
+    "d": "Enemies you poison become confused and attack each other. 6% of your hits poison.",
+    "p": {
+     "puppet": 1,
+     "pPsn": 0.06
+    }
+   }
+  },
+  "ground": {
+   "t1": [
+    {
+     "n": "Sand Veil",
+     "d": "10% dodge, and +12% more in Ground and Rock locations.",
+     "p": {
+      "dodge": 0.1,
+      "loc": [
+       "ground",
+       "rock"
+      ],
+      "lDodge": 0.12
+     }
+    },
+    {
+     "n": "Arena Trap",
+     "d": "Enemies near you move 25% slower. +10% max HP.",
+     "p": {
+      "slowA": 160,
+      "slowS": 0.25,
+      "hpM": 0.1
+     }
+    },
+    {
+     "n": "Sand Rush",
+     "d": "+12% move speed, and +30% more in Ground and Rock locations.",
+     "p": {
+      "spd": 0.12,
+      "loc": [
+       "ground",
+       "rock"
+      ],
+      "lSpd": 0.3
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Sand Force",
+     "d": "+15% damage. In Ground and Rock locations, Ground, Rock and Steel moves deal +35%.",
+     "p": {
+      "dmg": 0.15,
+      "loc": [
+       "ground",
+       "rock"
+      ],
+      "lTdm": {
+       "ground": 0.35,
+       "rock": 0.35,
+       "steel": 0.35
+      }
+     }
+    },
+    {
+     "n": "Sand Spit",
+     "d": "When you're hit, a burst of sand damages and slows nearby enemies.",
+     "p": {
+      "hurtBurst": "sand"
+     }
+    },
+    {
+     "n": "Mold Breaker",
+     "d": "Your hits are never resisted and ignore elite armor and shields.",
+     "p": {
+      "noRes": 1,
+      "ignArm": 1
+     }
+    }
+   ],
+   "leg": {
+    "n": "Desolate Land",
+    "d": "Scorched earth around you burns nearby enemies, and Water-type enemies deal 50% less.",
+    "p": {
+     "auraBurn": 150,
+     "redT": {
+      "water": 0.5
+     }
+    }
+   }
+  },
+  "flying": {
+   "t1": [
+    {
+     "n": "Gale Wings",
+     "d": "+10% move speed and 8% dodge.",
+     "p": {
+      "spd": 0.1,
+      "dodge": 0.08
+     }
+    },
+    {
+     "n": "Tangled Feet",
+     "d": "5% dodge, and +25% more for 3s after taking damage.",
+     "p": {
+      "dodge": 0.05,
+      "hurtDodge": [
+       0.25,
+       3
+      ]
+     }
+    },
+    {
+     "n": "Big Pecks",
+     "d": "Enemies that touch you are knocked back hard. Take 5% less damage.",
+     "p": {
+      "pecks": 1,
+      "red": 0.05
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Aerilate",
+     "d": "+20% damage and +10% range.",
+     "p": {
+      "dmg": 0.2,
+      "rng": 0.1
+     }
+    },
+    {
+     "n": "Wind Rider",
+     "d": "+15% move speed and 5% dodge, and +20% more speed in Flying locations.",
+     "p": {
+      "spd": 0.15,
+      "dodge": 0.05,
+      "loc": [
+       "flying"
+      ],
+      "lSpd": 0.2
+     }
+    },
+    {
+     "n": "Defiant",
+     "d": "Each hit you take gives +12% damage for 5s (stacks 3×).",
+     "p": {
+      "hurtStack": [
+       0.12,
+       5,
+       3
+      ]
+     }
+    }
+   ],
+   "leg": {
+    "n": "Delta Stream",
+    "d": "30% of enemy projectiles are blown away. Take 25% less super-effective damage. +20% move speed.",
+    "p": {
+     "projDeflect": 0.3,
+     "redSE": 0.25,
+     "spd": 0.2
+    }
+   }
+  },
+  "psychic": {
+   "t1": [
+    {
+     "n": "Synchronize",
+     "d": "Enemies that touch you take psychic damage and are slowed. Take 6% less damage.",
+     "p": {
+      "thorn": 0.9,
+      "cSt": [
+       "sl",
+       1,
+       1.5
+      ],
+      "red": 0.06
+     }
+    },
+    {
+     "n": "Magic Guard",
+     "d": "Immune to damage from lava, toxic pools, lightning and falling rocks.",
+     "p": {
+      "hzImm": [
+       "lava",
+       "toxic",
+       "storm",
+       "rockfall"
+      ]
+     }
+    },
+    {
+     "n": "Forewarn",
+     "d": "+15% damage to elites and bosses.",
+     "p": {
+      "vsElite": 0.15
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Psychic Surge",
+     "d": "Every 8s psychic terrain empowers you for 4s: +30% damage.",
+     "p": {
+      "win": [
+       8,
+       4,
+       "psy"
+      ]
+     }
+    },
+    {
+     "n": "Magic Bounce",
+     "d": "25% of enemy projectiles bounce back, hitting the nearest enemy.",
+     "p": {
+      "projReflect": 0.25
+     }
+    },
+    {
+     "n": "Trace",
+     "d": "Defeating an elite copies its power: +15% damage, +15% move speed and 10% faster attacks for 30s.",
+     "p": {
+      "trace": 1
+     }
+    }
+   ],
+   "leg": {
+    "n": "Neuroforce",
+    "d": "Super-effective hits deal +40%, and every 5th hit counts as super effective.",
+    "p": {
+     "seB": 0.4,
+     "nthSE": 5
+    }
+   }
+  },
+  "bug": {
+   "t1": [
+    {
+     "n": "Swarm",
+     "d": "+12% damage, +35% more below 35% HP, and +15% XP.",
+     "p": {
+      "dmg": 0.12,
+      "dmgLow": 0.35,
+      "xp": 0.15
+     }
+    },
+    {
+     "n": "Shield Dust",
+     "d": "Slows and sticky webs don't affect you. Take 8% less damage from projectiles.",
+     "p": {
+      "slowImm": 1,
+      "projDR": 0.08
+     }
+    },
+    {
+     "n": "Compound Eyes",
+     "d": "+20% range and +8% crit chance.",
+     "p": {
+      "rng": 0.2,
+      "crit": 0.08
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Tinted Lens",
+     "d": "Your resisted hits deal full damage.",
+     "p": {
+      "noRes": 1
+     }
+    },
+    {
+     "n": "Technician",
+     "d": "Your two lowest-level moves deal +35%.",
+     "p": {
+      "tech": 0.35
+     }
+    },
+    {
+     "n": "Sniper",
+     "d": "Critical hits deal 2.5× instead of 2×. +5% crit chance.",
+     "p": {
+      "critMul": 0.5,
+      "crit": 0.05
+     }
+    }
+   ],
+   "leg": {
+    "n": "Beast Boost",
+    "d": "Every kill adds +0.2% damage for the rest of the run (up to +40%).",
+    "p": {
+     "kPerm": [
+      0.002,
+      0.4
+     ]
+    }
+   }
+  },
+  "rock": {
+   "t1": [
+    {
+     "n": "Sturdy",
+     "d": "A hit that would knock you out leaves you at 1 HP instead (once every 60s). +8% max HP.",
+     "p": {
+      "sturdy": 60,
+      "hpM": 0.08
+     }
+    },
+    {
+     "n": "Rock Head",
+     "d": "+12% max HP and take 5% less damage.",
+     "p": {
+      "hpM": 0.12,
+      "red": 0.05
+     }
+    },
+    {
+     "n": "Solid Rock",
+     "d": "Take 25% less damage from super-effective attacks.",
+     "p": {
+      "redSE": 0.25
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Purifying Salt",
+     "d": "Slows don't affect you, Ghost-type enemies deal 50% less, and regenerate 0.5 HP/sec.",
+     "p": {
+      "slowImm": 1,
+      "redT": {
+       "ghost": 0.5
+      },
+      "reg": 0.5
+     }
+    },
+    {
+     "n": "Rocky Payload",
+     "d": "Rock moves deal +30%.",
+     "p": {
+      "tdm": {
+       "rock": 0.3
+      }
+     }
+    },
+    {
+     "n": "Stamina",
+     "d": "Each hit you take gives 3% damage reduction for 10s (stacks 8×).",
+     "p": {
+      "hurtRedStack": [
+       0.03,
+       10,
+       8
+      ]
+     }
+    }
+   ],
+   "leg": {
+    "n": "Sand Stream",
+    "d": "A sandstorm follows you: every 2s it strikes every enemy on screen. Take 10% less damage.",
+    "p": {
+     "chip": [
+      2,
+      0.12,
+      "sand"
+     ],
+     "red": 0.1
+    }
+   }
+  },
+  "ghost": {
+   "t1": [
+    {
+     "n": "Levitate",
+     "d": "10% dodge, and Ground-type enemies deal 30% less damage to you.",
+     "p": {
+      "dodge": 0.1,
+      "redT": {
+       "ground": 0.3
+      }
+     }
+    },
+    {
+     "n": "Cursed Body",
+     "d": "Enemies that touch you have a 20% chance to flee in fear for 3s.",
+     "p": {
+      "cSt": [
+       "fe",
+       0.2,
+       3
+      ]
+     }
+    },
+    {
+     "n": "Frisk",
+     "d": "+10% coins, and elites drop 50% more coins.",
+     "p": {
+      "coin": 0.1,
+      "eliteCoin": 0.5
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Shadow Tag",
+     "d": "Enemies near you move 25% slower.",
+     "p": {
+      "slowA": 170,
+      "slowS": 0.25
+     }
+    },
+    {
+     "n": "Perish Body",
+     "d": "Enemies that touch you are cursed: after 4s, if they're below 25% HP they faint.",
+     "p": {
+      "perish": 1
+     }
+    },
+    {
+     "n": "Infiltrator",
+     "d": "+20% damage to elites and bosses, ignoring their armor and shields.",
+     "p": {
+      "vsElite": 0.2,
+      "ignArm": 1
+     }
+    }
+   ],
+   "leg": {
+    "n": "Shadow Shield",
+    "d": "Take 60% less damage while at full HP or after 5s without being hit.",
+    "p": {
+     "redFull": 0.6,
+     "redFullCD": 5
+    }
+   }
+  },
+  "dragon": {
+   "t1": [
+    {
+     "n": "Shed Skin",
+     "d": "Every 5s, shake off webs and slows and heal 3% max HP. +5% max HP.",
+     "p": {
+      "shed": 5,
+      "hpM": 0.05
+     }
+    },
+    {
+     "n": "Marvel Scale",
+     "d": "Take 20% less damage below 50% HP.",
+     "p": {
+      "redLow": 0.2
+     }
+    },
+    {
+     "n": "Rough Skin",
+     "d": "Enemies that touch you take heavy damage.",
+     "p": {
+      "thorn": 2
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Multiscale",
+     "d": "Take 50% less damage while at full HP.",
+     "p": {
+      "redFull": 0.5
+     }
+    },
+    {
+     "n": "Dragon's Maw",
+     "d": "Dragon moves deal +30%.",
+     "p": {
+      "tdm": {
+       "dragon": 0.3
+      }
+     }
+    },
+    {
+     "n": "Sheer Force",
+     "d": "+25% damage, but your moves no longer cause status effects.",
+     "p": {
+      "dmg": 0.25,
+      "sheer": 1
+     }
+    }
+   ],
+   "leg": {
+    "n": "Power Construct",
+    "d": "Once per run, dropping below 50% HP transforms you: double max HP, full heal and +20% damage.",
+    "p": {
+     "pcon": 1
+    }
+   }
+  },
+  "dark": {
+   "t1": [
+    {
+     "n": "Super Luck",
+     "d": "+12% crit chance.",
+     "p": {
+      "crit": 0.12
+     }
+    },
+    {
+     "n": "Intimidate",
+     "d": "Enemies that touch you deal 15% less damage.",
+     "p": {
+      "intim": 0.15
+     }
+    },
+    {
+     "n": "Quick Feet",
+     "d": "+5% move speed, and +25% more while slowed or standing in a hazard.",
+     "p": {
+      "spd": 0.05,
+      "qfeet": 0.25
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Moxie",
+     "d": "Each kill gives +1% damage for 10s (stacks 15×).",
+     "p": {
+      "kStack": [
+       0.01,
+       10,
+       15
+      ]
+     }
+    },
+    {
+     "n": "Dark Aura",
+     "d": "Dark moves deal +20%, and co-op allies near you deal +10%.",
+     "p": {
+      "tdm": {
+       "dark": 0.2
+      },
+      "aDmg": 0.1
+     }
+    },
+    {
+     "n": "Unnerve",
+     "d": "Elites and bosses deal 25% less damage, and enemies near you move 10% slower.",
+     "p": {
+      "redElite": 0.25,
+      "slowA": 140,
+      "slowS": 0.1
+     }
+    }
+   ],
+   "leg": {
+    "n": "Bad Dreams",
+    "d": "6% of your hits put enemies to sleep for 2s, and sleeping, slowed or frozen enemies near you take damage every second.",
+    "p": {
+     "pSleep": 0.06,
+     "dream": 170
+    }
+   }
+  },
+  "steel": {
+   "t1": [
+    {
+     "n": "Clear Body",
+     "d": "Slows, webs and gusts don't affect you. Take 10% less damage.",
+     "p": {
+      "slowImm": 1,
+      "kbImm": 1,
+      "red": 0.1
+     }
+    },
+    {
+     "n": "Light Metal",
+     "d": "+15% move speed, but -5% max HP.",
+     "p": {
+      "spd": 0.15,
+      "hpM": -0.05
+     }
+    },
+    {
+     "n": "Heavy Metal",
+     "d": "+20% max HP, but -8% move speed.",
+     "p": {
+      "hpM": 0.2,
+      "spd": -0.08
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Steelworker",
+     "d": "Steel moves deal +20%, and all moves +8%.",
+     "p": {
+      "tdm": {
+       "steel": 0.2
+      },
+      "dmg": 0.08
+     }
+    },
+    {
+     "n": "Iron Barbs",
+     "d": "Enemies that touch you take heavy damage. Take 6% less damage.",
+     "p": {
+      "thorn": 1.8,
+      "red": 0.06
+     }
+    },
+    {
+     "n": "Magnet Pull",
+     "d": "+60% pickup range.",
+     "p": {
+      "mag": 0.6
+     }
+    }
+   ],
+   "leg": {
+    "n": "Full Metal Body",
+    "d": "Slows, webs and gusts don't affect you. Take 20% less damage and deal 15% more.",
+    "p": {
+     "slowImm": 1,
+     "kbImm": 1,
+     "red": 0.2,
+     "dmg": 0.15
+    }
+   }
+  },
+  "fairy": {
+   "t1": [
+    {
+     "n": "Cute Charm",
+     "d": "Enemies that touch you have a 30% chance to be charmed and stop attacking for 2s. +15% coins.",
+     "p": {
+      "cSt": [
+       "cm",
+       0.3,
+       2
+      ],
+      "coin": 0.15
+     }
+    },
+    {
+     "n": "Friend Guard",
+     "d": "You and co-op allies near you take 10% less damage.",
+     "p": {
+      "red": 0.1,
+      "aRed": 0.1
+     }
+    },
+    {
+     "n": "Healer",
+     "d": "Regenerate 0.5 HP/sec, and co-op allies near you regenerate 0.5 HP/sec too.",
+     "p": {
+      "reg": 0.5,
+      "aReg": 0.5
+     }
+    }
+   ],
+   "t2": [
+    {
+     "n": "Pixilate",
+     "d": "+20% damage.",
+     "p": {
+      "dmg": 0.2
+     }
+    },
+    {
+     "n": "Misty Surge",
+     "d": "Every 9s a mist surrounds you for 4s: slows don't affect you and projectiles deal half damage.",
+     "p": {
+      "win": [
+       9,
+       4,
+       "mist"
+      ]
+     }
+    },
+    {
+     "n": "Unaware",
+     "d": "Elites and bosses deal 20% less damage to you.",
+     "p": {
+      "redElite": 0.2
+     }
+    }
+   ],
+   "leg": {
+    "n": "Fairy Aura",
+    "d": "Fairy moves deal +25%, co-op allies near you deal +15%, and every 10s you heal 8% max HP.",
+    "p": {
+     "tdm": {
+      "fairy": 0.25
+     },
+     "aDmg": 0.15,
+     "pulse": [
+      10,
+      0,
+      0
+     ],
+     "healp": 0.08
+    }
+   }
+  }
+ }
+}

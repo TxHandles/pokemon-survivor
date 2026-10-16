@@ -1,0 +1,4744 @@
+{
+ "_about": "All moves. tier: basic / evolved / final. shape: attack archetype. params: tuning overrides (see CONTENT.md).",
+ "moves": [
+  {
+   "id": "normal_tackle",
+   "name": "Tackle",
+   "type": "normal",
+   "shape": "jab",
+   "tier": "basic",
+   "desc": "Quick hits on the nearest foes in close range",
+   "heldItem": "claw",
+   "icon": "👊",
+   "params": {}
+  },
+  {
+   "id": "normal_quickattack",
+   "name": "Quick Attack",
+   "type": "normal",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Dash through a foe; brief speed boost after",
+   "heldItem": "boots",
+   "icon": "👊",
+   "params": {
+    "spd": 1
+   }
+  },
+  {
+   "id": "normal_doubleslap",
+   "name": "Double Slap",
+   "type": "normal",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Two fast, wide slaps",
+   "heldItem": "muscle",
+   "icon": "👊",
+   "params": {
+    "hw": 1.15,
+    "hp": 0.08,
+    "hits": 2,
+    "hm": 0.62
+   }
+  },
+  {
+   "id": "normal_furyswipes",
+   "name": "Fury Swipes",
+   "type": "normal",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Three swipes; each hit on the same foe hits harder",
+   "heldItem": "muscle",
+   "icon": "👊",
+   "params": {
+    "hits": 3,
+    "hm": 0.5
+   }
+  },
+  {
+   "id": "normal_hyperfang",
+   "name": "Hyper Fang",
+   "type": "normal",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Big front-tooth bite; may flinch",
+   "heldItem": "muscle",
+   "icon": "👊",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "normal_swift",
+   "name": "Swift",
+   "type": "normal",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Stars that never miss",
+   "heldItem": "metro",
+   "icon": "⭐",
+   "params": {}
+  },
+  {
+   "id": "normal_payday",
+   "name": "Pay Day",
+   "type": "normal",
+   "shape": "boom",
+   "tier": "basic",
+   "desc": "Coin boomerang; foes it defeats may drop extra coins",
+   "heldItem": "metro",
+   "icon": "⭐",
+   "params": {
+    "coin": 1
+   }
+  },
+  {
+   "id": "normal_round",
+   "name": "Round",
+   "type": "normal",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Sound pulse around you; louder with each nearby ally in co-op",
+   "heldItem": "eject",
+   "icon": "💥",
+   "params": {}
+  },
+  {
+   "id": "normal_rapidspin",
+   "name": "Rapid Spin",
+   "type": "normal",
+   "shape": "spin",
+   "tier": "basic",
+   "desc": "Spin in place, hitting everything around you as you move; clears slows",
+   "heldItem": "muscle",
+   "icon": "👊",
+   "params": {}
+  },
+  {
+   "id": "normal_doubleteam",
+   "name": "Double Team",
+   "type": "normal",
+   "shape": "clone",
+   "tier": "basic",
+   "desc": "Copies circle you and repeat your projectile attack",
+   "heldItem": "glove",
+   "icon": "⭐",
+   "params": {}
+  },
+  {
+   "id": "normal_bodyslam",
+   "name": "Body Slam",
+   "type": "normal",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Heavy slam in front; 30% paralysis",
+   "heldItem": "muscle",
+   "icon": "👊",
+   "params": {
+    "st": [
+     "su",
+     0.3,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "normal_triattack",
+   "name": "Tri Attack",
+   "type": "normal",
+   "shape": "proj",
+   "tier": "evolved",
+   "desc": "Three-way shot; may burn, freeze or paralyze",
+   "heldItem": "glove",
+   "icon": "⭐",
+   "params": {
+    "mode": "fan",
+    "n0": 3,
+    "spr": 0.35,
+    "st": [
+     "bn",
+     0.3,
+     3
+    ]
+   }
+  },
+  {
+   "id": "normal_hypervoice",
+   "name": "Hyper Voice",
+   "type": "normal",
+   "shape": "nova",
+   "tier": "evolved",
+   "desc": "Large sound pulse",
+   "heldItem": "wide",
+   "icon": "💥",
+   "params": {
+    "rm": 1.4,
+    "cdm": 1.25
+   }
+  },
+  {
+   "id": "normal_uproar",
+   "name": "Uproar",
+   "type": "normal",
+   "shape": "cone",
+   "tier": "evolved",
+   "desc": "Nonstop roar in a cone in front of you",
+   "heldItem": "wide",
+   "icon": "💥",
+   "params": {}
+  },
+  {
+   "id": "normal_superfang",
+   "name": "Super Fang",
+   "type": "normal",
+   "shape": "strike",
+   "tier": "evolved",
+   "desc": "Halves a random non-boss foe's HP; bosses take a fixed hit",
+   "heldItem": "lens",
+   "icon": "💥",
+   "params": {
+    "pct": 0.5
+   }
+  },
+  {
+   "id": "normal_doubleedge",
+   "name": "Double-Edge",
+   "type": "normal",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Big dash that costs a little HP",
+   "heldItem": "lifeorb",
+   "icon": "👊",
+   "params": {
+    "hpc": 0.03
+   }
+  },
+  {
+   "id": "normal_hyperbeam",
+   "name": "Hyper Beam",
+   "type": "normal",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Huge piercing beam, then a short recharge",
+   "heldItem": "choice",
+   "icon": "⭐",
+   "params": {
+    "cdm": 1.25
+   }
+  },
+  {
+   "id": "normal_gigaimpact",
+   "name": "Giga Impact",
+   "type": "normal",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "Massive dash that flattens everything in its path",
+   "heldItem": "lifeorb",
+   "icon": "👊",
+   "params": {
+    "dm": 1.3,
+    "L": 300
+   }
+  },
+  {
+   "id": "normal_boomburst",
+   "name": "Boomburst",
+   "type": "normal",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Screen-shaking pulse with a huge radius",
+   "heldItem": "wide",
+   "icon": "💥",
+   "params": {
+    "rm": 1.8,
+    "cdm": 1.5
+   }
+  },
+  {
+   "id": "normal_explosion",
+   "name": "Explosion",
+   "type": "normal",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Huge blast around you that costs a big chunk of HP",
+   "heldItem": "wide",
+   "icon": "💥",
+   "params": {
+    "rm": 1.4,
+    "cdm": 1.25,
+    "hpc": 0.12,
+    "fat": 1
+   }
+  },
+  {
+   "id": "fire_ember",
+   "name": "Ember",
+   "type": "fire",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Small fireballs at the nearest foes; 10% burn",
+   "heldItem": "glove",
+   "icon": "🔥",
+   "params": {
+    "mode": "fan",
+    "n0": 3,
+    "st": [
+     "bn",
+     0.1,
+     3
+    ]
+   }
+  },
+  {
+   "id": "fire_firefang",
+   "name": "Fire Fang",
+   "type": "fire",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Bite in front; burn or flinch",
+   "heldItem": "muscle",
+   "icon": "🐾",
+   "params": {
+    "st": [
+     "bn",
+     0.3,
+     3
+    ]
+   }
+  },
+  {
+   "id": "fire_flamewheel",
+   "name": "Flame Wheel",
+   "type": "fire",
+   "shape": "orbit",
+   "tier": "basic",
+   "desc": "Rings of fire circle you",
+   "heldItem": "metro",
+   "icon": "🔥",
+   "params": {}
+  },
+  {
+   "id": "fire_willowisp",
+   "name": "Will-O-Wisp",
+   "type": "fire",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Slow seeking flames that always burn",
+   "heldItem": "metro",
+   "icon": "🔥",
+   "params": {
+    "sp": 80,
+    "l": 5,
+    "st": [
+     "bn",
+     1,
+     3
+    ]
+   }
+  },
+  {
+   "id": "fire_flamecharge",
+   "name": "Flame Charge",
+   "type": "fire",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Dash through a foe; each use stacks move speed",
+   "heldItem": "boots",
+   "icon": "🐾",
+   "params": {
+    "spd": 1
+   }
+  },
+  {
+   "id": "fire_firespin",
+   "name": "Fire Spin",
+   "type": "fire",
+   "shape": "whirl",
+   "tier": "basic",
+   "desc": "Fire vortex on a foe that pulls others in and burns",
+   "heldItem": "focus",
+   "icon": "🌋",
+   "params": {
+    "st": [
+     "bn",
+     0.3,
+     3
+    ]
+   }
+  },
+  {
+   "id": "fire_incinerate",
+   "name": "Incinerate",
+   "type": "fire",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Rapid line of embers that burns away enemy shields",
+   "heldItem": "glove",
+   "icon": "🔥",
+   "params": {
+    "st": [
+     "bn",
+     0.3,
+     3
+    ],
+    "shb": 1
+   }
+  },
+  {
+   "id": "fire_firelash",
+   "name": "Fire Lash",
+   "type": "fire",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Flaming whip in a long line; weakens enemy defense",
+   "heldItem": "muscle",
+   "icon": "🐾",
+   "params": {
+    "shape": "rect",
+    "r": 90,
+    "rp": 14,
+    "hw": 16,
+    "hp": 2,
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "fire_flamethrower",
+   "name": "Flamethrower",
+   "type": "fire",
+   "shape": "cone",
+   "tier": "evolved",
+   "desc": "Continuous stream of fire in front of you",
+   "heldItem": "wide",
+   "icon": "🌋",
+   "params": {}
+  },
+  {
+   "id": "fire_firepunch",
+   "name": "Fire Punch",
+   "type": "fire",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Fiery punch arc that widens with levels",
+   "heldItem": "muscle",
+   "icon": "🐾",
+   "params": {}
+  },
+  {
+   "id": "fire_blazekick",
+   "name": "Blaze Kick",
+   "type": "fire",
+   "shape": "spin",
+   "tier": "evolved",
+   "desc": "Spinning flaming kicks around you; high crit",
+   "heldItem": "muscle",
+   "icon": "🐾",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "fire_heatwave",
+   "name": "Heat Wave",
+   "type": "fire",
+   "shape": "nova",
+   "tier": "evolved",
+   "desc": "Hot wind around you; burns many foes",
+   "heldItem": "wide",
+   "icon": "🌋",
+   "params": {
+    "st": [
+     "bn",
+     0.3,
+     3
+    ]
+   }
+  },
+  {
+   "id": "fire_lavaplume",
+   "name": "Lava Plume",
+   "type": "fire",
+   "shape": "aura",
+   "tier": "evolved",
+   "desc": "Scorching aura that burns anything nearby",
+   "heldItem": "metal",
+   "icon": "🐾",
+   "params": {
+    "st": [
+     "bn",
+     0.3,
+     3
+    ]
+   }
+  },
+  {
+   "id": "fire_inferno",
+   "name": "Inferno",
+   "type": "fire",
+   "shape": "rupture",
+   "tier": "evolved",
+   "desc": "A line of fire pillars marches out ahead; always burns",
+   "heldItem": "focus",
+   "icon": "🌋",
+   "params": {
+    "st": [
+     "bn",
+     1,
+     3
+    ]
+   }
+  },
+  {
+   "id": "fire_fireblast",
+   "name": "Fire Blast",
+   "type": "fire",
+   "shape": "proj",
+   "tier": "final",
+   "desc": "Huge fireball that explodes in a star",
+   "heldItem": "band",
+   "icon": "🔥",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 1.7,
+    "ex": 1
+   }
+  },
+  {
+   "id": "fire_eruption",
+   "name": "Eruption",
+   "type": "fire",
+   "shape": "erupt",
+   "tier": "final",
+   "desc": "Fire bursts under random foes; stronger at high HP",
+   "heldItem": "lifeorb",
+   "icon": "🌋",
+   "params": {
+    "hpx": 1
+   }
+  },
+  {
+   "id": "fire_overheat",
+   "name": "Overheat",
+   "type": "fire",
+   "shape": "blast",
+   "tier": "final",
+   "desc": "Enormous blast in front after a wind-up",
+   "heldItem": "muscle",
+   "icon": "🐾",
+   "params": {
+    "tele": 0.45
+   }
+  },
+  {
+   "id": "fire_flareblitz",
+   "name": "Flare Blitz",
+   "type": "fire",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "Flaming charge that costs a little HP",
+   "heldItem": "lifeorb",
+   "icon": "🐾",
+   "params": {
+    "hpc": 0.03
+   }
+  },
+  {
+   "id": "fire_sacredfire",
+   "name": "Sacred Fire",
+   "type": "fire",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A wall of sacred flame sweeps the screen; 50% burn",
+   "heldItem": "choice",
+   "icon": "🌋",
+   "params": {
+    "st": [
+     "bn",
+     0.5,
+     3
+    ]
+   }
+  },
+  {
+   "id": "water_watergun",
+   "name": "Water Gun",
+   "type": "water",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Jets of water at the nearest foes",
+   "heldItem": "glove",
+   "icon": "💧",
+   "params": {}
+  },
+  {
+   "id": "water_bubble",
+   "name": "Bubble",
+   "type": "water",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Bubbles bounce from foe to foe and slow them",
+   "heldItem": "metro",
+   "icon": "💧",
+   "params": {
+    "sp": 80,
+    "l": 5,
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "water_aquajet",
+   "name": "Aqua Jet",
+   "type": "water",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Fast water dash through a foe",
+   "heldItem": "boots",
+   "icon": "🌊",
+   "params": {
+    "dm": 0.7,
+    "cdm": 0.6
+   }
+  },
+  {
+   "id": "water_waterpulse",
+   "name": "Water Pulse",
+   "type": "water",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Water ring around you; 20% confusion",
+   "heldItem": "eject",
+   "icon": "🫧",
+   "params": {
+    "st": [
+     "cf",
+     0.2,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "water_whirlpool",
+   "name": "Whirlpool",
+   "type": "water",
+   "shape": "whirl",
+   "tier": "basic",
+   "desc": "Whirlpool on a foe that drags others in",
+   "heldItem": "focus",
+   "icon": "🫧",
+   "params": {}
+  },
+  {
+   "id": "water_bubblebeam",
+   "name": "Bubble Beam",
+   "type": "water",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Line of bubbles; slows",
+   "heldItem": "glove",
+   "icon": "💧",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "water_watershuriken",
+   "name": "Water Shuriken",
+   "type": "water",
+   "shape": "boom",
+   "tier": "basic",
+   "desc": "Two water stars that fly out and return",
+   "heldItem": "metro",
+   "icon": "💧",
+   "params": {}
+  },
+  {
+   "id": "water_aquaring",
+   "name": "Aqua Ring",
+   "type": "water",
+   "shape": "orbit",
+   "tier": "basic",
+   "desc": "Orbiting water that heals you a little on each hit",
+   "heldItem": "metro",
+   "icon": "💧",
+   "params": {
+    "lsx": 0.12
+   }
+  },
+  {
+   "id": "water_aquastep",
+   "name": "Aqua Step",
+   "type": "water",
+   "shape": "spin",
+   "tier": "basic",
+   "desc": "Dancing water spin around you; each use raises move speed",
+   "heldItem": "muscle",
+   "icon": "🌊",
+   "params": {
+    "spd": 1
+   }
+  },
+  {
+   "id": "water_brine",
+   "name": "Brine",
+   "type": "water",
+   "shape": "strike",
+   "tier": "basic",
+   "desc": "Splashes random foes; double damage on foes below half HP",
+   "heldItem": "lens",
+   "icon": "🫧",
+   "params": {
+    "vlow": 2
+   }
+  },
+  {
+   "id": "water_aquatail",
+   "name": "Aqua Tail",
+   "type": "water",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Wide tail swipe",
+   "heldItem": "razor",
+   "icon": "🌊",
+   "params": {
+    "hw": 1.15,
+    "hp": 0.08
+   }
+  },
+  {
+   "id": "water_scald",
+   "name": "Scald",
+   "type": "water",
+   "shape": "cone",
+   "tier": "evolved",
+   "desc": "Spray of boiling water in front; 30% burn",
+   "heldItem": "focus",
+   "icon": "🫧",
+   "params": {
+    "st": [
+     "bn",
+     0.3,
+     3
+    ]
+   }
+  },
+  {
+   "id": "water_surf",
+   "name": "Surf",
+   "type": "water",
+   "shape": "sweep",
+   "tier": "evolved",
+   "desc": "A wave rolls across the screen, pushing foes back",
+   "heldItem": "focus",
+   "icon": "🫧",
+   "params": {
+    "kbx": 1
+   }
+  },
+  {
+   "id": "water_muddywater",
+   "name": "Muddy Water",
+   "type": "water",
+   "shape": "sweep",
+   "tier": "evolved",
+   "desc": "A muddy wave sweeps the screen; lowers enemy accuracy",
+   "heldItem": "choice",
+   "icon": "🫧",
+   "params": {}
+  },
+  {
+   "id": "water_waterfall",
+   "name": "Waterfall",
+   "type": "water",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Crashing blow in front; may flinch",
+   "heldItem": "muscle",
+   "icon": "🌊",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "water_liquidation",
+   "name": "Liquidation",
+   "type": "water",
+   "shape": "jab",
+   "tier": "evolved",
+   "desc": "Fast water jabs that crack enemy armor",
+   "heldItem": "muscle",
+   "icon": "🌊",
+   "params": {
+    "iarm": 1
+   }
+  },
+  {
+   "id": "water_hydropump",
+   "name": "Hydro Pump",
+   "type": "water",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Pressurised jet that pierces everything",
+   "heldItem": "choice",
+   "icon": "💧",
+   "params": {}
+  },
+  {
+   "id": "water_waterspout",
+   "name": "Water Spout",
+   "type": "water",
+   "shape": "erupt",
+   "tier": "final",
+   "desc": "Geysers burst under random foes; stronger at high HP",
+   "heldItem": "lifeorb",
+   "icon": "🫧",
+   "params": {
+    "hpx": 1
+   }
+  },
+  {
+   "id": "water_wavecrash",
+   "name": "Wave Crash",
+   "type": "water",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "Huge water charge that costs a little HP",
+   "heldItem": "lifeorb",
+   "icon": "🌊",
+   "params": {
+    "dm": 1.3,
+    "L": 300,
+    "hpc": 0.03
+   }
+  },
+  {
+   "id": "water_hydrocannon",
+   "name": "Hydro Cannon",
+   "type": "water",
+   "shape": "proj",
+   "tier": "final",
+   "desc": "Massive water blast, then a short recharge",
+   "heldItem": "band",
+   "icon": "💧",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 2.21,
+    "ex": 1
+   }
+  },
+  {
+   "id": "electric_thundershock",
+   "name": "Thunder Shock",
+   "type": "electric",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Short bolts that jump to one more foe",
+   "heldItem": "glove",
+   "icon": "⚡",
+   "params": {}
+  },
+  {
+   "id": "electric_spark",
+   "name": "Spark",
+   "type": "electric",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Small electric dash; 30% paralysis",
+   "heldItem": "boots",
+   "icon": "🔌",
+   "params": {
+    "dm": 0.7,
+    "cdm": 0.6,
+    "st": [
+     "su",
+     0.3,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "electric_nuzzle",
+   "name": "Nuzzle",
+   "type": "electric",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Cheek-spark in front that always paralyzes",
+   "heldItem": "muscle",
+   "icon": "🔌",
+   "params": {
+    "st": [
+     "su",
+     1,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "electric_thunderwave",
+   "name": "Thunder Wave",
+   "type": "electric",
+   "shape": "wave",
+   "tier": "basic",
+   "desc": "Pulse that paralyzes, no damage (bosses resist)",
+   "heldItem": "claw",
+   "icon": "🌩️",
+   "params": {
+    "sk": "su"
+   }
+  },
+  {
+   "id": "electric_electroball",
+   "name": "Electro Ball",
+   "type": "electric",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Seeking ball; hits harder the faster you move",
+   "heldItem": "metro",
+   "icon": "⚡",
+   "params": {}
+  },
+  {
+   "id": "electric_chargebeam",
+   "name": "Charge Beam",
+   "type": "electric",
+   "shape": "beam",
+   "tier": "basic",
+   "desc": "Thin beam; each hit has a chance to raise your damage",
+   "heldItem": "wise",
+   "icon": "⚡",
+   "params": {
+    "dm": 0.6,
+    "cdm": 0.55,
+    "w": 7
+   }
+  },
+  {
+   "id": "electric_electroweb",
+   "name": "Electroweb",
+   "type": "electric",
+   "shape": "wave",
+   "tier": "basic",
+   "desc": "Damaging net that slows everything it touches",
+   "heldItem": "claw",
+   "icon": "🌩️",
+   "params": {
+    "sk": "sl",
+    "dmg": 1
+   }
+  },
+  {
+   "id": "electric_voltswitch",
+   "name": "Volt Switch",
+   "type": "electric",
+   "shape": "boom",
+   "tier": "basic",
+   "desc": "Electric boomerang that returns to you",
+   "heldItem": "metro",
+   "icon": "⚡",
+   "params": {}
+  },
+  {
+   "id": "electric_shockwave",
+   "name": "Shock Wave",
+   "type": "electric",
+   "shape": "chain",
+   "tier": "basic",
+   "desc": "Arc of electricity that jumps between three foes; never misses",
+   "heldItem": "glove",
+   "icon": "⚡",
+   "params": {}
+  },
+  {
+   "id": "electric_thunderbolt",
+   "name": "Thunderbolt",
+   "type": "electric",
+   "shape": "chain",
+   "tier": "evolved",
+   "desc": "Big bolt that chains through up to six foes",
+   "heldItem": "lens",
+   "icon": "⚡",
+   "params": {}
+  },
+  {
+   "id": "electric_paraboliccharge",
+   "name": "Parabolic Charge",
+   "type": "electric",
+   "shape": "chain",
+   "tier": "evolved",
+   "desc": "Chaining arc that heals you for part of the damage",
+   "heldItem": "glove",
+   "icon": "⚡",
+   "params": {
+    "lsx": 0.12
+   }
+  },
+  {
+   "id": "electric_thunderpunch",
+   "name": "Thunder Punch",
+   "type": "electric",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Shocking punch arc",
+   "heldItem": "razor",
+   "icon": "🔌",
+   "params": {}
+  },
+  {
+   "id": "electric_discharge",
+   "name": "Discharge",
+   "type": "electric",
+   "shape": "nova",
+   "tier": "evolved",
+   "desc": "Electric burst around you; 30% paralysis",
+   "heldItem": "wide",
+   "icon": "🌩️",
+   "params": {
+    "st": [
+     "su",
+     0.3,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "electric_thunderfang",
+   "name": "Thunder Fang",
+   "type": "electric",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Electric bite; paralysis or flinch",
+   "heldItem": "muscle",
+   "icon": "🔌",
+   "params": {
+    "st": [
+     "su",
+     0.2,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "electric_wildcharge",
+   "name": "Wild Charge",
+   "type": "electric",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Strong electric dash that costs a little HP",
+   "heldItem": "lifeorb",
+   "icon": "🔌",
+   "params": {
+    "hpc": 0.03
+   }
+  },
+  {
+   "id": "electric_thunder",
+   "name": "Thunder",
+   "type": "electric",
+   "shape": "strike",
+   "tier": "final",
+   "desc": "Lightning from above on random foes",
+   "heldItem": "glove",
+   "icon": "🌩️",
+   "params": {}
+  },
+  {
+   "id": "electric_zapcannon",
+   "name": "Zap Cannon",
+   "type": "electric",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Slow, heavy beam that always paralyzes",
+   "heldItem": "choice",
+   "icon": "⚡",
+   "params": {
+    "tele": 0.8,
+    "st": [
+     "su",
+     1,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "electric_volttackle",
+   "name": "Volt Tackle",
+   "type": "electric",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "Huge electric charge that costs a little HP",
+   "heldItem": "lifeorb",
+   "icon": "🔌",
+   "params": {
+    "dm": 1.3,
+    "L": 300,
+    "hpc": 0.03
+   }
+  },
+  {
+   "id": "electric_risingvoltage",
+   "name": "Rising Voltage",
+   "type": "electric",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A surge of current sweeps the screen; double damage while moving fast",
+   "heldItem": "choice",
+   "icon": "🌩️",
+   "params": {}
+  },
+  {
+   "id": "grass_leafage",
+   "name": "Leafage",
+   "type": "grass",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Leaves at the nearest foes",
+   "heldItem": "glove",
+   "icon": "🍃",
+   "params": {}
+  },
+  {
+   "id": "grass_vinewhip",
+   "name": "Vine Whip",
+   "type": "grass",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Whip lash in a long rectangle in front",
+   "heldItem": "muscle",
+   "icon": "🌿",
+   "params": {
+    "shape": "rect",
+    "r": 90,
+    "rp": 14,
+    "hw": 16,
+    "hp": 2
+   }
+  },
+  {
+   "id": "grass_absorb",
+   "name": "Absorb",
+   "type": "grass",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Seeking energy that heals you a little",
+   "heldItem": "metro",
+   "icon": "🍃",
+   "params": {
+    "ls": 0.15
+   }
+  },
+  {
+   "id": "grass_razorleaf",
+   "name": "Razor Leaf",
+   "type": "grass",
+   "shape": "boom",
+   "tier": "basic",
+   "desc": "Two leaves that fly out and return; high crit",
+   "heldItem": "metro",
+   "icon": "🍃",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "grass_bulletseed",
+   "name": "Bullet Seed",
+   "type": "grass",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Rapid line of seeds",
+   "heldItem": "glove",
+   "icon": "🍃",
+   "params": {}
+  },
+  {
+   "id": "grass_leechseed",
+   "name": "Leech Seed",
+   "type": "grass",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Seeds that drain a foe over time and heal you",
+   "heldItem": "metro",
+   "icon": "🍃",
+   "params": {
+    "ls": 0.15,
+    "sp": 160,
+    "l": 4
+   }
+  },
+  {
+   "id": "grass_magicalleaf",
+   "name": "Magical Leaf",
+   "type": "grass",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Leaves that never miss",
+   "heldItem": "metro",
+   "icon": "🍃",
+   "params": {}
+  },
+  {
+   "id": "grass_stunspore",
+   "name": "Stun Spore",
+   "type": "grass",
+   "shape": "wave",
+   "tier": "basic",
+   "desc": "Powder that paralyzes, no damage",
+   "heldItem": "claw",
+   "icon": "🌸",
+   "params": {
+    "sk": "su"
+   }
+  },
+  {
+   "id": "grass_megadrain",
+   "name": "Mega Drain",
+   "type": "grass",
+   "shape": "chain",
+   "tier": "basic",
+   "desc": "Draining arc that jumps between foes and heals you",
+   "heldItem": "glove",
+   "icon": "🍃",
+   "params": {
+    "lsx": 0.12
+   }
+  },
+  {
+   "id": "grass_gigadrain",
+   "name": "Giga Drain",
+   "type": "grass",
+   "shape": "homing",
+   "tier": "evolved",
+   "desc": "Strong draining energy",
+   "heldItem": "metro",
+   "icon": "🍃",
+   "params": {
+    "dm": 1.4,
+    "r": 11,
+    "cdm": 1.2
+   }
+  },
+  {
+   "id": "grass_petalblizzard",
+   "name": "Petal Blizzard",
+   "type": "grass",
+   "shape": "whirl",
+   "tier": "evolved",
+   "desc": "Petal storm that pulls foes in",
+   "heldItem": "focus",
+   "icon": "🌸",
+   "params": {}
+  },
+  {
+   "id": "grass_seedbomb",
+   "name": "Seed Bomb",
+   "type": "grass",
+   "shape": "strike",
+   "tier": "evolved",
+   "desc": "Seeds burst on random foes",
+   "heldItem": "glove",
+   "icon": "🌸",
+   "params": {}
+  },
+  {
+   "id": "grass_energyball",
+   "name": "Energy Ball",
+   "type": "grass",
+   "shape": "proj",
+   "tier": "evolved",
+   "desc": "Big ball of nature energy",
+   "heldItem": "band",
+   "icon": "🍃",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 1.7,
+    "ex": 1
+   }
+  },
+  {
+   "id": "grass_leaftornado",
+   "name": "Leaf Tornado",
+   "type": "grass",
+   "shape": "spin",
+   "tier": "evolved",
+   "desc": "Whirling leaves around you as you move; lowers enemy accuracy",
+   "heldItem": "muscle",
+   "icon": "🌿",
+   "params": {}
+  },
+  {
+   "id": "grass_seedflare",
+   "name": "Seed Flare",
+   "type": "grass",
+   "shape": "cone",
+   "tier": "evolved",
+   "desc": "Seed shockwave in front; may lower enemy defense",
+   "heldItem": "wide",
+   "icon": "🌸",
+   "params": {}
+  },
+  {
+   "id": "grass_solarbeam",
+   "name": "Solar Beam",
+   "type": "grass",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Huge beam after a charge; no charge in sun",
+   "heldItem": "choice",
+   "icon": "🍃",
+   "params": {
+    "tele": 0.8
+   }
+  },
+  {
+   "id": "grass_leafstorm",
+   "name": "Leaf Storm",
+   "type": "grass",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Massive leaf burst around you",
+   "heldItem": "wide",
+   "icon": "🌸",
+   "params": {
+    "rm": 1.4,
+    "cdm": 1.25
+   }
+  },
+  {
+   "id": "grass_petaldance",
+   "name": "Petal Dance",
+   "type": "grass",
+   "shape": "orbit",
+   "tier": "final",
+   "desc": "Wild petals spin around you for a while",
+   "heldItem": "wide",
+   "icon": "🍃",
+   "params": {}
+  },
+  {
+   "id": "grass_frenzyplant",
+   "name": "Frenzy Plant",
+   "type": "grass",
+   "shape": "rupture",
+   "tier": "final",
+   "desc": "Giant roots tear out of the ground in a line ahead",
+   "heldItem": "focus",
+   "icon": "🌸",
+   "params": {
+    "st": [
+     "rt",
+     0.5,
+     1
+    ]
+   }
+  },
+  {
+   "id": "grass_powerwhip",
+   "name": "Power Whip",
+   "type": "grass",
+   "shape": "arc",
+   "tier": "final",
+   "desc": "Huge vine lash all around you",
+   "heldItem": "razor",
+   "icon": "🌿",
+   "params": {
+    "shape": "360",
+    "hw": 3.1416,
+    "tele": 0.2,
+    "dm": 0.85
+   }
+  },
+  {
+   "id": "ice_powdersnow",
+   "name": "Powder Snow",
+   "type": "ice",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Small cold pulse; 10% freeze",
+   "heldItem": "eject",
+   "icon": "🌨️",
+   "params": {
+    "dm": 0.75,
+    "rm": 0.75,
+    "cdm": 0.8,
+    "st": [
+     "fz",
+     0.1,
+     1
+    ]
+   }
+  },
+  {
+   "id": "ice_iceshard",
+   "name": "Ice Shard",
+   "type": "ice",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Very fast ice shards",
+   "heldItem": "glove",
+   "icon": "❄️",
+   "params": {
+    "sp": 600,
+    "cdm": 0.8,
+    "dm": 0.8
+   }
+  },
+  {
+   "id": "ice_icywind",
+   "name": "Icy Wind",
+   "type": "ice",
+   "shape": "cone",
+   "tier": "basic",
+   "desc": "Cold gust in front that slows everything it hits",
+   "heldItem": "wide",
+   "icon": "🌨️",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "ice_icefang",
+   "name": "Ice Fang",
+   "type": "ice",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Bite in front; freeze or flinch",
+   "heldItem": "muscle",
+   "icon": "🧊",
+   "params": {
+    "st": [
+     "fz",
+     0.2,
+     1
+    ]
+   }
+  },
+  {
+   "id": "ice_frostbreath",
+   "name": "Frost Breath",
+   "type": "ice",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Icy breath that always crits",
+   "heldItem": "glove",
+   "icon": "❄️",
+   "params": {
+    "cr": 1
+   }
+  },
+  {
+   "id": "ice_iceball",
+   "name": "Ice Ball",
+   "type": "ice",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Rolling ball that hits harder each time",
+   "heldItem": "metro",
+   "icon": "❄️",
+   "params": {}
+  },
+  {
+   "id": "ice_aurorabeam",
+   "name": "Aurora Beam",
+   "type": "ice",
+   "shape": "beam",
+   "tier": "basic",
+   "desc": "Rainbow beam that lowers enemy damage",
+   "heldItem": "wise",
+   "icon": "❄️",
+   "params": {
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "ice_iciclespear",
+   "name": "Icicle Spear",
+   "type": "ice",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Rapid line of icicles",
+   "heldItem": "glove",
+   "icon": "❄️",
+   "params": {}
+  },
+  {
+   "id": "ice_icespinner",
+   "name": "Ice Spinner",
+   "type": "ice",
+   "shape": "spin",
+   "tier": "basic",
+   "desc": "Spin on ice blades, hitting everything around you",
+   "heldItem": "muscle",
+   "icon": "🧊",
+   "params": {}
+  },
+  {
+   "id": "ice_icebeam",
+   "name": "Ice Beam",
+   "type": "ice",
+   "shape": "beam",
+   "tier": "evolved",
+   "desc": "Freezing beam that pierces everything",
+   "heldItem": "wise",
+   "icon": "❄️",
+   "params": {
+    "st": [
+     "fz",
+     0.12,
+     1
+    ]
+   }
+  },
+  {
+   "id": "ice_icepunch",
+   "name": "Ice Punch",
+   "type": "ice",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Freezing punch arc",
+   "heldItem": "razor",
+   "icon": "🧊",
+   "params": {
+    "st": [
+     "fz",
+     0.12,
+     1
+    ]
+   }
+  },
+  {
+   "id": "ice_freezedry",
+   "name": "Freeze-Dry",
+   "type": "ice",
+   "shape": "proj",
+   "tier": "evolved",
+   "desc": "Super effective against Water types",
+   "heldItem": "glove",
+   "icon": "❄️",
+   "params": {
+    "vty": "water"
+   }
+  },
+  {
+   "id": "ice_avalanche",
+   "name": "Avalanche",
+   "type": "ice",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Heavy blow; double damage if you were just hit",
+   "heldItem": "muscle",
+   "icon": "🧊",
+   "params": {}
+  },
+  {
+   "id": "ice_icehammer",
+   "name": "Ice Hammer",
+   "type": "ice",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Huge icy fist slam in front",
+   "heldItem": "band",
+   "icon": "🧊",
+   "params": {}
+  },
+  {
+   "id": "ice_tripleaxel",
+   "name": "Triple Axel",
+   "type": "ice",
+   "shape": "spin",
+   "tier": "evolved",
+   "desc": "Three spinning kicks, each stronger than the last",
+   "heldItem": "boots",
+   "icon": "🧊",
+   "params": {}
+  },
+  {
+   "id": "ice_blizzard",
+   "name": "Blizzard",
+   "type": "ice",
+   "shape": "strike",
+   "tier": "final",
+   "desc": "Ice storm on many random foes; 10% freeze",
+   "heldItem": "glove",
+   "icon": "🌨️",
+   "params": {
+    "n0": 3,
+    "st": [
+     "fz",
+     0.1,
+     1
+    ]
+   }
+  },
+  {
+   "id": "ice_iciclecrash",
+   "name": "Icicle Crash",
+   "type": "ice",
+   "shape": "rupture",
+   "tier": "final",
+   "desc": "A line of huge icicles erupts ahead; may flinch",
+   "heldItem": "focus",
+   "icon": "🌨️",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "ice_glaciallance",
+   "name": "Glacial Lance",
+   "type": "ice",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "Giant ice lances sweep the screen, slowing every foe",
+   "heldItem": "choice",
+   "icon": "🌨️",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "ice_mountaingale",
+   "name": "Mountain Gale",
+   "type": "ice",
+   "shape": "blast",
+   "tier": "final",
+   "desc": "Hurls giant chunks of ice in front; may flinch",
+   "heldItem": "muscle",
+   "icon": "🧊",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "fighting_karatechop",
+   "name": "Karate Chop",
+   "type": "fighting",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Chop in front; high crit chance",
+   "heldItem": "muscle",
+   "icon": "🦵",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "fighting_lowkick",
+   "name": "Low Kick",
+   "type": "fighting",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Sweeping kick; stronger against big foes",
+   "heldItem": "muscle",
+   "icon": "🦵",
+   "params": {}
+  },
+  {
+   "id": "fighting_rocksmash",
+   "name": "Rock Smash",
+   "type": "fighting",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Punch that cracks enemy armor",
+   "heldItem": "muscle",
+   "icon": "🦵",
+   "params": {
+    "iarm": 1
+   }
+  },
+  {
+   "id": "fighting_machpunch",
+   "name": "Mach Punch",
+   "type": "fighting",
+   "shape": "jab",
+   "tier": "basic",
+   "desc": "Lightning jabs at close foes",
+   "heldItem": "claw",
+   "icon": "🦵",
+   "params": {}
+  },
+  {
+   "id": "fighting_doublekick",
+   "name": "Double Kick",
+   "type": "fighting",
+   "shape": "twin",
+   "tier": "basic",
+   "desc": "Two kicks side by side at the nearest foe",
+   "heldItem": "glove",
+   "icon": "🥊",
+   "params": {}
+  },
+  {
+   "id": "fighting_forcepalm",
+   "name": "Force Palm",
+   "type": "fighting",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Shockwave palm; 30% paralysis",
+   "heldItem": "glove",
+   "icon": "🥊",
+   "params": {
+    "st": [
+     "su",
+     0.3,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "fighting_vacuumwave",
+   "name": "Vacuum Wave",
+   "type": "fighting",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Very fast wind punch",
+   "heldItem": "glove",
+   "icon": "🥊",
+   "params": {
+    "sp": 600,
+    "cdm": 0.8,
+    "dm": 0.8
+   }
+  },
+  {
+   "id": "fighting_rollingkick",
+   "name": "Rolling Kick",
+   "type": "fighting",
+   "shape": "spin",
+   "tier": "basic",
+   "desc": "Spinning kicks around you; may flinch",
+   "heldItem": "muscle",
+   "icon": "🦵",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "fighting_seismictoss",
+   "name": "Seismic Toss",
+   "type": "fighting",
+   "shape": "strike",
+   "tier": "basic",
+   "desc": "Throws a random foe for damage based on your level",
+   "heldItem": "lens",
+   "icon": "💢",
+   "params": {}
+  },
+  {
+   "id": "fighting_brickbreak",
+   "name": "Brick Break",
+   "type": "fighting",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Heavy chop that breaks enemy shields",
+   "heldItem": "muscle",
+   "icon": "🦵",
+   "params": {
+    "shb": 1
+   }
+  },
+  {
+   "id": "fighting_aurasphere",
+   "name": "Aura Sphere",
+   "type": "fighting",
+   "shape": "homing",
+   "tier": "evolved",
+   "desc": "Aura ball that never misses",
+   "heldItem": "wise",
+   "icon": "🥊",
+   "params": {}
+  },
+  {
+   "id": "fighting_drainpunch",
+   "name": "Drain Punch",
+   "type": "fighting",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Punch that heals you",
+   "heldItem": "razor",
+   "icon": "🦵",
+   "params": {
+    "ls": 0.15
+   }
+  },
+  {
+   "id": "fighting_crosschop",
+   "name": "Cross Chop",
+   "type": "fighting",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Wide X-chop; very high crit chance",
+   "heldItem": "muscle",
+   "icon": "🦵",
+   "params": {
+    "hw": 1.15,
+    "hp": 0.08,
+    "cr": 0.3
+   }
+  },
+  {
+   "id": "fighting_ragefist",
+   "name": "Rage Fist",
+   "type": "fighting",
+   "shape": "jab",
+   "tier": "evolved",
+   "desc": "Punches that grow stronger each time you are hit this run",
+   "heldItem": "muscle",
+   "icon": "🦵",
+   "params": {}
+  },
+  {
+   "id": "fighting_submission",
+   "name": "Submission",
+   "type": "fighting",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Grappling charge that costs a little HP",
+   "heldItem": "boots",
+   "icon": "🦵",
+   "params": {
+    "hpc": 0.03
+   }
+  },
+  {
+   "id": "fighting_closecombat",
+   "name": "Close Combat",
+   "type": "fighting",
+   "shape": "blast",
+   "tier": "final",
+   "desc": "Huge flurry in front after a short wind-up",
+   "heldItem": "muscle",
+   "icon": "🦵",
+   "params": {
+    "tele": 0.45
+   }
+  },
+  {
+   "id": "fighting_dynamicpunch",
+   "name": "Dynamic Punch",
+   "type": "fighting",
+   "shape": "strike",
+   "tier": "final",
+   "desc": "Explosive punches on random foes; always confuse",
+   "heldItem": "glove",
+   "icon": "💢",
+   "params": {
+    "st": [
+     "cf",
+     1,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "fighting_focusblast",
+   "name": "Focus Blast",
+   "type": "fighting",
+   "shape": "proj",
+   "tier": "final",
+   "desc": "Massive slow energy ball",
+   "heldItem": "band",
+   "icon": "🥊",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 1.7,
+    "ex": 1
+   }
+  },
+  {
+   "id": "fighting_superpower",
+   "name": "Superpower",
+   "type": "fighting",
+   "shape": "rupture",
+   "tier": "final",
+   "desc": "Shockwave of force tears the ground in a line ahead",
+   "heldItem": "focus",
+   "icon": "💢",
+   "params": {}
+  },
+  {
+   "id": "poison_poisonsting",
+   "name": "Poison Sting",
+   "type": "poison",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Stingers at the nearest foes; 30% poison",
+   "heldItem": "glove",
+   "icon": "☠️",
+   "params": {
+    "mode": "fan",
+    "n0": 3,
+    "st": [
+     "ps",
+     0.3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "poison_acid",
+   "name": "Acid",
+   "type": "poison",
+   "shape": "sludge",
+   "tier": "basic",
+   "desc": "Acid blobs spray around you",
+   "heldItem": "wide",
+   "icon": "☠️",
+   "params": {}
+  },
+  {
+   "id": "poison_smog",
+   "name": "Smog",
+   "type": "poison",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Toxic cloud pulse; 40% poison",
+   "heldItem": "eject",
+   "icon": "🟣",
+   "params": {
+    "st": [
+     "ps",
+     0.4,
+     4
+    ]
+   }
+  },
+  {
+   "id": "poison_poisonfang",
+   "name": "Poison Fang",
+   "type": "poison",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Bite in front; often badly poisons",
+   "heldItem": "muscle",
+   "icon": "🧪",
+   "params": {
+    "st": [
+     "ps",
+     0.6,
+     5
+    ]
+   }
+  },
+  {
+   "id": "poison_toxic",
+   "name": "Toxic",
+   "type": "poison",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Seeking toxin that badly poisons",
+   "heldItem": "metro",
+   "icon": "☠️",
+   "params": {
+    "st": [
+     "ps",
+     0.6,
+     5
+    ]
+   }
+  },
+  {
+   "id": "poison_clearsmog",
+   "name": "Clear Smog",
+   "type": "poison",
+   "shape": "whirl",
+   "tier": "basic",
+   "desc": "Cloud on a foe that strips its buffs",
+   "heldItem": "focus",
+   "icon": "🟣",
+   "params": {}
+  },
+  {
+   "id": "poison_barbbarrage",
+   "name": "Barb Barrage",
+   "type": "poison",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Line of barbs; extra damage to poisoned foes",
+   "heldItem": "glove",
+   "icon": "☠️",
+   "params": {
+    "vps": 1.5
+   }
+  },
+  {
+   "id": "poison_poisongas",
+   "name": "Poison Gas",
+   "type": "poison",
+   "shape": "cone",
+   "tier": "basic",
+   "desc": "Gas spray in front that poisons, little damage",
+   "heldItem": "wide",
+   "icon": "🟣",
+   "params": {
+    "dm": 0.35,
+    "st": [
+     "ps",
+     0.5,
+     4
+    ]
+   }
+  },
+  {
+   "id": "poison_poisontail",
+   "name": "Poison Tail",
+   "type": "poison",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Tail swipe; high crit, 10% poison",
+   "heldItem": "muscle",
+   "icon": "🧪",
+   "params": {
+    "st": [
+     "ps",
+     0.1,
+     4
+    ],
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "poison_venoshock",
+   "name": "Venoshock",
+   "type": "poison",
+   "shape": "strike",
+   "tier": "evolved",
+   "desc": "Strikes random foes; double damage if poisoned",
+   "heldItem": "glove",
+   "icon": "🟣",
+   "params": {
+    "vps": 2
+   }
+  },
+  {
+   "id": "poison_sludgebomb",
+   "name": "Sludge Bomb",
+   "type": "poison",
+   "shape": "proj",
+   "tier": "evolved",
+   "desc": "Big sludge ball that splashes",
+   "heldItem": "band",
+   "icon": "☠️",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 1.7,
+    "ex": 1
+   }
+  },
+  {
+   "id": "poison_poisonjab",
+   "name": "Poison Jab",
+   "type": "poison",
+   "shape": "jab",
+   "tier": "evolved",
+   "desc": "Fast toxic jabs; 30% poison",
+   "heldItem": "claw",
+   "icon": "🧪",
+   "params": {
+    "st": [
+     "ps",
+     0.3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "poison_toxicspikes",
+   "name": "Toxic Spikes",
+   "type": "poison",
+   "shape": "mine",
+   "tier": "evolved",
+   "desc": "Drops spikes that burst and badly poison foes who step on them",
+   "heldItem": "heat",
+   "icon": "🟣",
+   "params": {
+    "st": [
+     "ps",
+     0.6,
+     5
+    ]
+   }
+  },
+  {
+   "id": "poison_crosspoison",
+   "name": "Cross Poison",
+   "type": "poison",
+   "shape": "twin",
+   "tier": "evolved",
+   "desc": "Two poison slashes; high crit",
+   "heldItem": "glove",
+   "icon": "☠️",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "poison_sludge",
+   "name": "Sludge",
+   "type": "poison",
+   "shape": "cone",
+   "tier": "evolved",
+   "desc": "Thick sludge spray in front; 30% poison",
+   "heldItem": "wide",
+   "icon": "🟣",
+   "params": {
+    "st": [
+     "ps",
+     0.3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "poison_mortalspin",
+   "name": "Mortal Spin",
+   "type": "poison",
+   "shape": "spin",
+   "tier": "evolved",
+   "desc": "Spin that poisons everything around you",
+   "heldItem": "boots",
+   "icon": "🧪",
+   "params": {
+    "st": [
+     "ps",
+     0.5,
+     4
+    ]
+   }
+  },
+  {
+   "id": "poison_gunkshot",
+   "name": "Gunk Shot",
+   "type": "poison",
+   "shape": "proj",
+   "tier": "final",
+   "desc": "Huge garbage shot that splashes",
+   "heldItem": "band",
+   "icon": "☠️",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 1.7,
+    "ex": 1
+   }
+  },
+  {
+   "id": "poison_sludgewave",
+   "name": "Sludge Wave",
+   "type": "poison",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A giant wave of sludge sweeps the screen",
+   "heldItem": "choice",
+   "icon": "🟣",
+   "params": {}
+  },
+  {
+   "id": "poison_belch",
+   "name": "Belch",
+   "type": "poison",
+   "shape": "blast",
+   "tier": "final",
+   "desc": "Enormous toxic blast in front after a wind-up",
+   "heldItem": "muscle",
+   "icon": "🧪",
+   "params": {
+    "tele": 0.45
+   }
+  },
+  {
+   "id": "ground_mudslap",
+   "name": "Mud-Slap",
+   "type": "ground",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Mud that lowers enemy accuracy",
+   "heldItem": "glove",
+   "icon": "🟤",
+   "params": {}
+  },
+  {
+   "id": "ground_sandattack",
+   "name": "Sand Attack",
+   "type": "ground",
+   "shape": "wave",
+   "tier": "basic",
+   "desc": "Sand pulse that slows, no damage",
+   "heldItem": "claw",
+   "icon": "🏜️",
+   "params": {
+    "sk": "sl"
+   }
+  },
+  {
+   "id": "ground_mudshot",
+   "name": "Mud Shot",
+   "type": "ground",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Line of mud; slows",
+   "heldItem": "glove",
+   "icon": "🟤",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "ground_bulldoze",
+   "name": "Bulldoze",
+   "type": "ground",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Ground stomp that slows everything nearby",
+   "heldItem": "eject",
+   "icon": "🏜️",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ],
+    "fat": 1
+   }
+  },
+  {
+   "id": "ground_dig",
+   "name": "Dig",
+   "type": "ground",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Burrow under a foe and burst up beneath it",
+   "heldItem": "boots",
+   "icon": "⛏️",
+   "params": {}
+  },
+  {
+   "id": "ground_magnitude",
+   "name": "Magnitude",
+   "type": "ground",
+   "shape": "strike",
+   "tier": "basic",
+   "desc": "Tremors of random strength on random foes",
+   "heldItem": "lens",
+   "icon": "🏜️",
+   "params": {}
+  },
+  {
+   "id": "ground_boneclub",
+   "name": "Bone Club",
+   "type": "ground",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Bone swing in front; may flinch",
+   "heldItem": "muscle",
+   "icon": "⛏️",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "ground_bonemerang",
+   "name": "Bonemerang",
+   "type": "ground",
+   "shape": "boom",
+   "tier": "basic",
+   "desc": "Bone that flies out and back, hitting twice",
+   "heldItem": "metro",
+   "icon": "🟤",
+   "params": {}
+  },
+  {
+   "id": "ground_sandtomb",
+   "name": "Sand Tomb",
+   "type": "ground",
+   "shape": "whirl",
+   "tier": "basic",
+   "desc": "Sand vortex on a foe that traps others nearby",
+   "heldItem": "focus",
+   "icon": "🏜️",
+   "params": {}
+  },
+  {
+   "id": "ground_earthpower",
+   "name": "Earth Power",
+   "type": "ground",
+   "shape": "erupt",
+   "tier": "evolved",
+   "desc": "Ground bursts under random foes",
+   "heldItem": "lifeorb",
+   "icon": "🏜️",
+   "params": {}
+  },
+  {
+   "id": "ground_drillrun",
+   "name": "Drill Run",
+   "type": "ground",
+   "shape": "spin",
+   "tier": "evolved",
+   "desc": "Drill-spin through foes around you; high crit",
+   "heldItem": "boots",
+   "icon": "⛏️",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "ground_sandstorm",
+   "name": "Sandstorm",
+   "type": "ground",
+   "shape": "aura",
+   "tier": "evolved",
+   "desc": "Sandstorm around you that chips nearby foes",
+   "heldItem": "left",
+   "icon": "⛏️",
+   "params": {}
+  },
+  {
+   "id": "ground_stompingtantrum",
+   "name": "Stomping Tantrum",
+   "type": "ground",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Heavy stomp in front",
+   "heldItem": "band",
+   "icon": "⛏️",
+   "params": {}
+  },
+  {
+   "id": "ground_spikes",
+   "name": "Spikes",
+   "type": "ground",
+   "shape": "mine",
+   "tier": "evolved",
+   "desc": "Scatters spikes that burst under foes who step on them",
+   "heldItem": "heat",
+   "icon": "🏜️",
+   "params": {}
+  },
+  {
+   "id": "ground_scorchingsands",
+   "name": "Scorching Sands",
+   "type": "ground",
+   "shape": "cone",
+   "tier": "evolved",
+   "desc": "Spray of hot sand in front; 30% burn",
+   "heldItem": "focus",
+   "icon": "🏜️",
+   "params": {
+    "st": [
+     "bn",
+     0.3,
+     3
+    ]
+   }
+  },
+  {
+   "id": "ground_highhorsepower",
+   "name": "High Horsepower",
+   "type": "ground",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Galloping charge through a line of foes",
+   "heldItem": "lifeorb",
+   "icon": "⛏️",
+   "params": {}
+  },
+  {
+   "id": "ground_earthquake",
+   "name": "Earthquake",
+   "type": "ground",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Huge quake that hits everything around you",
+   "heldItem": "wide",
+   "icon": "🏜️",
+   "params": {
+    "rm": 1.4,
+    "cdm": 1.25,
+    "fat": 1
+   }
+  },
+  {
+   "id": "ground_precipiceblades",
+   "name": "Precipice Blades",
+   "type": "ground",
+   "shape": "rupture",
+   "tier": "final",
+   "desc": "Blades of stone burst out of the ground in a line ahead",
+   "heldItem": "focus",
+   "icon": "🏜️",
+   "params": {}
+  },
+  {
+   "id": "ground_headlongrush",
+   "name": "Headlong Rush",
+   "type": "ground",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "All-out charge that costs a little HP",
+   "heldItem": "lifeorb",
+   "icon": "⛏️",
+   "params": {
+    "dm": 1.3,
+    "L": 300,
+    "hpc": 0.03
+   }
+  },
+  {
+   "id": "flying_gust",
+   "name": "Gust",
+   "type": "flying",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Wind pulse that pushes foes back",
+   "heldItem": "eject",
+   "icon": "🦅",
+   "params": {
+    "kbx": 1
+   }
+  },
+  {
+   "id": "flying_peck",
+   "name": "Peck",
+   "type": "flying",
+   "shape": "jab",
+   "tier": "basic",
+   "desc": "Quick pecks at close foes",
+   "heldItem": "claw",
+   "icon": "🌪️",
+   "params": {}
+  },
+  {
+   "id": "flying_wingattack",
+   "name": "Wing Attack",
+   "type": "flying",
+   "shape": "twin",
+   "tier": "basic",
+   "desc": "Two wing blades side by side",
+   "heldItem": "glove",
+   "icon": "🪶",
+   "params": {}
+  },
+  {
+   "id": "flying_aircutter",
+   "name": "Air Cutter",
+   "type": "flying",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Fan of wind blades; high crit",
+   "heldItem": "glove",
+   "icon": "🪶",
+   "params": {
+    "mode": "fan",
+    "n0": 3,
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "flying_aerialace",
+   "name": "Aerial Ace",
+   "type": "flying",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Slash that never misses",
+   "heldItem": "metro",
+   "icon": "🪶",
+   "params": {}
+  },
+  {
+   "id": "flying_pluck",
+   "name": "Pluck",
+   "type": "flying",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Snatching strike in front",
+   "heldItem": "muscle",
+   "icon": "🌪️",
+   "params": {}
+  },
+  {
+   "id": "flying_acrobatics",
+   "name": "Acrobatics",
+   "type": "flying",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Quick aerial dash; faster with no held items",
+   "heldItem": "boots",
+   "icon": "🌪️",
+   "params": {
+    "dm": 0.7,
+    "cdm": 0.6
+   }
+  },
+  {
+   "id": "flying_whirlwind",
+   "name": "Whirlwind",
+   "type": "flying",
+   "shape": "cone",
+   "tier": "basic",
+   "desc": "Gust of wind in front that blows foes away",
+   "heldItem": "wide",
+   "icon": "🦅",
+   "params": {
+    "kbx": 1
+   }
+  },
+  {
+   "id": "flying_featherdance",
+   "name": "Feather Dance",
+   "type": "flying",
+   "shape": "orbit",
+   "tier": "basic",
+   "desc": "Orbiting feathers that weaken foes they touch",
+   "heldItem": "metro",
+   "icon": "🪶",
+   "params": {
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "flying_airslash",
+   "name": "Air Slash",
+   "type": "flying",
+   "shape": "proj",
+   "tier": "evolved",
+   "desc": "Big wind blade; may flinch",
+   "heldItem": "band",
+   "icon": "🪶",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 1.7,
+    "ex": 1,
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "flying_drillpeck",
+   "name": "Drill Peck",
+   "type": "flying",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Spinning dash through a line of foes",
+   "heldItem": "boots",
+   "icon": "🌪️",
+   "params": {}
+  },
+  {
+   "id": "flying_fly",
+   "name": "Fly",
+   "type": "flying",
+   "shape": "strike",
+   "tier": "evolved",
+   "desc": "Swoop down onto a random foe",
+   "heldItem": "glove",
+   "icon": "🦅",
+   "params": {}
+  },
+  {
+   "id": "flying_bounce",
+   "name": "Bounce",
+   "type": "flying",
+   "shape": "strike",
+   "tier": "evolved",
+   "desc": "Land on a foe; 30% paralysis",
+   "heldItem": "lens",
+   "icon": "🦅",
+   "params": {
+    "st": [
+     "su",
+     0.3,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "flying_oblivionwing",
+   "name": "Oblivion Wing",
+   "type": "flying",
+   "shape": "chain",
+   "tier": "evolved",
+   "desc": "Draining wing-light that jumps foe to foe and heals you",
+   "heldItem": "lens",
+   "icon": "🪶",
+   "params": {
+    "lsx": 0.12
+   }
+  },
+  {
+   "id": "flying_tailwind",
+   "name": "Tailwind",
+   "type": "flying",
+   "shape": "sweep",
+   "tier": "evolved",
+   "desc": "A gale sweeps the screen, pushing foes back and speeding you up",
+   "heldItem": "focus",
+   "icon": "🦅",
+   "params": {
+    "kbx": 1,
+    "spd": 1
+   }
+  },
+  {
+   "id": "flying_hurricane",
+   "name": "Hurricane",
+   "type": "flying",
+   "shape": "whirl",
+   "tier": "final",
+   "desc": "Huge storm that pulls foes in; may confuse",
+   "heldItem": "wide",
+   "icon": "🦅",
+   "params": {
+    "st": [
+     "cf",
+     0.15,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "flying_bravebird",
+   "name": "Brave Bird",
+   "type": "flying",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "Massive dive that costs a little HP",
+   "heldItem": "lifeorb",
+   "icon": "🌪️",
+   "params": {
+    "dm": 1.3,
+    "L": 300,
+    "hpc": 0.03
+   }
+  },
+  {
+   "id": "flying_skyattack",
+   "name": "Sky Attack",
+   "type": "flying",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Glowing strike after a charge; high crit",
+   "heldItem": "choice",
+   "icon": "🪶",
+   "params": {
+    "tele": 0.8,
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "flying_aeroblast",
+   "name": "Aeroblast",
+   "type": "flying",
+   "shape": "rupture",
+   "tier": "final",
+   "desc": "A line of vacuum blasts tears out ahead; high crit",
+   "heldItem": "focus",
+   "icon": "🦅",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "psychic_confusion",
+   "name": "Confusion",
+   "type": "psychic",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Psychic bolts; 10% confusion",
+   "heldItem": "glove",
+   "icon": "🔮",
+   "params": {
+    "st": [
+     "cf",
+     0.1,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "psychic_psybeam",
+   "name": "Psybeam",
+   "type": "psychic",
+   "shape": "beam",
+   "tier": "basic",
+   "desc": "Thin psychic beam; may confuse",
+   "heldItem": "wise",
+   "icon": "🔮",
+   "params": {
+    "dm": 0.6,
+    "cdm": 0.55,
+    "w": 7,
+    "st": [
+     "cf",
+     0.15,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "psychic_psywave",
+   "name": "Psywave",
+   "type": "psychic",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Wave of random strength around you",
+   "heldItem": "eject",
+   "icon": "👁️",
+   "params": {}
+  },
+  {
+   "id": "psychic_psychocut",
+   "name": "Psycho Cut",
+   "type": "psychic",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Psychic blade in front; high crit",
+   "heldItem": "muscle",
+   "icon": "🧠",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "psychic_extrasensory",
+   "name": "Extrasensory",
+   "type": "psychic",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Seeking psychic orb; may flinch",
+   "heldItem": "metro",
+   "icon": "🔮",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "psychic_heartstamp",
+   "name": "Heart Stamp",
+   "type": "psychic",
+   "shape": "jab",
+   "tier": "basic",
+   "desc": "Quick stamps at close foes; may flinch",
+   "heldItem": "claw",
+   "icon": "🧠",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "psychic_lightscreen",
+   "name": "Light Screen",
+   "type": "psychic",
+   "shape": "screen",
+   "tier": "basic",
+   "desc": "Orbiting screens that each block one hit",
+   "heldItem": "metal",
+   "icon": "🔮",
+   "params": {}
+  },
+  {
+   "id": "psychic_teleport",
+   "name": "Teleport",
+   "type": "psychic",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Blink to a nearby spot, leaving a burst where you were",
+   "heldItem": "boots",
+   "icon": "🧠",
+   "params": {}
+  },
+  {
+   "id": "psychic_psyshieldbash",
+   "name": "Psyshield Bash",
+   "type": "psychic",
+   "shape": "spin",
+   "tier": "basic",
+   "desc": "Spin wrapped in psychic energy, hitting everything around you",
+   "heldItem": "muscle",
+   "icon": "🧠",
+   "params": {}
+  },
+  {
+   "id": "psychic_psychic",
+   "name": "Psychic",
+   "type": "psychic",
+   "shape": "strike",
+   "tier": "evolved",
+   "desc": "Lifts and slams random foes",
+   "heldItem": "glove",
+   "icon": "👁️",
+   "params": {}
+  },
+  {
+   "id": "psychic_psyshock",
+   "name": "Psyshock",
+   "type": "psychic",
+   "shape": "homing",
+   "tier": "evolved",
+   "desc": "Strong orb that ignores enemy armor",
+   "heldItem": "metro",
+   "icon": "🔮",
+   "params": {
+    "dm": 1.4,
+    "r": 11,
+    "cdm": 1.2,
+    "iarm": 1
+   }
+  },
+  {
+   "id": "psychic_zenheadbutt",
+   "name": "Zen Headbutt",
+   "type": "psychic",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Psychic headbutt dash; may flinch",
+   "heldItem": "boots",
+   "icon": "🧠",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "psychic_futuresight",
+   "name": "Future Sight",
+   "type": "psychic",
+   "shape": "strike",
+   "tier": "evolved",
+   "desc": "Marks foes, then hits them hard a few seconds later",
+   "heldItem": "lens",
+   "icon": "👁️",
+   "params": {}
+  },
+  {
+   "id": "psychic_psychoshift",
+   "name": "Psycho Shift",
+   "type": "psychic",
+   "shape": "chain",
+   "tier": "evolved",
+   "desc": "Psychic arc that jumps between foes, spreading your statuses",
+   "heldItem": "glove",
+   "icon": "🔮",
+   "params": {}
+  },
+  {
+   "id": "psychic_psychicterrain",
+   "name": "Psychic Terrain",
+   "type": "psychic",
+   "shape": "mine",
+   "tier": "evolved",
+   "desc": "Psychic glyphs on the ground burst when foes cross them",
+   "heldItem": "wide",
+   "icon": "👁️",
+   "params": {}
+  },
+  {
+   "id": "psychic_expandingforce",
+   "name": "Expanding Force",
+   "type": "psychic",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Huge psychic burst around you",
+   "heldItem": "wide",
+   "icon": "👁️",
+   "params": {
+    "rm": 1.4,
+    "cdm": 1.25
+   }
+  },
+  {
+   "id": "psychic_dreameater",
+   "name": "Dream Eater",
+   "type": "psychic",
+   "shape": "homing",
+   "tier": "final",
+   "desc": "Drains sleeping or stunned foes for big healing",
+   "heldItem": "wise",
+   "icon": "🔮",
+   "params": {
+    "dm": 1.4,
+    "r": 11,
+    "cdm": 1.2,
+    "st": [
+     "su",
+     0.5,
+     1.2
+    ],
+    "ls": 0.15
+   }
+  },
+  {
+   "id": "psychic_prismaticlaser",
+   "name": "Prismatic Laser",
+   "type": "psychic",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Enormous rainbow laser, then a recharge",
+   "heldItem": "choice",
+   "icon": "🔮",
+   "params": {
+    "cdm": 1.25
+   }
+  },
+  {
+   "id": "psychic_psystrike",
+   "name": "Psystrike",
+   "type": "psychic",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A psychic wave sweeps the screen and ignores enemy armor",
+   "heldItem": "choice",
+   "icon": "👁️",
+   "params": {
+    "iarm": 1
+   }
+  },
+  {
+   "id": "bug_bugbite",
+   "name": "Bug Bite",
+   "type": "bug",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Bite in front; may drop a berry",
+   "heldItem": "muscle",
+   "icon": "🐝",
+   "params": {}
+  },
+  {
+   "id": "bug_stringshot",
+   "name": "String Shot",
+   "type": "bug",
+   "shape": "wave",
+   "tier": "basic",
+   "desc": "Web pulse that slows, no damage",
+   "heldItem": "claw",
+   "icon": "🕸️",
+   "params": {
+    "sk": "sl"
+   }
+  },
+  {
+   "id": "bug_furycutter",
+   "name": "Fury Cutter",
+   "type": "bug",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Slashes that get stronger with each hit in a row",
+   "heldItem": "muscle",
+   "icon": "🐝",
+   "params": {}
+  },
+  {
+   "id": "bug_pinmissile",
+   "name": "Pin Missile",
+   "type": "bug",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Rapid line of pins",
+   "heldItem": "glove",
+   "icon": "🐛",
+   "params": {}
+  },
+  {
+   "id": "bug_strugglebug",
+   "name": "Struggle Bug",
+   "type": "bug",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Small pulse that lowers enemy damage",
+   "heldItem": "eject",
+   "icon": "🕸️",
+   "params": {
+    "dm": 0.75,
+    "rm": 0.75,
+    "cdm": 0.8,
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "bug_infestation",
+   "name": "Infestation",
+   "type": "bug",
+   "shape": "whirl",
+   "tier": "basic",
+   "desc": "Swarm on a foe that traps nearby enemies",
+   "heldItem": "focus",
+   "icon": "🕸️",
+   "params": {}
+  },
+  {
+   "id": "bug_twineedle",
+   "name": "Twineedle",
+   "type": "bug",
+   "shape": "twin",
+   "tier": "basic",
+   "desc": "Two stingers side by side; 20% poison",
+   "heldItem": "glove",
+   "icon": "🐛",
+   "params": {
+    "st": [
+     "ps",
+     0.2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "bug_leechlife",
+   "name": "Leech Life",
+   "type": "bug",
+   "shape": "jab",
+   "tier": "basic",
+   "desc": "Quick bites that heal you",
+   "heldItem": "claw",
+   "icon": "🐝",
+   "params": {
+    "lsx": 0.12
+   }
+  },
+  {
+   "id": "bug_ragepowder",
+   "name": "Rage Powder",
+   "type": "bug",
+   "shape": "cone",
+   "tier": "basic",
+   "desc": "Powder spray in front that slows foes and draws them off co-op allies",
+   "heldItem": "wide",
+   "icon": "🕸️",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "bug_xscissor",
+   "name": "X-Scissor",
+   "type": "bug",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Wide crossing slash",
+   "heldItem": "razor",
+   "icon": "🐝",
+   "params": {
+    "hw": 1.15,
+    "hp": 0.08
+   }
+  },
+  {
+   "id": "bug_signalbeam",
+   "name": "Signal Beam",
+   "type": "bug",
+   "shape": "beam",
+   "tier": "evolved",
+   "desc": "Strange beam; may confuse",
+   "heldItem": "choice",
+   "icon": "🐛",
+   "params": {
+    "st": [
+     "cf",
+     0.15,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "bug_silverwind",
+   "name": "Silver Wind",
+   "type": "bug",
+   "shape": "boom",
+   "tier": "evolved",
+   "desc": "Scaly wind that may raise your stats",
+   "heldItem": "glove",
+   "icon": "🐛",
+   "params": {}
+  },
+  {
+   "id": "bug_uturn",
+   "name": "U-turn",
+   "type": "bug",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Dash through a foe and snap back to your spot",
+   "heldItem": "boots",
+   "icon": "🐝",
+   "params": {}
+  },
+  {
+   "id": "bug_stickyweb",
+   "name": "Sticky Web",
+   "type": "bug",
+   "shape": "mine",
+   "tier": "evolved",
+   "desc": "Webs on the ground that burst and slow foes who cross them",
+   "heldItem": "heat",
+   "icon": "🕸️",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "bug_pollenpuff",
+   "name": "Pollen Puff",
+   "type": "bug",
+   "shape": "proj",
+   "tier": "evolved",
+   "desc": "Pollen ball that bursts on foes; heals co-op allies it touches",
+   "heldItem": "band",
+   "icon": "🐛",
+   "params": {
+    "lsx": 0.12
+   }
+  },
+  {
+   "id": "bug_bugbuzz",
+   "name": "Bug Buzz",
+   "type": "bug",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Huge buzzing shockwave",
+   "heldItem": "wide",
+   "icon": "🕸️",
+   "params": {
+    "rm": 1.4,
+    "cdm": 1.25
+   }
+  },
+  {
+   "id": "bug_megahorn",
+   "name": "Megahorn",
+   "type": "bug",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "Massive horn charge",
+   "heldItem": "lifeorb",
+   "icon": "🐝",
+   "params": {
+    "dm": 1.3,
+    "L": 300
+   }
+  },
+  {
+   "id": "bug_attackorder",
+   "name": "Attack Order",
+   "type": "bug",
+   "shape": "strike",
+   "tier": "final",
+   "desc": "A swarm strikes random foes; high crit",
+   "heldItem": "glove",
+   "icon": "🕸️",
+   "params": {
+    "n0": 3,
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "bug_quiverdance",
+   "name": "Quiver Dance",
+   "type": "bug",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A shimmering wing-dance sweeps the screen and raises your stats",
+   "heldItem": "choice",
+   "icon": "🕸️",
+   "params": {}
+  },
+  {
+   "id": "rock_rockthrow",
+   "name": "Rock Throw",
+   "type": "rock",
+   "shape": "twin",
+   "tier": "basic",
+   "desc": "Two heavy rocks side by side",
+   "heldItem": "glove",
+   "icon": "🪨",
+   "params": {}
+  },
+  {
+   "id": "rock_rollout",
+   "name": "Rollout",
+   "type": "rock",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Rolling boulder that hits harder each time",
+   "heldItem": "metro",
+   "icon": "🪨",
+   "params": {}
+  },
+  {
+   "id": "rock_rocktomb",
+   "name": "Rock Tomb",
+   "type": "rock",
+   "shape": "strike",
+   "tier": "basic",
+   "desc": "Rocks drop on foes and slow them",
+   "heldItem": "lens",
+   "icon": "💎",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "rock_smackdown",
+   "name": "Smack Down",
+   "type": "rock",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Rock that knocks flying foes to the ground",
+   "heldItem": "glove",
+   "icon": "🪨",
+   "params": {}
+  },
+  {
+   "id": "rock_ancientpower",
+   "name": "Ancient Power",
+   "type": "rock",
+   "shape": "orbit",
+   "tier": "basic",
+   "desc": "Orbiting stones; may raise all your stats",
+   "heldItem": "metro",
+   "icon": "🪨",
+   "params": {}
+  },
+  {
+   "id": "rock_rockblast",
+   "name": "Rock Blast",
+   "type": "rock",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Rapid line of rocks",
+   "heldItem": "glove",
+   "icon": "🪨",
+   "params": {}
+  },
+  {
+   "id": "rock_accelerock",
+   "name": "Accelerock",
+   "type": "rock",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Very fast rock dash",
+   "heldItem": "boots",
+   "icon": "🗿",
+   "params": {
+    "dm": 0.7,
+    "cdm": 0.6
+   }
+  },
+  {
+   "id": "rock_saltcure",
+   "name": "Salt Cure",
+   "type": "rock",
+   "shape": "whirl",
+   "tier": "basic",
+   "desc": "Salt crust on a foe that keeps hurting it and anything nearby",
+   "heldItem": "focus",
+   "icon": "💎",
+   "params": {}
+  },
+  {
+   "id": "rock_tarshot",
+   "name": "Tar Shot",
+   "type": "rock",
+   "shape": "cone",
+   "tier": "basic",
+   "desc": "Sticky tar spray in front that slows foes and makes them weak to Fire",
+   "heldItem": "wide",
+   "icon": "💎",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "rock_rockslide",
+   "name": "Rock Slide",
+   "type": "rock",
+   "shape": "strike",
+   "tier": "evolved",
+   "desc": "Rocks crash on several foes; may flinch",
+   "heldItem": "lens",
+   "icon": "💎",
+   "params": {
+    "n0": 3,
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "rock_powergem",
+   "name": "Power Gem",
+   "type": "rock",
+   "shape": "beam",
+   "tier": "evolved",
+   "desc": "Gleaming beam of gem light",
+   "heldItem": "choice",
+   "icon": "🪨",
+   "params": {}
+  },
+  {
+   "id": "rock_stealthrock",
+   "name": "Stealth Rock",
+   "type": "rock",
+   "shape": "mine",
+   "tier": "evolved",
+   "desc": "Floating rocks that burst when foes touch them",
+   "heldItem": "heat",
+   "icon": "💎",
+   "params": {}
+  },
+  {
+   "id": "rock_stoneedge",
+   "name": "Stone Edge",
+   "type": "rock",
+   "shape": "rupture",
+   "tier": "evolved",
+   "desc": "Sharp stones erupt in a line ahead; very high crit",
+   "heldItem": "band",
+   "icon": "💎",
+   "params": {
+    "cr": 0.3
+   }
+  },
+  {
+   "id": "rock_mightycleave",
+   "name": "Mighty Cleave",
+   "type": "rock",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Heavy cleaving blow in front that breaks shields",
+   "heldItem": "muscle",
+   "icon": "🗿",
+   "params": {
+    "shb": 1
+   }
+  },
+  {
+   "id": "rock_rockwrecker",
+   "name": "Rock Wrecker",
+   "type": "rock",
+   "shape": "proj",
+   "tier": "final",
+   "desc": "Giant boulder, then a short recharge",
+   "heldItem": "band",
+   "icon": "🪨",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 2.21,
+    "ex": 1
+   }
+  },
+  {
+   "id": "rock_headsmash",
+   "name": "Head Smash",
+   "type": "rock",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "Enormous headbutt that costs HP",
+   "heldItem": "lifeorb",
+   "icon": "🗿",
+   "params": {
+    "dm": 1.3,
+    "L": 300,
+    "hpc": 0.05
+   }
+  },
+  {
+   "id": "rock_meteorbeam",
+   "name": "Meteor Beam",
+   "type": "rock",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Charges, then fires a huge beam",
+   "heldItem": "choice",
+   "icon": "🪨",
+   "params": {
+    "tele": 0.8
+   }
+  },
+  {
+   "id": "rock_diamondstorm",
+   "name": "Diamond Storm",
+   "type": "rock",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Burst of diamonds around you",
+   "heldItem": "wide",
+   "icon": "💎",
+   "params": {
+    "fat": 1
+   }
+  },
+  {
+   "id": "rock_stoneaxe",
+   "name": "Stone Axe",
+   "type": "rock",
+   "shape": "arc",
+   "tier": "final",
+   "desc": "Huge axe swing that leaves rocks behind",
+   "heldItem": "razor",
+   "icon": "🗿",
+   "params": {}
+  },
+  {
+   "id": "ghost_lick",
+   "name": "Lick",
+   "type": "ghost",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Ghostly lick in front; 30% paralysis",
+   "heldItem": "muscle",
+   "icon": "🕯️",
+   "params": {
+    "st": [
+     "su",
+     0.3,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "ghost_astonish",
+   "name": "Astonish",
+   "type": "ghost",
+   "shape": "jab",
+   "tier": "basic",
+   "desc": "Spooky jabs at close foes; may flinch",
+   "heldItem": "claw",
+   "icon": "🕯️",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "ghost_nightshade",
+   "name": "Night Shade",
+   "type": "ghost",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Seeking shade that deals damage based on your level",
+   "heldItem": "metro",
+   "icon": "👻",
+   "params": {}
+  },
+  {
+   "id": "ghost_shadowsneak",
+   "name": "Shadow Sneak",
+   "type": "ghost",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Shadow dash that strikes first",
+   "heldItem": "boots",
+   "icon": "🕯️",
+   "params": {}
+  },
+  {
+   "id": "ghost_confuseray",
+   "name": "Confuse Ray",
+   "type": "ghost",
+   "shape": "wave",
+   "tier": "basic",
+   "desc": "Pulse that confuses, no damage",
+   "heldItem": "claw",
+   "icon": "💀",
+   "params": {
+    "sk": "cf"
+   }
+  },
+  {
+   "id": "ghost_hex",
+   "name": "Hex",
+   "type": "ghost",
+   "shape": "strike",
+   "tier": "basic",
+   "desc": "Hits random foes; double damage on statused foes",
+   "heldItem": "lens",
+   "icon": "💀",
+   "params": {
+    "vst": 2
+   }
+  },
+  {
+   "id": "ghost_ominouswind",
+   "name": "Ominous Wind",
+   "type": "ghost",
+   "shape": "boom",
+   "tier": "basic",
+   "desc": "Eerie wind that may raise your stats",
+   "heldItem": "metro",
+   "icon": "👻",
+   "params": {}
+  },
+  {
+   "id": "ghost_spite",
+   "name": "Spite",
+   "type": "ghost",
+   "shape": "chain",
+   "tier": "basic",
+   "desc": "Cursed arc that hops between foes and slows them",
+   "heldItem": "glove",
+   "icon": "👻",
+   "params": {
+    "st": [
+     "sl",
+     1,
+     1.2
+    ]
+   }
+  },
+  {
+   "id": "ghost_curse",
+   "name": "Curse",
+   "type": "ghost",
+   "shape": "mine",
+   "tier": "basic",
+   "desc": "Cursed marks on the ground that burst when foes cross them",
+   "heldItem": "heat",
+   "icon": "💀",
+   "params": {}
+  },
+  {
+   "id": "ghost_shadowball",
+   "name": "Shadow Ball",
+   "type": "ghost",
+   "shape": "proj",
+   "tier": "evolved",
+   "desc": "Big shadow orb; may weaken enemy defenses",
+   "heldItem": "band",
+   "icon": "👻",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 1.7,
+    "ex": 1,
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "ghost_shadowclaw",
+   "name": "Shadow Claw",
+   "type": "ghost",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Shadow swipe; high crit",
+   "heldItem": "razor",
+   "icon": "🕯️",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "ghost_shadowpunch",
+   "name": "Shadow Punch",
+   "type": "ghost",
+   "shape": "homing",
+   "tier": "evolved",
+   "desc": "Punch that never misses",
+   "heldItem": "metro",
+   "icon": "👻",
+   "params": {}
+  },
+  {
+   "id": "ghost_phantomforce",
+   "name": "Phantom Force",
+   "type": "ghost",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Vanish, then strike through foes",
+   "heldItem": "lifeorb",
+   "icon": "🕯️",
+   "params": {}
+  },
+  {
+   "id": "ghost_bittermalice",
+   "name": "Bitter Malice",
+   "type": "ghost",
+   "shape": "cone",
+   "tier": "evolved",
+   "desc": "Chilling malice in front; lowers enemy damage",
+   "heldItem": "focus",
+   "icon": "💀",
+   "params": {
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "ghost_infernalparade",
+   "name": "Infernal Parade",
+   "type": "ghost",
+   "shape": "orbit",
+   "tier": "evolved",
+   "desc": "Ghostly flames circle you; extra damage on statused foes",
+   "heldItem": "wide",
+   "icon": "👻",
+   "params": {
+    "vst": 2
+   }
+  },
+  {
+   "id": "ghost_poltergeist",
+   "name": "Poltergeist",
+   "type": "ghost",
+   "shape": "strike",
+   "tier": "final",
+   "desc": "Huge haunted hits on random foes",
+   "heldItem": "glove",
+   "icon": "💀",
+   "params": {}
+  },
+  {
+   "id": "ghost_shadowforce",
+   "name": "Shadow Force",
+   "type": "ghost",
+   "shape": "dash",
+   "tier": "final",
+   "desc": "Disappear and reappear with a massive strike",
+   "heldItem": "lifeorb",
+   "icon": "🕯️",
+   "params": {
+    "dm": 1.3,
+    "L": 300
+   }
+  },
+  {
+   "id": "ghost_moongeistbeam",
+   "name": "Moongeist Beam",
+   "type": "ghost",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Ghostly beam that ignores enemy armor",
+   "heldItem": "choice",
+   "icon": "👻",
+   "params": {
+    "iarm": 1
+   }
+  },
+  {
+   "id": "ghost_astralbarrage",
+   "name": "Astral Barrage",
+   "type": "ghost",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A ghostly horde sweeps the screen",
+   "heldItem": "choice",
+   "icon": "💀",
+   "params": {}
+  },
+  {
+   "id": "dragon_twister",
+   "name": "Twister",
+   "type": "dragon",
+   "shape": "whirl",
+   "tier": "basic",
+   "desc": "Small twister that pulls foes in",
+   "heldItem": "focus",
+   "icon": "☄️",
+   "params": {}
+  },
+  {
+   "id": "dragon_dragonbreath",
+   "name": "Dragon Breath",
+   "type": "dragon",
+   "shape": "cone",
+   "tier": "basic",
+   "desc": "Breath in front; 30% paralysis",
+   "heldItem": "wide",
+   "icon": "☄️",
+   "params": {
+    "st": [
+     "su",
+     0.3,
+     0.7
+    ]
+   }
+  },
+  {
+   "id": "dragon_dragonrage",
+   "name": "Dragon Rage",
+   "type": "dragon",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Seeking flame with fixed damage",
+   "heldItem": "metro",
+   "icon": "🐉",
+   "params": {}
+  },
+  {
+   "id": "dragon_dragontail",
+   "name": "Dragon Tail",
+   "type": "dragon",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Tail swing that knocks foes far back",
+   "heldItem": "muscle",
+   "icon": "🐲",
+   "params": {
+    "kbx": 1
+   }
+  },
+  {
+   "id": "dragon_breakingswipe",
+   "name": "Breaking Swipe",
+   "type": "dragon",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Wide swipe that lowers enemy damage",
+   "heldItem": "muscle",
+   "icon": "🐲",
+   "params": {
+    "hw": 1.15,
+    "hp": 0.08,
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "dragon_dualchop",
+   "name": "Dual Chop",
+   "type": "dragon",
+   "shape": "twin",
+   "tier": "basic",
+   "desc": "Two chops side by side",
+   "heldItem": "glove",
+   "icon": "🐉",
+   "params": {}
+  },
+  {
+   "id": "dragon_scaleshot",
+   "name": "Scale Shot",
+   "type": "dragon",
+   "shape": "burst",
+   "tier": "basic",
+   "desc": "Rapid line of scales",
+   "heldItem": "glove",
+   "icon": "🐉",
+   "params": {}
+  },
+  {
+   "id": "dragon_dragondarts",
+   "name": "Dragon Darts",
+   "type": "dragon",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Two darts that each pick their own target",
+   "heldItem": "glove",
+   "icon": "🐉",
+   "params": {
+    "mode": "fan",
+    "n0": 2
+   }
+  },
+  {
+   "id": "dragon_dragonpulse",
+   "name": "Dragon Pulse",
+   "type": "dragon",
+   "shape": "beam",
+   "tier": "evolved",
+   "desc": "Shockwave beam",
+   "heldItem": "wise",
+   "icon": "🐉",
+   "params": {}
+  },
+  {
+   "id": "dragon_dragonclaw",
+   "name": "Dragon Claw",
+   "type": "dragon",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Strong claw slash",
+   "heldItem": "razor",
+   "icon": "🐲",
+   "params": {}
+  },
+  {
+   "id": "dragon_dragonrush",
+   "name": "Dragon Rush",
+   "type": "dragon",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Overwhelming charge; may flinch",
+   "heldItem": "lifeorb",
+   "icon": "🐲",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "dragon_outrage",
+   "name": "Outrage",
+   "type": "dragon",
+   "shape": "aura",
+   "tier": "evolved",
+   "desc": "Rampage aura that hits hard for a while",
+   "heldItem": "left",
+   "icon": "🐲",
+   "params": {}
+  },
+  {
+   "id": "dragon_dragondance",
+   "name": "Dragon Dance",
+   "type": "dragon",
+   "shape": "spin",
+   "tier": "evolved",
+   "desc": "Spinning dance that hits nearby foes and stacks move speed",
+   "heldItem": "muscle",
+   "icon": "🐲",
+   "params": {
+    "spd": 1
+   }
+  },
+  {
+   "id": "dragon_dragonhammer",
+   "name": "Dragon Hammer",
+   "type": "dragon",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Heavy slam in front",
+   "heldItem": "muscle",
+   "icon": "🐲",
+   "params": {}
+  },
+  {
+   "id": "dragon_dracometeor",
+   "name": "Draco Meteor",
+   "type": "dragon",
+   "shape": "strike",
+   "tier": "final",
+   "desc": "Meteors rain on random foes",
+   "heldItem": "glove",
+   "icon": "☄️",
+   "params": {}
+  },
+  {
+   "id": "dragon_clangingscales",
+   "name": "Clanging Scales",
+   "type": "dragon",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Huge scale-rattling shockwave",
+   "heldItem": "wide",
+   "icon": "☄️",
+   "params": {
+    "rm": 1.4,
+    "cdm": 1.25
+   }
+  },
+  {
+   "id": "dragon_dragonenergy",
+   "name": "Dragon Energy",
+   "type": "dragon",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Huge beam; stronger at high HP",
+   "heldItem": "choice",
+   "icon": "🐉",
+   "params": {
+    "hpx": 1
+   }
+  },
+  {
+   "id": "dragon_spacialrend",
+   "name": "Spacial Rend",
+   "type": "dragon",
+   "shape": "rupture",
+   "tier": "final",
+   "desc": "Space tears open in a line ahead; high crit",
+   "heldItem": "focus",
+   "icon": "☄️",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "dragon_dynamaxcannon",
+   "name": "Dynamax Cannon",
+   "type": "dragon",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A huge draconic blast sweeps the screen",
+   "heldItem": "choice",
+   "icon": "☄️",
+   "params": {}
+  },
+  {
+   "id": "dark_bite",
+   "name": "Bite",
+   "type": "dark",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Bite in front; may flinch",
+   "heldItem": "muscle",
+   "icon": "🦷",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "dark_pursuit",
+   "name": "Pursuit",
+   "type": "dark",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Seeking strike; double damage on fleeing foes",
+   "heldItem": "metro",
+   "icon": "🌑",
+   "params": {}
+  },
+  {
+   "id": "dark_snarl",
+   "name": "Snarl",
+   "type": "dark",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Snarl pulse that lowers enemy damage",
+   "heldItem": "eject",
+   "icon": "🦇",
+   "params": {
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "dark_thief",
+   "name": "Thief",
+   "type": "dark",
+   "shape": "jab",
+   "tier": "basic",
+   "desc": "Quick jabs; chance to steal a coin",
+   "heldItem": "claw",
+   "icon": "🦷",
+   "params": {
+    "coin": 1
+   }
+  },
+  {
+   "id": "dark_assurance",
+   "name": "Assurance",
+   "type": "dark",
+   "shape": "strike",
+   "tier": "basic",
+   "desc": "Hits random foes; double damage if already hurt",
+   "heldItem": "lens",
+   "icon": "🦇",
+   "params": {
+    "vlow": 2
+   }
+  },
+  {
+   "id": "dark_beatup",
+   "name": "Beat Up",
+   "type": "dark",
+   "shape": "clone",
+   "tier": "basic",
+   "desc": "Shadow allies appear and join your attacks",
+   "heldItem": "glove",
+   "icon": "🌑",
+   "params": {}
+  },
+  {
+   "id": "dark_brutalswing",
+   "name": "Brutal Swing",
+   "type": "dark",
+   "shape": "spin",
+   "tier": "basic",
+   "desc": "Wild spinning swing all around you",
+   "heldItem": "muscle",
+   "icon": "🦷",
+   "params": {}
+  },
+  {
+   "id": "dark_feintattack",
+   "name": "Feint Attack",
+   "type": "dark",
+   "shape": "dash",
+   "tier": "basic",
+   "desc": "Shadowy dash that never misses",
+   "heldItem": "boots",
+   "icon": "🦷",
+   "params": {}
+  },
+  {
+   "id": "dark_faketears",
+   "name": "Fake Tears",
+   "type": "dark",
+   "shape": "cone",
+   "tier": "basic",
+   "desc": "Wailing in front that weakens enemy defense",
+   "heldItem": "wide",
+   "icon": "🦇",
+   "params": {
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "dark_crunch",
+   "name": "Crunch",
+   "type": "dark",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Strong bite that weakens enemy defenses",
+   "heldItem": "muscle",
+   "icon": "🦷",
+   "params": {
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "dark_nightslash",
+   "name": "Night Slash",
+   "type": "dark",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Dark slash; high crit",
+   "heldItem": "razor",
+   "icon": "🦷",
+   "params": {
+    "cr": 0.15
+   }
+  },
+  {
+   "id": "dark_suckerpunch",
+   "name": "Sucker Punch",
+   "type": "dark",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Lightning dash at the foe about to attack you",
+   "heldItem": "boots",
+   "icon": "🦷",
+   "params": {}
+  },
+  {
+   "id": "dark_darkpulse",
+   "name": "Dark Pulse",
+   "type": "dark",
+   "shape": "nova",
+   "tier": "evolved",
+   "desc": "Dark aura burst; may flinch",
+   "heldItem": "eject",
+   "icon": "🦇",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "dark_throatchop",
+   "name": "Throat Chop",
+   "type": "dark",
+   "shape": "jab",
+   "tier": "evolved",
+   "desc": "Fast chops that silence foes",
+   "heldItem": "muscle",
+   "icon": "🦷",
+   "params": {}
+  },
+  {
+   "id": "dark_lashout",
+   "name": "Lash Out",
+   "type": "dark",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Big hit; double damage if you were weakened",
+   "heldItem": "band",
+   "icon": "🦷",
+   "params": {
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "dark_foulplay",
+   "name": "Foul Play",
+   "type": "dark",
+   "shape": "blast",
+   "tier": "final",
+   "desc": "Huge hit that grows with the target's strength",
+   "heldItem": "muscle",
+   "icon": "🦷",
+   "params": {}
+  },
+  {
+   "id": "dark_knockoff",
+   "name": "Knock Off",
+   "type": "dark",
+   "shape": "proj",
+   "tier": "final",
+   "desc": "Heavy strike that removes enemy buffs and shields",
+   "heldItem": "band",
+   "icon": "🌑",
+   "params": {
+    "shb": 1
+   }
+  },
+  {
+   "id": "dark_nightdaze",
+   "name": "Night Daze",
+   "type": "dark",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A wave of darkness sweeps the screen; may lower accuracy",
+   "heldItem": "choice",
+   "icon": "🦇",
+   "params": {}
+  },
+  {
+   "id": "dark_fierywrath",
+   "name": "Fiery Wrath",
+   "type": "dark",
+   "shape": "rupture",
+   "tier": "final",
+   "desc": "Dark flames erupt in a line ahead; may flinch",
+   "heldItem": "focus",
+   "icon": "🦇",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "steel_metalclaw",
+   "name": "Metal Claw",
+   "type": "steel",
+   "shape": "arc",
+   "tier": "basic",
+   "desc": "Steel claw in front; may raise your damage",
+   "heldItem": "muscle",
+   "icon": "🔩",
+   "params": {}
+  },
+  {
+   "id": "steel_bulletpunch",
+   "name": "Bullet Punch",
+   "type": "steel",
+   "shape": "jab",
+   "tier": "basic",
+   "desc": "Lightning steel jabs",
+   "heldItem": "claw",
+   "icon": "🔩",
+   "params": {}
+  },
+  {
+   "id": "steel_mirrorshot",
+   "name": "Mirror Shot",
+   "type": "steel",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Flash of light; lowers enemy accuracy",
+   "heldItem": "glove",
+   "icon": "⚙️",
+   "params": {}
+  },
+  {
+   "id": "steel_gyroball",
+   "name": "Gyro Ball",
+   "type": "steel",
+   "shape": "orbit",
+   "tier": "basic",
+   "desc": "Spinning steel balls; stronger when you're slow",
+   "heldItem": "metro",
+   "icon": "⚙️",
+   "params": {}
+  },
+  {
+   "id": "steel_magnetbomb",
+   "name": "Magnet Bomb",
+   "type": "steel",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Magnetic bomb that never misses",
+   "heldItem": "metro",
+   "icon": "⚙️",
+   "params": {}
+  },
+  {
+   "id": "steel_steelwing",
+   "name": "Steel Wing",
+   "type": "steel",
+   "shape": "twin",
+   "tier": "basic",
+   "desc": "Two steel wings side by side",
+   "heldItem": "glove",
+   "icon": "⚙️",
+   "params": {}
+  },
+  {
+   "id": "steel_irondefense",
+   "name": "Iron Defense",
+   "type": "steel",
+   "shape": "screen",
+   "tier": "basic",
+   "desc": "Orbiting plates that each block one hit",
+   "heldItem": "metal",
+   "icon": "⚙️",
+   "params": {}
+  },
+  {
+   "id": "steel_spinout",
+   "name": "Spin Out",
+   "type": "steel",
+   "shape": "spin",
+   "tier": "basic",
+   "desc": "Wheel-spin that hits everything around you; costs a little speed",
+   "heldItem": "muscle",
+   "icon": "🔩",
+   "params": {}
+  },
+  {
+   "id": "steel_metalburst",
+   "name": "Metal Burst",
+   "type": "steel",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Returns part of the damage you just took as a burst around you",
+   "heldItem": "eject",
+   "icon": "🛡️",
+   "params": {}
+  },
+  {
+   "id": "steel_flashcannon",
+   "name": "Flash Cannon",
+   "type": "steel",
+   "shape": "beam",
+   "tier": "evolved",
+   "desc": "Steel light beam",
+   "heldItem": "wise",
+   "icon": "⚙️",
+   "params": {}
+  },
+  {
+   "id": "steel_ironhead",
+   "name": "Iron Head",
+   "type": "steel",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Steel headbutt; may flinch",
+   "heldItem": "lifeorb",
+   "icon": "🔩",
+   "params": {
+    "st": [
+     "su",
+     0.15,
+     0.3
+    ]
+   }
+  },
+  {
+   "id": "steel_irontail",
+   "name": "Iron Tail",
+   "type": "steel",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Heavy tail slam",
+   "heldItem": "razor",
+   "icon": "🔩",
+   "params": {}
+  },
+  {
+   "id": "steel_smartstrike",
+   "name": "Smart Strike",
+   "type": "steel",
+   "shape": "homing",
+   "tier": "evolved",
+   "desc": "Sharp horn strike that never misses",
+   "heldItem": "metro",
+   "icon": "⚙️",
+   "params": {}
+  },
+  {
+   "id": "steel_geargrind",
+   "name": "Gear Grind",
+   "type": "steel",
+   "shape": "boom",
+   "tier": "evolved",
+   "desc": "Two gears that fly out and back",
+   "heldItem": "metro",
+   "icon": "⚙️",
+   "params": {}
+  },
+  {
+   "id": "steel_heavyslam",
+   "name": "Heavy Slam",
+   "type": "steel",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Crushing slam in front; stronger the heavier your Pokémon",
+   "heldItem": "band",
+   "icon": "🔩",
+   "params": {}
+  },
+  {
+   "id": "steel_meteormash",
+   "name": "Meteor Mash",
+   "type": "steel",
+   "shape": "strike",
+   "tier": "final",
+   "desc": "Meteor punches on random foes",
+   "heldItem": "glove",
+   "icon": "🛡️",
+   "params": {}
+  },
+  {
+   "id": "steel_steelbeam",
+   "name": "Steel Beam",
+   "type": "steel",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Enormous beam that costs HP",
+   "heldItem": "choice",
+   "icon": "⚙️",
+   "params": {
+    "hpc": 0.05
+   }
+  },
+  {
+   "id": "steel_makeitrain",
+   "name": "Make It Rain",
+   "type": "steel",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A wave of coins sweeps the screen; foes drop extra coins",
+   "heldItem": "choice",
+   "icon": "🛡️",
+   "params": {
+    "coin": 1
+   }
+  },
+  {
+   "id": "steel_doomdesire",
+   "name": "Doom Desire",
+   "type": "steel",
+   "shape": "rupture",
+   "tier": "final",
+   "desc": "Delayed blasts erupt in a line ahead",
+   "heldItem": "focus",
+   "icon": "🛡️",
+   "params": {}
+  },
+  {
+   "id": "fairy_fairywind",
+   "name": "Fairy Wind",
+   "type": "fairy",
+   "shape": "boom",
+   "tier": "basic",
+   "desc": "Fairy gust that flies out and back",
+   "heldItem": "metro",
+   "icon": "✨",
+   "params": {}
+  },
+  {
+   "id": "fairy_disarmingvoice",
+   "name": "Disarming Voice",
+   "type": "fairy",
+   "shape": "nova",
+   "tier": "basic",
+   "desc": "Charming cry that never misses",
+   "heldItem": "eject",
+   "icon": "🌙",
+   "params": {}
+  },
+  {
+   "id": "fairy_drainingkiss",
+   "name": "Draining Kiss",
+   "type": "fairy",
+   "shape": "homing",
+   "tier": "basic",
+   "desc": "Kiss that heals you",
+   "heldItem": "metro",
+   "icon": "✨",
+   "params": {
+    "ls": 0.15
+   }
+  },
+  {
+   "id": "fairy_charm",
+   "name": "Charm",
+   "type": "fairy",
+   "shape": "wave",
+   "tier": "basic",
+   "desc": "Pulse that lowers enemy damage, no damage",
+   "heldItem": "claw",
+   "icon": "🌙",
+   "params": {
+    "sk": "fe"
+   }
+  },
+  {
+   "id": "fairy_sweetkiss",
+   "name": "Sweet Kiss",
+   "type": "fairy",
+   "shape": "wave",
+   "tier": "basic",
+   "desc": "Pulse that confuses, no damage",
+   "heldItem": "claw",
+   "icon": "🌙",
+   "params": {
+    "sk": "cf"
+   }
+  },
+  {
+   "id": "fairy_alluringvoice",
+   "name": "Alluring Voice",
+   "type": "fairy",
+   "shape": "proj",
+   "tier": "basic",
+   "desc": "Sound bolts; confuse foes that just got buffed",
+   "heldItem": "glove",
+   "icon": "✨",
+   "params": {
+    "st": [
+     "cf",
+     0.15,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "fairy_strangesteam",
+   "name": "Strange Steam",
+   "type": "fairy",
+   "shape": "sludge",
+   "tier": "basic",
+   "desc": "Steam clouds; may confuse",
+   "heldItem": "wide",
+   "icon": "✨",
+   "params": {
+    "st": [
+     "cf",
+     0.15,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "fairy_fairylock",
+   "name": "Fairy Lock",
+   "type": "fairy",
+   "shape": "mine",
+   "tier": "basic",
+   "desc": "Glowing locks on the ground that burst and root foes",
+   "heldItem": "heat",
+   "icon": "🌙",
+   "params": {
+    "st": [
+     "rt",
+     0.5,
+     1
+    ]
+   }
+  },
+  {
+   "id": "fairy_magicaltorque",
+   "name": "Magical Torque",
+   "type": "fairy",
+   "shape": "spin",
+   "tier": "basic",
+   "desc": "Wheel of fairy energy spinning around you; may confuse",
+   "heldItem": "muscle",
+   "icon": "🎀",
+   "params": {
+    "st": [
+     "cf",
+     0.15,
+     1.5
+    ]
+   }
+  },
+  {
+   "id": "fairy_dazzlinggleam",
+   "name": "Dazzling Gleam",
+   "type": "fairy",
+   "shape": "nova",
+   "tier": "evolved",
+   "desc": "Dazzling burst of light",
+   "heldItem": "eject",
+   "icon": "🌙",
+   "params": {}
+  },
+  {
+   "id": "fairy_playrough",
+   "name": "Play Rough",
+   "type": "fairy",
+   "shape": "arc",
+   "tier": "evolved",
+   "desc": "Rough play in front; may lower enemy damage",
+   "heldItem": "muscle",
+   "icon": "🎀",
+   "params": {}
+  },
+  {
+   "id": "fairy_spiritbreak",
+   "name": "Spirit Break",
+   "type": "fairy",
+   "shape": "dash",
+   "tier": "evolved",
+   "desc": "Dash that weakens enemy special attacks",
+   "heldItem": "boots",
+   "icon": "🎀",
+   "params": {
+    "st": [
+     "fe",
+     0.1,
+     0.8
+    ]
+   }
+  },
+  {
+   "id": "fairy_moonblast",
+   "name": "Moonblast",
+   "type": "fairy",
+   "shape": "blast",
+   "tier": "evolved",
+   "desc": "Moon power blast after a wind-up",
+   "heldItem": "muscle",
+   "icon": "🎀",
+   "params": {
+    "tele": 0.45
+   }
+  },
+  {
+   "id": "fairy_sparklyswirl",
+   "name": "Sparkly Swirl",
+   "type": "fairy",
+   "shape": "cone",
+   "tier": "evolved",
+   "desc": "Sparkling spray in front; clears your statuses",
+   "heldItem": "focus",
+   "icon": "🌙",
+   "params": {}
+  },
+  {
+   "id": "fairy_decorate",
+   "name": "Decorate",
+   "type": "fairy",
+   "shape": "chain",
+   "tier": "evolved",
+   "desc": "Ribbon arc that hops between foes, marking them for extra damage",
+   "heldItem": "glove",
+   "icon": "✨",
+   "params": {}
+  },
+  {
+   "id": "fairy_lightofruin",
+   "name": "Light of Ruin",
+   "type": "fairy",
+   "shape": "beam",
+   "tier": "final",
+   "desc": "Ruinous beam that costs HP",
+   "heldItem": "choice",
+   "icon": "✨",
+   "params": {
+    "hpc": 0.05
+   }
+  },
+  {
+   "id": "fairy_mistyexplosion",
+   "name": "Misty Explosion",
+   "type": "fairy",
+   "shape": "nova",
+   "tier": "final",
+   "desc": "Huge misty blast around you",
+   "heldItem": "wide",
+   "icon": "🌙",
+   "params": {
+    "rm": 1.4,
+    "cdm": 1.25,
+    "fat": 1
+   }
+  },
+  {
+   "id": "fairy_fleurcannon",
+   "name": "Fleur Cannon",
+   "type": "fairy",
+   "shape": "proj",
+   "tier": "final",
+   "desc": "Giant floral blast, then a short recharge",
+   "heldItem": "band",
+   "icon": "✨",
+   "params": {
+    "n0": 1,
+    "r": 13,
+    "p": 4,
+    "sp": 250,
+    "dm": 2.3,
+    "cdm": 2.21,
+    "ex": 1
+   }
+  },
+  {
+   "id": "fairy_springtidestorm",
+   "name": "Springtide Storm",
+   "type": "fairy",
+   "shape": "sweep",
+   "tier": "final",
+   "desc": "A storm of petals sweeps the screen",
+   "heldItem": "choice",
+   "icon": "🌙",
+   "params": {}
+  }
+ ]
+}

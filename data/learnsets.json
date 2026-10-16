@@ -1,0 +1,912 @@
+{
+ "_about": "Learnset per evolution line (keyed by the first form). start = starting move. secondType moves unlock at forms that have that type.",
+ "learnsets": {
+  "grass": {
+   "start": "grass_vinewhip",
+   "moves": [
+    "grass_vinewhip",
+    "grass_leafage",
+    "grass_razorleaf",
+    "grass_leechseed",
+    "grass_stunspore",
+    "grass_bulletseed",
+    "grass_seedbomb",
+    "grass_petalblizzard",
+    "grass_solarbeam",
+    "grass_frenzyplant"
+   ],
+   "secondType": {
+    "poison": [
+     "poison_poisongas",
+     "poison_acid",
+     "poison_poisonsting",
+     "poison_toxic",
+     "poison_smog",
+     "poison_sludge",
+     "poison_sludgebomb",
+     "poison_venoshock",
+     "poison_toxicspikes",
+     "poison_sludgewave"
+    ]
+   }
+  },
+  "odd": {
+   "start": "grass_absorb",
+   "moves": [
+    "grass_absorb",
+    "grass_megadrain",
+    "grass_magicalleaf",
+    "grass_stunspore",
+    "grass_leechseed",
+    "grass_gigadrain",
+    "grass_petalblizzard",
+    "grass_energyball",
+    "grass_seedflare",
+    "grass_leafstorm"
+   ],
+   "secondType": {
+    "poison": [
+     "poison_acid",
+     "poison_smog",
+     "poison_poisongas",
+     "poison_toxic",
+     "poison_clearsmog",
+     "poison_sludge",
+     "poison_sludgebomb",
+     "poison_venoshock",
+     "poison_toxicspikes",
+     "poison_sludgewave"
+    ]
+   }
+  },
+  "fire": {
+   "start": "fire_ember",
+   "moves": [
+    "fire_ember",
+    "fire_firefang",
+    "fire_firespin",
+    "fire_firelash",
+    "fire_flamethrower",
+    "fire_firepunch",
+    "fire_blazekick",
+    "fire_inferno",
+    "fire_fireblast",
+    "fire_flareblitz"
+   ],
+   "secondType": {
+    "flying": [
+     "flying_gust",
+     "flying_wingattack",
+     "flying_aircutter",
+     "flying_aerialace",
+     "flying_acrobatics",
+     "flying_airslash",
+     "flying_fly",
+     "flying_tailwind",
+     "flying_hurricane",
+     "flying_bravebird"
+    ]
+   }
+  },
+  "vul": {
+   "start": "fire_willowisp",
+   "moves": [
+    "fire_willowisp",
+    "fire_ember",
+    "fire_firespin",
+    "fire_incinerate",
+    "fire_flamewheel",
+    "fire_flamethrower",
+    "fire_heatwave",
+    "fire_lavaplume",
+    "fire_inferno",
+    "fire_fireblast",
+    "fire_eruption",
+    "fire_overheat",
+    "fire_sacredfire"
+   ]
+  },
+  "growl": {
+   "start": "fire_firefang",
+   "moves": [
+    "fire_firefang",
+    "fire_ember",
+    "fire_flamewheel",
+    "fire_flamecharge",
+    "fire_firespin",
+    "fire_incinerate",
+    "fire_flamethrower",
+    "fire_heatwave",
+    "fire_lavaplume",
+    "fire_inferno",
+    "fire_fireblast",
+    "fire_flareblitz",
+    "fire_sacredfire"
+   ]
+  },
+  "fireleg": {
+   "start": "fire_flamewheel",
+   "moves": [
+    "fire_flamewheel",
+    "fire_ember",
+    "fire_willowisp",
+    "fire_firespin",
+    "fire_flamethrower",
+    "fire_heatwave",
+    "fire_fireblast",
+    "fire_eruption",
+    "fire_overheat",
+    "fire_sacredfire"
+   ],
+   "secondType": {
+    "flying": [
+     "flying_gust",
+     "flying_wingattack",
+     "flying_whirlwind",
+     "flying_airslash",
+     "flying_fly",
+     "flying_tailwind",
+     "flying_hurricane",
+     "flying_bravebird",
+     "flying_skyattack",
+     "flying_aeroblast"
+    ]
+   }
+  },
+  "water": {
+   "start": "water_watergun",
+   "moves": [
+    "water_watergun",
+    "water_bubble",
+    "water_aquastep",
+    "water_aquajet",
+    "water_waterpulse",
+    "water_bubblebeam",
+    "water_aquatail",
+    "water_scald",
+    "water_surf",
+    "water_waterfall",
+    "water_hydropump",
+    "water_hydrocannon",
+    "water_wavecrash"
+   ]
+  },
+  "psy": {
+   "start": "water_waterpulse",
+   "moves": [
+    "water_waterpulse",
+    "water_watergun",
+    "water_whirlpool",
+    "water_bubblebeam",
+    "water_aquaring",
+    "water_brine",
+    "water_aquajet",
+    "water_scald",
+    "water_surf",
+    "water_muddywater",
+    "water_aquatail",
+    "water_hydropump",
+    "water_waterspout"
+   ]
+  },
+  "poli": {
+   "start": "water_bubble",
+   "moves": [
+    "water_bubble",
+    "water_watergun",
+    "water_whirlpool",
+    "water_bubblebeam",
+    "water_waterpulse",
+    "water_brine",
+    "water_surf",
+    "water_waterfall",
+    "water_liquidation",
+    "water_hydropump"
+   ],
+   "secondType": {
+    "fighting": [
+     "fighting_machpunch",
+     "fighting_doublekick",
+     "fighting_rocksmash",
+     "fighting_rollingkick",
+     "fighting_brickbreak",
+     "fighting_drainpunch",
+     "fighting_submission",
+     "fighting_closecombat",
+     "fighting_dynamicpunch",
+     "fighting_focusblast"
+    ]
+   }
+  },
+  "electric": {
+   "start": "electric_thundershock",
+   "moves": [
+    "electric_thundershock",
+    "electric_nuzzle",
+    "electric_spark",
+    "electric_thunderwave",
+    "electric_electroball",
+    "electric_voltswitch",
+    "electric_shockwave",
+    "electric_thunderbolt",
+    "electric_thunderpunch",
+    "electric_discharge",
+    "electric_wildcharge",
+    "electric_thunder",
+    "electric_volttackle"
+   ]
+  },
+  "normal": {
+   "start": "normal_quickattack",
+   "moves": [
+    "normal_quickattack",
+    "normal_tackle",
+    "normal_hyperfang",
+    "normal_furyswipes",
+    "normal_swift",
+    "normal_rapidspin",
+    "normal_doubleteam",
+    "normal_bodyslam",
+    "normal_superfang",
+    "normal_doubleedge",
+    "normal_uproar",
+    "normal_hyperbeam",
+    "normal_gigaimpact"
+   ]
+  },
+  "igg": {
+   "start": "normal_round",
+   "moves": [
+    "normal_round",
+    "normal_doubleslap",
+    "normal_tackle",
+    "normal_swift",
+    "normal_bodyslam",
+    "normal_hypervoice",
+    "normal_uproar",
+    "normal_doubleedge",
+    "normal_boomburst",
+    "normal_hyperbeam"
+   ],
+   "secondType": {
+    "fairy": [
+     "fairy_disarmingvoice",
+     "fairy_sweetkiss",
+     "fairy_charm",
+     "fairy_drainingkiss",
+     "fairy_fairywind",
+     "fairy_alluringvoice",
+     "fairy_dazzlinggleam",
+     "fairy_playrough",
+     "fairy_moonblast",
+     "fairy_mistyexplosion"
+    ]
+   }
+  },
+  "meow": {
+   "start": "normal_payday",
+   "moves": [
+    "normal_payday",
+    "normal_furyswipes",
+    "normal_tackle",
+    "normal_swift",
+    "normal_doubleteam",
+    "normal_rapidspin",
+    "normal_hyperfang",
+    "normal_triattack",
+    "normal_bodyslam",
+    "normal_uproar",
+    "normal_hypervoice",
+    "normal_hyperbeam",
+    "normal_explosion"
+   ]
+  },
+  "cater": {
+   "start": "bug_stringshot",
+   "moves": [
+    "bug_stringshot",
+    "bug_bugbite",
+    "bug_strugglebug",
+    "bug_infestation",
+    "bug_ragepowder",
+    "bug_signalbeam",
+    "bug_silverwind",
+    "bug_pollenpuff",
+    "bug_bugbuzz",
+    "bug_quiverdance"
+   ],
+   "secondType": {
+    "flying": [
+     "flying_gust",
+     "flying_whirlwind",
+     "flying_aircutter",
+     "flying_featherdance",
+     "flying_aerialace",
+     "flying_airslash",
+     "flying_tailwind",
+     "flying_oblivionwing",
+     "flying_hurricane",
+     "flying_skyattack"
+    ]
+   }
+  },
+  "bug": {
+   "start": "bug_twineedle",
+   "moves": [
+    "bug_twineedle",
+    "bug_bugbite",
+    "bug_pinmissile",
+    "bug_furycutter",
+    "bug_stringshot",
+    "bug_xscissor",
+    "bug_uturn",
+    "bug_stickyweb",
+    "bug_megahorn",
+    "bug_attackorder"
+   ],
+   "secondType": {
+    "poison": [
+     "poison_poisonsting",
+     "poison_poisontail",
+     "poison_barbbarrage",
+     "poison_toxic",
+     "poison_poisonjab",
+     "poison_toxicspikes",
+     "poison_crosspoison",
+     "poison_venoshock",
+     "poison_sludgebomb",
+     "poison_gunkshot"
+    ]
+   }
+  },
+  "paras": {
+   "start": "bug_furycutter",
+   "moves": [
+    "bug_furycutter",
+    "bug_bugbite",
+    "bug_strugglebug",
+    "bug_leechlife",
+    "bug_infestation",
+    "bug_xscissor",
+    "bug_pollenpuff",
+    "bug_silverwind",
+    "bug_attackorder",
+    "bug_megahorn"
+   ],
+   "secondType": {
+    "grass": [
+     "grass_absorb",
+     "grass_megadrain",
+     "grass_stunspore",
+     "grass_leechseed",
+     "grass_bulletseed",
+     "grass_gigadrain",
+     "grass_seedbomb",
+     "grass_seedflare",
+     "grass_energyball",
+     "grass_solarbeam"
+    ]
+   }
+  },
+  "veno": {
+   "start": "bug_strugglebug",
+   "moves": [
+    "bug_strugglebug",
+    "bug_bugbite",
+    "bug_leechlife",
+    "bug_infestation",
+    "bug_stringshot",
+    "bug_signalbeam",
+    "bug_silverwind",
+    "bug_pollenpuff",
+    "bug_bugbuzz",
+    "bug_quiverdance"
+   ],
+   "secondType": {
+    "poison": [
+     "poison_poisongas",
+     "poison_poisonsting",
+     "poison_smog",
+     "poison_toxic",
+     "poison_clearsmog",
+     "poison_sludge",
+     "poison_sludgebomb",
+     "poison_venoshock",
+     "poison_toxicspikes",
+     "poison_sludgewave"
+    ]
+   }
+  },
+  "flying": {
+   "start": "flying_gust",
+   "moves": [
+    "flying_gust",
+    "flying_peck",
+    "flying_wingattack",
+    "flying_whirlwind",
+    "flying_featherdance",
+    "flying_aerialace",
+    "flying_aircutter",
+    "flying_airslash",
+    "flying_tailwind",
+    "flying_fly",
+    "flying_hurricane",
+    "flying_bravebird",
+    "flying_aeroblast"
+   ]
+  },
+  "spear": {
+   "start": "flying_peck",
+   "moves": [
+    "flying_peck",
+    "flying_pluck",
+    "flying_acrobatics",
+    "flying_aerialace",
+    "flying_aircutter",
+    "flying_drillpeck",
+    "flying_fly",
+    "flying_bounce",
+    "flying_bravebird",
+    "flying_skyattack"
+   ],
+   "secondType": {
+    "normal": [
+     "normal_quickattack",
+     "normal_tackle",
+     "normal_furyswipes",
+     "normal_swift",
+     "normal_hyperfang",
+     "normal_superfang",
+     "normal_doubleedge",
+     "normal_uproar",
+     "normal_hyperbeam",
+     "normal_gigaimpact"
+    ]
+   }
+  },
+  "ekans": {
+   "start": "poison_poisonfang",
+   "moves": [
+    "poison_poisonfang",
+    "poison_poisonsting",
+    "poison_acid",
+    "poison_poisontail",
+    "poison_poisongas",
+    "poison_toxic",
+    "poison_sludge",
+    "poison_sludgebomb",
+    "poison_poisonjab",
+    "poison_mortalspin",
+    "poison_venoshock",
+    "poison_gunkshot",
+    "poison_belch"
+   ]
+  },
+  "nidof": {
+   "start": "poison_poisonsting",
+   "moves": [
+    "poison_poisonsting",
+    "poison_poisonfang",
+    "poison_poisontail",
+    "poison_toxic",
+    "poison_barbbarrage",
+    "poison_toxicspikes",
+    "poison_poisonjab",
+    "poison_sludgebomb",
+    "poison_venoshock",
+    "poison_sludgewave"
+   ],
+   "secondType": {
+    "ground": [
+     "ground_mudslap",
+     "ground_mudshot",
+     "ground_bulldoze",
+     "ground_dig",
+     "ground_sandtomb",
+     "ground_earthpower",
+     "ground_stompingtantrum",
+     "ground_highhorsepower",
+     "ground_earthquake",
+     "ground_precipiceblades"
+    ]
+   }
+  },
+  "nidom": {
+   "start": "poison_barbbarrage",
+   "moves": [
+    "poison_barbbarrage",
+    "poison_poisonsting",
+    "poison_poisonjab",
+    "poison_poisontail",
+    "poison_toxic",
+    "poison_crosspoison",
+    "poison_toxicspikes",
+    "poison_mortalspin",
+    "poison_sludgebomb",
+    "poison_gunkshot"
+   ],
+   "secondType": {
+    "ground": [
+     "ground_mudslap",
+     "ground_dig",
+     "ground_magnitude",
+     "ground_bulldoze",
+     "ground_drillrun",
+     "ground_earthpower",
+     "ground_highhorsepower",
+     "ground_spikes",
+     "ground_earthquake",
+     "ground_headlongrush"
+    ]
+   }
+  },
+  "zub": {
+   "start": "poison_toxic",
+   "moves": [
+    "poison_toxic",
+    "poison_poisonfang",
+    "poison_smog",
+    "poison_clearsmog",
+    "poison_poisongas",
+    "poison_sludge",
+    "poison_crosspoison",
+    "poison_venoshock",
+    "poison_sludgebomb",
+    "poison_gunkshot"
+   ],
+   "secondType": {
+    "flying": [
+     "flying_wingattack",
+     "flying_gust",
+     "flying_aerialace",
+     "flying_acrobatics",
+     "flying_aircutter",
+     "flying_airslash",
+     "flying_oblivionwing",
+     "flying_tailwind",
+     "flying_bravebird",
+     "flying_skyattack"
+    ]
+   }
+  },
+  "poison": {
+   "start": "poison_acid",
+   "moves": [
+    "poison_acid",
+    "poison_smog",
+    "poison_poisongas",
+    "poison_toxic",
+    "poison_clearsmog",
+    "poison_barbbarrage",
+    "poison_sludge",
+    "poison_sludgebomb",
+    "poison_toxicspikes",
+    "poison_venoshock",
+    "poison_gunkshot",
+    "poison_sludgewave",
+    "poison_belch"
+   ]
+  },
+  "sand": {
+   "start": "ground_mudshot",
+   "moves": [
+    "ground_mudshot",
+    "ground_mudslap",
+    "ground_sandattack",
+    "ground_dig",
+    "ground_sandtomb",
+    "ground_magnitude",
+    "ground_bulldoze",
+    "ground_drillrun",
+    "ground_sandstorm",
+    "ground_spikes",
+    "ground_stompingtantrum",
+    "ground_earthquake",
+    "ground_precipiceblades"
+   ]
+  },
+  "ground": {
+   "start": "ground_magnitude",
+   "moves": [
+    "ground_magnitude",
+    "ground_mudslap",
+    "ground_sandattack",
+    "ground_dig",
+    "ground_bulldoze",
+    "ground_sandtomb",
+    "ground_earthpower",
+    "ground_sandstorm",
+    "ground_scorchingsands",
+    "ground_stompingtantrum",
+    "ground_earthquake",
+    "ground_precipiceblades",
+    "ground_headlongrush"
+   ]
+  },
+  "asand": {
+   "start": "ice_iceball",
+   "moves": [
+    "ice_iceball",
+    "ice_powdersnow",
+    "ice_iceshard",
+    "ice_iciclespear",
+    "ice_icespinner",
+    "ice_icepunch",
+    "ice_tripleaxel",
+    "ice_avalanche",
+    "ice_iciclecrash",
+    "ice_blizzard"
+   ],
+   "secondType": {
+    "steel": [
+     "steel_metalclaw",
+     "steel_gyroball",
+     "steel_spinout",
+     "steel_irondefense",
+     "steel_mirrorshot",
+     "steel_ironhead",
+     "steel_irontail",
+     "steel_smartstrike",
+     "steel_heavyslam",
+     "steel_meteormash"
+    ]
+   }
+  },
+  "avul": {
+   "start": "ice_powdersnow",
+   "moves": [
+    "ice_powdersnow",
+    "ice_icywind",
+    "ice_iceshard",
+    "ice_aurorabeam",
+    "ice_frostbreath",
+    "ice_icebeam",
+    "ice_freezedry",
+    "ice_icehammer",
+    "ice_blizzard",
+    "ice_glaciallance"
+   ],
+   "secondType": {
+    "fairy": [
+     "fairy_disarmingvoice",
+     "fairy_fairywind",
+     "fairy_charm",
+     "fairy_drainingkiss",
+     "fairy_dazzlinggleam",
+     "fairy_moonblast",
+     "fairy_sparklyswirl",
+     "fairy_playrough",
+     "fairy_mistyexplosion",
+     "fairy_lightofruin"
+    ]
+   }
+  },
+  "adig": {
+   "start": "ground_bulldoze",
+   "moves": [
+    "ground_bulldoze",
+    "ground_mudslap",
+    "ground_sandattack",
+    "ground_dig",
+    "ground_magnitude",
+    "ground_sandtomb",
+    "ground_earthpower",
+    "ground_stompingtantrum",
+    "ground_earthquake",
+    "ground_headlongrush"
+   ],
+   "secondType": {
+    "steel": [
+     "steel_metalclaw",
+     "steel_mirrorshot",
+     "steel_magnetbomb",
+     "steel_metalburst",
+     "steel_ironhead",
+     "steel_heavyslam",
+     "steel_flashcannon",
+     "steel_steelbeam",
+     "steel_meteormash",
+     "steel_doomdesire"
+    ]
+   }
+  },
+  "fairy": {
+   "start": "fairy_disarmingvoice",
+   "moves": [
+    "fairy_disarmingvoice",
+    "fairy_fairywind",
+    "fairy_charm",
+    "fairy_sweetkiss",
+    "fairy_drainingkiss",
+    "fairy_fairylock",
+    "fairy_magicaltorque",
+    "fairy_dazzlinggleam",
+    "fairy_playrough",
+    "fairy_moonblast",
+    "fairy_decorate",
+    "fairy_mistyexplosion",
+    "fairy_lightofruin"
+   ]
+  },
+  "mank": {
+   "start": "fighting_lowkick",
+   "moves": [
+    "fighting_lowkick",
+    "fighting_karatechop",
+    "fighting_rocksmash",
+    "fighting_doublekick",
+    "fighting_rollingkick",
+    "fighting_seismictoss",
+    "fighting_crosschop",
+    "fighting_brickbreak",
+    "fighting_ragefist",
+    "fighting_submission",
+    "fighting_closecombat",
+    "fighting_dynamicpunch",
+    "fighting_superpower"
+   ]
+  },
+  "fighting": {
+   "start": "fighting_karatechop",
+   "moves": [
+    "fighting_karatechop",
+    "fighting_lowkick",
+    "fighting_rocksmash",
+    "fighting_machpunch",
+    "fighting_seismictoss",
+    "fighting_forcepalm",
+    "fighting_brickbreak",
+    "fighting_crosschop",
+    "fighting_submission",
+    "fighting_drainpunch",
+    "fighting_dynamicpunch",
+    "fighting_closecombat",
+    "fighting_superpower"
+   ]
+  },
+  "psychic": {
+   "start": "psychic_confusion",
+   "moves": [
+    "psychic_confusion",
+    "psychic_psybeam",
+    "psychic_teleport",
+    "psychic_lightscreen",
+    "psychic_extrasensory",
+    "psychic_psychic",
+    "psychic_psyshock",
+    "psychic_futuresight",
+    "psychic_psychoshift",
+    "psychic_psychicterrain",
+    "psychic_expandingforce",
+    "psychic_dreameater",
+    "psychic_prismaticlaser"
+   ]
+  },
+  "rock": {
+   "start": "rock_rockthrow",
+   "moves": [
+    "rock_rockthrow",
+    "rock_rollout",
+    "rock_rocktomb",
+    "rock_rockblast",
+    "rock_smackdown",
+    "rock_accelerock",
+    "rock_rockslide",
+    "rock_stealthrock",
+    "rock_stoneedge",
+    "rock_mightycleave",
+    "rock_headsmash",
+    "rock_rockwrecker",
+    "rock_diamondstorm"
+   ]
+  },
+  "ice": {
+   "start": "ice_iceshard",
+   "moves": [
+    "ice_iceshard",
+    "ice_powdersnow",
+    "ice_icywind",
+    "ice_frostbreath",
+    "ice_icefang",
+    "ice_aurorabeam",
+    "ice_icebeam",
+    "ice_freezedry",
+    "ice_avalanche",
+    "ice_icehammer",
+    "ice_blizzard",
+    "ice_glaciallance",
+    "ice_mountaingale"
+   ]
+  },
+  "dark": {
+   "start": "dark_bite",
+   "moves": [
+    "dark_bite",
+    "dark_pursuit",
+    "dark_snarl",
+    "dark_thief",
+    "dark_assurance",
+    "dark_feintattack",
+    "dark_faketears",
+    "dark_crunch",
+    "dark_throatchop",
+    "dark_suckerpunch",
+    "dark_lashout",
+    "dark_foulplay",
+    "dark_fierywrath"
+   ]
+  },
+  "steel": {
+   "start": "steel_gyroball",
+   "moves": [
+    "steel_gyroball",
+    "steel_metalclaw",
+    "steel_bulletpunch",
+    "steel_magnetbomb",
+    "steel_irondefense",
+    "steel_metalburst",
+    "steel_ironhead",
+    "steel_heavyslam",
+    "steel_flashcannon",
+    "steel_smartstrike",
+    "steel_meteormash",
+    "steel_steelbeam",
+    "steel_doomdesire"
+   ]
+  },
+  "ghost": {
+   "start": "ghost_lick",
+   "moves": [
+    "ghost_lick",
+    "ghost_astonish",
+    "ghost_nightshade",
+    "ghost_confuseray",
+    "ghost_hex",
+    "ghost_spite",
+    "ghost_curse",
+    "ghost_shadowball",
+    "ghost_phantomforce",
+    "ghost_bittermalice",
+    "ghost_infernalparade",
+    "ghost_poltergeist",
+    "ghost_astralbarrage"
+   ]
+  },
+  "dragon": {
+   "start": "dragon_twister",
+   "moves": [
+    "dragon_twister",
+    "dragon_dragonrage",
+    "dragon_dragontail",
+    "dragon_dragonbreath",
+    "dragon_scaleshot",
+    "dragon_dragonpulse",
+    "dragon_dragonrush",
+    "dragon_dragondance",
+    "dragon_outrage",
+    "dragon_dragonclaw",
+    "dragon_dracometeor",
+    "dragon_dragonenergy",
+    "dragon_dynamaxcannon"
+   ]
+  },
+  "bell": {
+   "start": "grass_absorb",
+   "moves": [
+    "grass_absorb",
+    "grass_megadrain",
+    "grass_magicalleaf",
+    "grass_stunspore",
+    "grass_leechseed",
+    "grass_gigadrain",
+    "grass_petalblizzard",
+    "grass_energyball",
+    "grass_seedflare",
+    "grass_leafstorm",
+    "grass_petaldance",
+    "grass_leaftornado",
+    "grass_powerwhip"
+   ]
+  }
+ }
+}
