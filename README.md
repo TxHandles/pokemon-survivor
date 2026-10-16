@@ -18,6 +18,7 @@ A native rebuild in Go with [Ebitengine](https://ebitengine.org), reading the sa
 |---|---|
 | `engine/content` | Loads `data/*.json` (stats, learnsets, tier rules) |
 | `engine/sim` | The game simulation — pure logic, no graphics, so bots can run it headless |
+| `engine/meta` | Progression: save file (same format as the web game), shop, unlocks, mastery, challenges, rewards |
 | `engine/client` | Rendering, input (keyboard, gamepad, mouse), HUD and menus |
 | `cmd/game` | The playable game (Windows / browser) |
 | `cmd/sim` | Headless bot runner for balance checks: `go run ./cmd/sim -runs 20 -mins 5` |
@@ -27,6 +28,10 @@ A native rebuild in Go with [Ebitengine](https://ebitengine.org), reading the sa
 ./tools/build_go.sh            # -> build/windows/PokemonSurvivor.exe and build/web/
 go test ./engine/content ./engine/sim
 ```
+
+Saves: the Windows build keeps its save in `%APPDATA%\PokemonSurvivor\save.json`; the browser build uses the same
+browser storage key as the web game. Main menu → Save transfer copies / loads the same save codes as the web game's
+"Copy save code" / "Load save code", so progress moves both ways.
 
 The browser build accepts `?demo=<id>&biome=<type>&seed=<n>&t=<seconds>` to watch the bot play.
 GitHub Actions builds both on every push (Actions → Go build → artifacts); pushing a `go-v*` tag makes a release.

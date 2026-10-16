@@ -14,8 +14,13 @@ func New(db *content.DB, id, biome string, seed int64) (*World, error) {
 	return NewRun(db, id, biome, seed, 0)
 }
 
-// NewRun starts a run with ability 0 (starting) or 1 (hidden / legendary).
+// NewRun starts a run with ability 0 (starting) or 1 (hidden / legendary) and no meta upgrades.
 func NewRun(db *content.DB, id, biome string, seed int64, ability int) (*World, error) {
+	return NewWith(db, id, biome, seed, Config{Ability: ability, LI: -1})
+}
+
+func newWorld(db *content.DB, id, biome string, seed int64, cfg Config) (*World, error) {
+	ability := cfg.Ability
 	p := db.ByID[id]
 	if p == nil {
 		return nil, fmt.Errorf("unknown Pokémon %q", id)
@@ -23,7 +28,7 @@ func NewRun(db *content.DB, id, biome string, seed int64, ability int) (*World, 
 	st := db.Stats[id]
 	w := &World{DB: db, Biome: biome, Seed: seed, rng: rand.New(rand.NewSource(seed)), Held: map[string]int{}, DMG: map[string]float64{},
 		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[[2]int][]Obstacle{},
-		pools: map[[2]int][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6}
+		pools: map[[2]int][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6, Cfg: cfg, Run: makeRun(cfg), Ban: map[string]bool{}}
 	ab := db.AbilityPair(id)[ability&1]
 	w.PS, w.Ability = newPS(ab), ability&1
 	if pl := w.PS.L("pulse"); len(pl) == 3 {
@@ -31,11 +36,22 @@ func NewRun(db *content.DB, id, biome string, seed int64, ability int) (*World, 
 	} else {
 		w.ab.pt = 0
 	}
-	mh := math.Round(80 * (1 + w.PS.F("hpM")) * st.HP)
-	w.P = &Player{ID: id, Name: p.Name, Types: p.Types, Stats: st, HP: mh, MHP: mh, Sp: 125 * st.Spd, Lv: 1, NX: 5, FX: 1, DQ: -1, AtkT: -9}
+	mh := math.Round((80 + 14*w.up("hp")) * b2f(w.Run.Glass, .5, 1) * (1 + w.PS.F("hpM")) * st.HP)
+	w.P = &Player{ID: id, Name: p.Name, Types: p.Types, Stats: st, HP: mh, MHP: mh, Sp: 125 * st.Spd * (1 + .03*w.up("spd")), Lv: 1, NX: 5, FX: 1, DQ: -1, AtkT: -9}
 	w.addMove(db.StartMove(id))
-	w.RouteChoices, w.chestT, w.shT = 2, 30, 150
-	w.enterBiome(biome, w.rng.Intn(3), true)
+	w.Learned = map[string]bool{db.StartMove(id): true}
+	w.Evolved, w.Capstone = map[string]bool{}, map[string]bool{}
+	w.RouteChoices = min(5, 2+int(w.up("rt")))
+	w.MoveSlots = 2 + int(w.up("m3")) + int(w.up("m4"))
+	w.HeldSlots = 2 + int(w.up("h3")) + int(w.up("h4"))
+	w.Choices = 3 + int(w.up("ch"))
+	w.Rerolls, w.Banishes = int(w.up("rr")), int(w.up("bn"))
+	w.chestT, w.shT = 30, 150
+	li := cfg.LI
+	if li < 0 || li > 2 {
+		li = w.rng.Intn(3)
+	}
+	w.enterBiome(biome, li, true)
 	return w, nil
 }
 
@@ -55,7 +71,13 @@ func (w *World) slot(id string) *Slot {
 	return nil
 }
 
-func (w *World) tS() float64  { return math.Min(w.T, 900) + math.Max(0, w.T-900) }
+func (w *World) tS() float64 {
+	k := 1.0
+	if w.Run.Stage > 1 && !w.Endless {
+		k = .6
+	}
+	return math.Min(w.T, 900) + math.Max(0, w.T-900)*k
+}
 func (w *World) tsc() float64 { return (1 + w.tS()/60*.35) * w.ef() }
 func (w *World) dmS() float64 { return (1 + w.tS()/600) * math.Sqrt(w.ef()) }
 
@@ -102,14 +124,17 @@ func (w *World) spawn(a float64, t string) {
 	if big {
 		e.R, hp, sp, dm = 16, 45, sp*.7, 12
 	}
-	e.HP, e.MHP = hp*sc, hp*sc
+	e.HP, e.MHP = hp*sc*w.Run.HM, hp*sc*w.Run.HM
 	if w.P.Pgr > 0 {
 		e.HP, e.MHP = e.HP*1.5, e.MHP*1.5
 	}
-	e.Sp = sp * w.spS()
-	e.Dm = dm * w.dmS() * math.Min(1, .75+w.T/720)
+	e.Sp = sp * w.spS() * w.Run.SM
+	e.Dm = dm * w.dmS() * w.Run.DM * math.Min(1, .75+w.T/720)
 	e.PokeID = w.enemySprite(t, "")
-	w.assignRole(e)
+	w.maybeSpec(e)
+	if e.Sp2 == "" {
+		w.assignRole(e)
+	}
 	w.E = append(w.E, e)
 }
 
@@ -127,12 +152,12 @@ func (w *World) spawnBoss() {
 	if n > 1 {
 		bh = 800 * float64(n)
 	}
-	bh *= bd.HP * w.ef()
-	dm := 18 * w.dmS() * bd.Dm
+	bh *= bd.HP * w.ef() * w.Run.HM * w.Run.BH
+	dm := 18 * w.dmS() * bd.Dm * w.Run.DM
 	if n == 1 {
 		dm *= .85
 	}
-	e := &Enemy{X: w.P.X + math.Cos(a)*500, Y: w.P.Y + math.Sin(a)*500, Type: t, R: bd.R, HP: bh, MHP: bh, Sp: 60 * bd.Sp, Dm: dm, Boss: true, BD: bd, Seed: w.rng.Float64()}
+	e := &Enemy{X: w.P.X + math.Cos(a)*500, Y: w.P.Y + math.Sin(a)*500, Type: t, R: bd.R, HP: bh, MHP: bh, Sp: 60 * bd.Sp * w.spS() * w.Run.SM, Dm: dm, Boss: true, BD: bd, Seed: w.rng.Float64()}
 	e.PokeID = w.enemySprite(t, "boss")
 	w.E = append(w.E, e)
 	name := e.PokeID
@@ -205,13 +230,13 @@ func (w *World) Step(dt float64, in Input) {
 		for i := 0; i < n; i++ {
 			w.spawn(-1, "")
 		}
-		w.spawnT = math.Max(.1, .55-w.T/1700)
+		w.spawnT = math.Max(.1, .55-w.T/1700) / w.Run.RT
 		if w.Endless {
 			w.spawnT /= 1 + (w.T-w.ET)/180
 		}
 	}
 	w.relocate(dt)
-	if w.T >= w.nextBoss && (w.bossesSpawned < RunBosses || w.Endless) {
+	if w.T >= w.nextBoss && (w.bossesSpawned < w.Run.Bosses || w.Endless) {
 		w.spawnBoss()
 	}
 	w.stepRun(dt)
@@ -295,7 +320,9 @@ func (w *World) stepPlayer(dt float64, in Input) {
 	if v := w.pe("lifeorb"); v > 0 && P.HP > P.MHP*.5 {
 		P.HP -= P.MHP * .0015 * v * dt
 	}
-	P.HP = math.Min(P.MHP, P.HP+(.45*w.pe("left")+w.abReg())*dt)
+	if !w.Run.NoHeal {
+		P.HP = math.Min(P.MHP, P.HP+(.45*w.pe("left")+.3*w.up("reg")+w.abReg())*dt)
+	}
 	w.abTick(dt)
 	// moves
 	if in.Dash {
@@ -889,7 +916,7 @@ func (w *World) compact() {
 
 func (w *World) stepGems(dt float64) {
 	P := w.P
-	mag := 90 * (1 + .25*w.pe("magnet") + w.PS.F("mag"))
+	mag := 90 * (1 + .12*w.up("mag") + .25*w.pe("magnet") + w.PS.F("mag"))
 	if w.magnetAll {
 		w.magnetAll = false
 		for _, g := range w.Gems {
@@ -916,8 +943,15 @@ func (w *World) stepGems(dt float64) {
 			}
 		}
 		if d < 14 {
-			P.XP += g.V * (1 + .1*w.pe("exp") + w.PS.F("xp"))
-			w.Coins += g.C
+			P.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp"))
+			w.Coins += g.C * (1 + w.PS.F("coin"))
+			if g.Tk {
+				w.Tickets++
+				if g.Ed {
+					w.Stats.EliteTk++
+				}
+				w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 30, Life: 1.5, Text: "+1 ticket!", Col: "gold"})
+			}
 			continue
 		}
 		g2 = append(g2, g)
@@ -944,7 +978,9 @@ func (w *World) levelUp() {
 	P := w.P
 	P.XP -= P.NX
 	P.Lv++
-	P.HP = math.Min(P.MHP, P.HP+P.MHP*b2f(P.Lv <= 20, .06, .015))
+	if !w.Run.NoHeal {
+		P.HP = math.Min(P.MHP, P.HP+P.MHP*b2f(P.Lv <= 20, .06, .015))
+	}
 	if P.Lv <= 13 {
 		P.NX = math.Round(P.NX*1.22 + 4)
 	} else {
@@ -1034,7 +1070,13 @@ func (w *World) options() []Option {
 }
 
 func (w *World) genOpts() []Option {
-	o := w.options()
+	all := w.options()
+	o := all[:0]
+	for _, x := range all {
+		if !w.Ban[banKey(x)] {
+			o = append(o, x)
+		}
+	}
 	w.rng.Shuffle(len(o), func(i, j int) { o[i], o[j] = o[j], o[i] })
 	need := map[string]bool{}
 	for _, s := range w.Slots {
@@ -1052,8 +1094,8 @@ func (w *World) genOpts() []Option {
 		return 0
 	}
 	sort.SliceStable(o, func(i, j int) bool { return pr(o[i]) > pr(o[j]) })
-	if len(o) > 3 {
-		o = o[:3]
+	if len(o) > w.Choices {
+		o = o[:w.Choices]
 	}
 	return o
 }
@@ -1067,12 +1109,17 @@ func (w *World) Choose(i int) {
 	switch {
 	case o.Evo:
 		w.slot(o.ID).Evo = true
+		w.Evolved[o.ID] = true
 		w.message("EVOLVED! " + w.DB.Moves[o.ID].Name)
 	case o.Move:
 		if s := w.slot(o.ID); s != nil {
 			s.Lv++
+			if s.Lv >= 20 {
+				w.Capstone[o.ID] = true
+			}
 		} else {
 			w.addMove(o.ID)
+			w.Learned[o.ID] = true
 		}
 	default:
 		if o.Swap != "" {

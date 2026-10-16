@@ -193,3 +193,7 @@ func (r *prng) f() float64 {
 	return float64(t^t>>14) / 4294967296
 }
 func (r *prng) rg(a, b float64) float64 { return a + r.f()*(b-a) }
+
+func rectI(r [4]float64) image.Rectangle {
+	return image.Rect(int(r[0]), int(r[1]), int(r[0]+r[2]), int(r[1]+r[3]))
+}

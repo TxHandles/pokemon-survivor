@@ -313,7 +313,12 @@ func (w *World) kill(e *Enemy) {
 
 func (w *World) message(s string) { w.Msg, w.MsgT = s, 3 }
 
-func (w *World) heal(v float64) { w.P.HP = math.Min(w.P.MHP, w.P.HP+v) }
+func (w *World) heal(v float64) {
+	if w.Run.NoHeal {
+		return
+	}
+	w.P.HP = math.Min(w.P.MHP, w.P.HP+v)
+}
 
 func (w *World) healCapped(v float64) { w.heal(math.Min(v, w.P.MHP*.03)) }
 
@@ -337,7 +342,7 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 	if P.Still > 1 {
 		red += w.PS.F("redStill")
 	}
-	P.HP -= d * math.Pow(.93, w.pe("metal")) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
+	P.HP -= d * math.Pow(.96, w.up("arm")) * math.Pow(.93, w.pe("metal")) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
 	w.abHurt(h0 - P.HP)
 	if h0-P.HP > .6 {
 		P.HurtT = w.T

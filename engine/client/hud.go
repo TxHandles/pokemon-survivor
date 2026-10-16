@@ -75,7 +75,7 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	bar(dst, 70, 44, 220, 12, hpf, hc, c(40, 46, 60, 255))
 	drawText(dst, fmt.Sprintf("%.0f / %.0f", P.HP, P.MHP), 180, 58, 11, true, dim, text.AlignCenter, false)
 	// timer / biome / kills
-	tm := fmtT(w.T) + " / " + fmtT(sim.RunLength)
+	tm := fmtT(w.T) + " / " + fmtT(w.Run.Len)
 	if w.Endless {
 		tm = "ENDLESS  " + fmtT(w.T)
 	}
@@ -219,7 +219,12 @@ func (g *Game) drawLevelUp(dst *ebiten.Image) {
 	w := g.W
 	rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, 170))
 	drawText(dst, "LEVEL UP!", float64(g.sw)/2, float64(g.sh)/2-190, 34, true, gold, text.AlignCenter, true)
-	drawText(dst, "Choose one  ·  1-3, arrows + Enter, click, or gamepad", float64(g.sw)/2, float64(g.sh)/2-148, 13, false, dim, text.AlignCenter, true)
+	sub := "Choose one  ·  number keys, arrows + Enter, click, or gamepad"
+	if g.banMode {
+		sub = "BANISH MODE: pick a card to remove it for the rest of this run (X / Y to cancel)"
+	}
+	drawText(dst, sub, float64(g.sw)/2, float64(g.sh)/2-148, 13, g.banMode, b2c(g.banMode, c(255, 140, 140, 255), dim), text.AlignCenter, true)
+	drawText(dst, fmt.Sprintf("R / X button: Reroll (%d left)     X key / Y button: Banish (%d left)", w.Rerolls, w.Banishes), float64(g.sw)/2, float64(g.sh)/2+170, 13, true, b2c(w.Rerolls+w.Banishes > 0, c(159, 232, 255, 255), c(110, 116, 130, 255)), text.AlignCenter, true)
 	mx, my := ebiten.CursorPosition()
 	hov := g.cardHit(mx, my)
 	for i, r := range g.cardRects() {

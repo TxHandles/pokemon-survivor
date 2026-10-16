@@ -47,7 +47,7 @@ func (g *Game) choiceHeader(dst *ebiten.Image, title, sub string, col color.NRGB
 
 func (g *Game) drawRoute(dst *ebiten.Image) {
 	w := g.W
-	sub := fmt.Sprintf("Boss %d of %d defeated · you are in %s", w.Bosses, sim.RunBosses, w.LocName(w.Biome, w.LI))
+	sub := fmt.Sprintf("Boss %d of %d defeated · you are in %s", w.Bosses, w.Run.Bosses, w.LocName(w.Biome, w.LI))
 	if w.Endless {
 		sub = fmt.Sprintf("Endless mode · %d bosses defeated", w.Bosses)
 	}

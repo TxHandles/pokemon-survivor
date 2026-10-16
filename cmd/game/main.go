@@ -23,6 +23,9 @@ func main() {
 		log.Fatal(err)
 	}
 	g := client.New(data.FS, db)
+	if sc := opts["screen"]; sc != "" { // open a menu screen directly (screenshots / testing)
+		g.OpenScreen(sc)
+	}
 	if opts["demo"] != "" { // the bot plays: ?demo=fire  (optionally &biome=water&seed=3&t=40 to fast-forward)
 		g.Demo(true)
 		if opts["ab"] == "1" {

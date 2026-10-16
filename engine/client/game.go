@@ -8,8 +8,10 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 
 	"github.com/TxHandles/pokemon-survivor/engine/content"
+	"github.com/TxHandles/pokemon-survivor/engine/meta"
 	"github.com/TxHandles/pokemon-survivor/engine/sim"
 )
 
@@ -49,10 +51,29 @@ type Game struct {
 	auto bool // demo: the bot plays (title screen background / -demo flag)
 	bot  *sim.Bot
 	tick int
+
+	// meta
+	prof        *meta.Profile
+	ui          uiState
+	csel        string // selected Pokémon
+	lineFam     string
+	toasts      []toastMsg
+	clipIn      chan string
+	xferMsg     string
+	xferPending *meta.Save
+	end         endInfo
+	finished    bool
+	banMode     bool
 }
 
 func New(dataFS fs.FS, db *content.DB) *Game {
-	g := &Game{db: db, assets: NewAssets(dataFS, db), biome: -1, sw: 1280, sh: 720}
+	g := &Game{db: db, assets: NewAssets(dataFS, db), biome: -1, sw: 1280, sh: 720, clipIn: make(chan string, 1)}
+	g.prof = meta.NewProfile(meta.LoadStored(), db)
+	g.csel = g.prof.S.Sel()
+	if g.db.ByID[g.csel] == nil || !g.prof.Unl(g.csel) {
+		g.csel = "fire"
+	}
+	g.scr = scMenu
 	for _, p := range db.Pokemon { // first forms: the roster you pick from in this build
 		if p.EvolvesFrom == "" && p.RegionalOf == "" && !p.Legendary {
 			g.roster = append(g.roster, p.ID)
@@ -66,7 +87,15 @@ func (g *Game) Start(id, biome string, seed int64) {
 	if biome == "" {
 		biome = g.db.ByID[id].Types[0]
 	}
-	w, err := sim.NewRun(g.db, id, biome, seed, g.ability)
+	g.startCfg(id, biome, seed, sim.Config{Ability: g.ability, LI: -1})
+}
+
+// startCfg begins a run with a full meta configuration.
+func (g *Game) startCfg(id, biome string, seed int64, cfg sim.Config) {
+	if biome == "" {
+		biome = g.db.ByID[id].Types[0]
+	}
+	w, err := sim.NewWith(g.db, id, biome, seed, cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -247,7 +276,10 @@ func (g *Game) Update() error {
 	g.tick++
 	switch g.scr {
 	case scTitle:
-		g.updateTitle()
+		g.scr = scMenu
+	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult:
+		g.buildMenu()
+		g.ui.update()
 	case scPlay:
 		g.updatePlay()
 	case scPause:
@@ -255,12 +287,18 @@ func (g *Game) Update() error {
 			g.scr = scPlay
 		}
 		if keyJust(ebiten.KeyQ) || padBtn(ebiten.StandardGamepadButtonRightRight) {
-			g.scr = scTitle
+			g.scr = scMenu // abandon: no rewards (same as the web game)
+			g.ui.focus = ""
 		}
 	case scOver:
 		g.overT += 1.0 / 60
-		if g.overT > .8 && (confirm() || inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)) {
-			g.scr = scTitle
+		if g.auto {
+			if g.overT > .8 && (confirm() || inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft)) {
+				g.scr = scMenu
+			}
+		} else if g.overT > 1.2 {
+			g.scr = scResult
+			g.ui.focus = ""
 		}
 	}
 	return nil
@@ -323,7 +361,21 @@ func (g *Game) updatePlay() {
 			}
 			return
 		}
+		if w.State == sim.StateLevelUp {
+			if keyJust(ebiten.KeyR) || padBtn(ebiten.StandardGamepadButtonRightLeft) {
+				w.Reroll()
+				g.banMode = false
+			}
+			if (keyJust(ebiten.KeyX) || padBtn(ebiten.StandardGamepadButtonRightTop)) && w.Banishes > 0 {
+				g.banMode = !g.banMode
+			}
+		} else {
+			g.banMode = false
+		}
 		n := g.choiceCount()
+		if n == 0 {
+			return
+		}
 		dx, dy := nav()
 		g.lvSel = (g.lvSel + dx + dy + n) % n
 		for i := 0; i < n; i++ {
@@ -343,12 +395,17 @@ func (g *Game) updatePlay() {
 		}
 		return
 	case sim.StateDead:
+		g.finishRun()
 		g.scr = scOver
 		g.overT = 0
 		return
 	}
 	g.lvDelay = 0
 	w.Step(1.0/60, g.playInput())
+	for _, n := range w.Notes {
+		g.toast(n)
+	}
+	w.Notes = nil
 }
 
 // choiceCount: cards on the current choice screen (shrines add "Leave it").
@@ -369,6 +426,11 @@ func (g *Game) pick(i int) {
 	case sim.StateShrine:
 		g.W.ChooseBoon(i)
 	default:
+		if g.banMode {
+			g.W.Banish(i)
+			g.banMode = false
+			return
+		}
 		g.W.Choose(i)
 	}
 	g.lvSel = 0
@@ -396,7 +458,43 @@ func (g *Game) Draw(dst *ebiten.Image) {
 		if g.scr == scOver {
 			g.drawOver(dst)
 		}
+	case scResult:
+		g.drawWorld(dst)
+		rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, 215))
+		g.ui.draw(dst)
+	default: // menus
+		g.drawBackdrop(dst)
+		g.ui.draw(dst)
 	}
+	g.drawToasts(dst)
+}
+
+func (g *Game) drawBackdrop(dst *ebiten.Image) {
+	t := float64(g.tick) / 60
+	dst.Fill(c(16, 20, 32, 255))
+	for i := 0; i < 14; i++ {
+		x := math.Mod(float64(i)*173+t*12, float64(g.sw)+200) - 100
+		soft(dst, x, 120+math.Sin(float64(i)*1.7+t*.3)*90+float64(i%5)*120, 160, 120, alpha(tc(content.Types[i%18]), .07))
+	}
+}
+
+func (g *Game) drawToasts(dst *ebiten.Image) {
+	keep := g.toasts[:0]
+	y := 90.0
+	for _, t := range g.toasts {
+		t.t -= 1.0 / 60
+		if t.t <= 0 {
+			continue
+		}
+		a := math.Min(1, t.t/.5)
+		tw, _ := text.Measure(t.s, font(14, true), 0)
+		x := float64(g.sw) - tw - 40
+		roundRect(dst, x, y, tw+24, 30, 8, alpha(c(20, 26, 40, 240), a))
+		drawText(dst, t.s, x+12, y+7, 14, true, alpha(gold, a), text.AlignStart, false)
+		y += 36
+		keep = append(keep, t)
+	}
+	g.toasts = keep
 }
 
 func fmtT(t float64) string { return fmt.Sprintf("%d:%02d", int(t)/60, int(t)%60) }

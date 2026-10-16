@@ -110,7 +110,7 @@ func (w *World) assignRole(e *Enemy) {
 
 func (w *World) minion(x, y float64, t string) {
 	sc := w.tsc() * w.ef()
-	e := &Enemy{X: x, Y: y, Type: t, R: 9, HP: 12 * sc, MHP: 12 * sc, Sp: w.rnd(70, 100), Dm: 5 * w.dmS(), Seed: w.rng.Float64()}
+	e := &Enemy{X: x, Y: y, Type: t, R: 9, HP: 12 * sc * w.Run.HM, MHP: 12 * sc * w.Run.HM, Sp: w.rnd(70, 100) * w.spS() * w.Run.SM, Dm: 5 * w.dmS() * w.Run.DM, Seed: w.rng.Float64()}
 	e.PokeID = w.enemySprite(t, "")
 	w.E = append(w.E, e)
 }
@@ -129,6 +129,9 @@ func (w *World) spawnEliteAt(mini bool, x, y float64, cursed bool) {
 	if mini {
 		n = 2
 	}
+	if w.Run.Tier >= 5 && w.rng.Float64() < .5 {
+		n = min(3, n+1)
+	}
 	keys := append([]string{}, Affixes...)
 	w.rng.Shuffle(len(keys), func(i, j int) { keys[i], keys[j] = keys[j], keys[i] })
 	hp := 130 * sc
@@ -136,8 +139,10 @@ func (w *World) spawnEliteAt(mini bool, x, y float64, cursed bool) {
 	if mini {
 		hp, r, dm = 270*sc, 24, 20
 	}
+	hp *= w.Run.HM * (1 + .08*float64(w.Run.Tier))
+	dm *= w.Run.DM
 	e := &Enemy{Elite: true, Mini: mini, Cursed: cursed, Big: true, X: x, Y: y, Type: t, R: r, HP: hp, MHP: hp,
-		Sp: w.rnd(55, 72), Dm: dm * w.dmS(), Af: keys[:n], Seed: w.rng.Float64()}
+		Sp: w.rnd(55, 72) * w.spS() * w.Run.SM, Dm: dm * w.dmS(), Af: keys[:n], Seed: w.rng.Float64()}
 	for _, k := range e.Af {
 		switch k {
 		case "swift":
@@ -184,6 +189,14 @@ func (w *World) onDeath(e *Enemy) {
 		}
 	}
 	if e.Elite {
+		w.Stats.Elites++
+		if e.Mini {
+			w.Stats.Minis++
+		}
+		if w.rng.Float64() < b2f(e.Mini, .05, .02) {
+			w.Gems = append(w.Gems, &Gem{X: e.X, Y: e.Y - 8, Tk: true, Ed: true, Mag: true})
+			w.addFX(&FX{Kind: "txt", X: e.X, Y: e.Y - 52, Life: 2, Text: "Ticket dropped!", Col: "gold"})
+		}
 		n := 3
 		if e.Mini {
 			n = 5
@@ -197,8 +210,11 @@ func (w *World) onDeath(e *Enemy) {
 		}
 		w.addFX(&FX{Kind: "txt", X: e.X, Y: e.Y - 30, Life: 1.5, Text: b2s(e.Mini, "MINI-BOSS DEFEATED", "Elite defeated!"), Col: "gold"})
 	}
-	if !e.Boss && !e.Elite && w.rng.Float64() < b2f(e.Big, .008, .0015) {
+	if !e.Boss && !e.Elite && !w.noDrop && w.rng.Float64() < b2f(e.Big, .008, .0015) {
 		w.dropItem(e.X, e.Y)
+	}
+	if !e.Boss && w.rng.Float64() < b2f(e.Big, .0015, .00005) {
+		w.Gems = append(w.Gems, &Gem{X: e.X - 5, Y: e.Y, Tk: true})
 	}
 }
 
@@ -320,6 +336,9 @@ func (w *World) ai(e *Enemy, dt float64) float64 {
 				}
 			}
 		}
+	}
+	if e.Sp2 != "" {
+		return w.specAI(e, dt)
 	}
 	if e.Rk != "" {
 		return w.roleAI(e, dt)
@@ -702,7 +721,7 @@ func (w *World) bossAI(e *Enemy, dt float64) float64 {
 		kit := e.BD.Kit[e.Ph-1]
 		e.K = kit[w.rng.Intn(len(kit))]
 		e.trl, e.c3 = false, 0
-		e.at = math.Max(2, 5.5-float64(e.Ph)*.8)
+		e.at = math.Max(2, 5.5-float64(e.Ph)*.8-float64(w.Run.Tier)*.12)
 		if w.bossMove(e, e.K) {
 			return 1 + .15*float64(e.Ph-1)
 		}
@@ -746,15 +765,18 @@ func (w *World) stepEnemyAttacks(dt float64) {
 	P := w.P
 	w.elT -= dt
 	if w.elT <= 0 && w.T >= 150 && w.spawnHold <= 0 {
-		w.elT = math.Max(22, 70-w.T/40)
+		w.elT = math.Max(22, 70-float64(w.Run.Tier)*4-w.T/40)
 		n := 0
 		for _, e := range w.E {
 			if e.Elite && !e.Dead {
 				n++
 			}
 		}
-		if n < 4 {
+		if n < 4+w.Run.Tier>>1 {
 			w.spawnElite(false)
+			if w.Run.Tier >= 6 && w.rng.Float64() < .4 {
+				w.spawnElite(false)
+			}
 		}
 	}
 	if w.T >= w.mbT && w.spawnHold <= 0 {
@@ -925,12 +947,12 @@ func (w *World) biomeEvents(dt float64) {
 	switch k {
 	case "storm", "rockfall":
 		r, dm, d0, d1, t, col, typ := 42.0, 10*w.dmS(), 60.0, 260.0, 1.2, "255,224,61", "electric"
-		w.bioT = 7
-		n := b2i(w.T > 600)
+		w.bioT = math.Max(5, 7-.1*float64(w.Run.Tier))
+		n := b2i(w.T > 600) + b2i(w.Run.Tier > 5)
 		ahead := 40.0
 		if k == "rockfall" {
 			r, dm, d0, d1, t, col, typ = 52, 13*w.dmS(), 80, 280, 1.5, "190,160,110", "rock"
-			w.bioT = 9.5
+			w.bioT = math.Max(6.5, 9.5-.15*float64(w.Run.Tier))
 			n = 1 + b2i(w.T > 600)
 			ahead = 60
 		}

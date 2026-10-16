@@ -175,6 +175,8 @@ type Enemy struct {
 	pb                  float64 // Perish Body countdown
 	aslT, aslS          float64 // ability slow aura
 	Cursed              bool    // cursed-chest guardian
+	Sp2                 string  // difficulty special: spit chg bomb shld wisp
+	st, cc              float64
 }
 
 type Proj struct {
@@ -227,6 +229,7 @@ type Gem struct {
 	X, Y, V float64
 	Mag     bool    // flying to the player (magnet)
 	C       float64 // coin value (coins instead of XP)
+	Tk, Ed  bool    // ticket (Ed: dropped by an elite)
 	ms      float64
 }
 
@@ -315,6 +318,17 @@ type World struct {
 	Chests                           []Chest
 	Boons                            []Boon
 	bossesSpawned                    int
+	Cfg                              Config
+	Run                              Run
+	Choices                          int
+	Rerolls, Banishes                int
+	Ban                              map[string]bool
+	Tickets                          int
+	Visited                          []string // biomes whose boss was beaten this run
+	Notes                            []string // unlock messages from the meta layer (shown by the client)
+	Learned, Evolved                 map[string]bool
+	Capstone                         map[string]bool
+	Stats                            RunStats
 }
 
 func hyp(x, y float64) float64 { return math.Hypot(x, y) }
@@ -334,3 +348,8 @@ func (w *World) addFX(f *FX) {
 }
 
 func (w *World) later(t float64, fn func()) { w.DL = append(w.DL, &delay{t, fn}) }
+
+// RunStats counts things the meta layer records at the end of a run.
+type RunStats struct {
+	Elites, Minis, EliteTk, Cursed, Curses int
+}

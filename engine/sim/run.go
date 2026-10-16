@@ -34,7 +34,12 @@ type Boon struct {
 
 var safeBoons = []Boon{
 	{"Shrine of Might", "+30% damage for 90 seconds.", "", func(w *World) { w.P.Pm = 90 }},
-	{"Shrine of Vigor", "+15% max HP and restore HP.", "", func(w *World) { w.P.MHP = math.Round(w.P.MHP * 1.15); w.P.HP = w.P.MHP }},
+	{"Shrine of Vigor", "+15% max HP and restore HP.", "", func(w *World) {
+		w.P.MHP = math.Round(w.P.MHP * 1.15)
+		if !w.Run.NoHeal {
+			w.P.HP = w.P.MHP
+		}
+	}},
 	{"Shrine of Plenty", "A free level up and bonus coins.", "", func(w *World) { w.P.XP += w.P.NX; w.Coins += 40 }},
 }
 
@@ -128,14 +133,32 @@ func (w *World) afterBoss(e *Enemy) {
 	w.Coins += 25
 	w.P.XP += w.P.NX // boss chest: free level up
 	w.bossClear(e)
-	if w.Bosses >= RunBosses && !w.Endless {
+	w.Visited = appendU(w.Visited, w.Biome)
+	w.Tickets++ // boss chest ticket
+	if w.Cfg.OnBoss != nil {
+		w.Notes = append(w.Notes, w.Cfg.OnBoss(w.Biome, e.Type, w.LI, w.Bosses == w.Run.Bosses && !w.Endless, w.Visited)...)
+	}
+	if w.Bosses >= w.Run.Bosses && !w.Endless {
 		w.Endless, w.Won, w.ET = true, true, w.T
 		w.message("VICTORY! Endless mode begins...")
 	} else {
 		w.message("Boss defeated! Choose your next destination...")
 	}
+	if w.Run.Lock {
+		w.spawnHold = 3
+		return
+	}
 	w.spawnHold = 1e9
 	w.routeT = 1.3
+}
+
+func appendU(l []string, x string) []string {
+	for _, y := range l {
+		if y == x {
+			return l
+		}
+	}
+	return append(l, x)
 }
 
 func (w *World) spawnMap(kind string) {
@@ -172,7 +195,7 @@ func (w *World) stepRun(dt float64) {
 		if w.rng.Float64() < .12 && len(w.MC) < 3 {
 			w.spawnMap("m")
 		}
-		if w.T >= 240 && w.rng.Float64() < .04 {
+		if w.T >= 240 && w.rng.Float64() < .04+.01*float64(w.Run.Tier) {
 			cur := false
 			for _, m := range w.MC {
 				cur = cur || m.Cursed
@@ -215,6 +238,7 @@ func (w *World) stepRun(dt float64) {
 		if dist(c.X, c.Y, P.X, P.Y) < 28 {
 			cn := 25.0
 			w.Coins += cn
+			w.Tickets++
 			P.XP += P.NX
 			w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 40, Life: 2.5, Text: "CHEST! +25 coins, free level up", Col: "gold"})
 			continue
@@ -233,6 +257,7 @@ func (w *World) openChest(c *MapChest) {
 		w.Boons = append(w.Boons, pacts[p[0]], pacts[p[1]])
 		w.State = StateShrine
 	case c.Cursed:
+		w.Stats.Cursed++
 		w.spawnEliteAt(true, c.X, c.Y, true)
 		for i := 0; i < 18; i++ {
 			a := float64(i) / 18 * 6.283
@@ -261,6 +286,9 @@ func (w *World) ChooseBoon(i int) {
 	if i >= 0 && i < len(w.Boons) {
 		b := w.Boons[i]
 		b.apply(w)
+		if b.Curse != "" {
+			w.Stats.Curses++
+		}
 		w.addFX(&FX{Kind: "txt", X: w.P.X, Y: w.P.Y - 50, Life: 2, Text: b.Name + "!", Col: "gold"})
 	}
 	w.Boons = nil
@@ -272,7 +300,7 @@ func (w *World) ChooseBoon(i int) {
 
 // coinDrop: enemies sometimes drop coins (web hit() death drops).
 func (w *World) coinDrop(e *Enemy) {
-	cm := b2f(w.P.Pgr > 0, 2, 1)
+	cm := b2f(w.P.Pgr > 0, 2, 1) * (1 + .1*w.up("cg"))
 	if e.Boss {
 		return
 	}
