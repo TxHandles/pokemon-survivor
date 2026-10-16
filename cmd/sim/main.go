@@ -23,10 +23,11 @@ func main() {
 	runs := flag.Int("runs", 20, "runs per Pokémon")
 	mins := flag.Float64("mins", 5, "survival mark in minutes")
 	who := flag.String("who", "", "comma-separated Pokémon ids (default: every type base form)")
-	biome := flag.String("biome", "", "biome type (default: the Pokémon's own type)")
+	biome := flag.String("biome", "random", "biome type, \"own\" for the Pokémon's own type, or \"random\" (like the web balance sweeps)")
 	workers := flag.Int("j", 2, "parallel workers")
 	harness := flag.Bool("harness", true, "use the web balance harness leash (260 / .8 / 1.75) instead of the game's")
 	verbose := flag.Bool("v", false, "print each run")
+	stepDT := flag.Float64("dt", 1.0/60, "simulation step (the web balance harness used 0.05)")
 	flag.Parse()
 
 	db, err := content.Load(data.FS)
@@ -55,8 +56,11 @@ func main() {
 			for j := range jobs {
 				id := ids[j[0]]
 				b := *biome
-				if b == "" {
+				switch b {
+				case "own", "":
 					b = db.ByID[id].Types[0]
+				case "random":
+					b = content.Types[(j[1]*7+j[0]*13+j[1]*j[0])%len(content.Types)]
 				}
 				w, err := sim.New(db, id, b, int64(j[1]*7919+j[0]*104729+1))
 				if err != nil {
@@ -68,7 +72,7 @@ func main() {
 					w.LeashFar, w.LeashBias, w.LeashSpread = 260, .8, 1.75
 				}
 				bot := sim.NewBot(w, int64(j[1]*31+j[0]))
-				const dt = 1.0 / 60
+				dt := *stepDT
 				for w.State != sim.StateDead && w.T < *mins*60 {
 					if w.State == sim.StateLevelUp {
 						w.Choose(w.BotPick())

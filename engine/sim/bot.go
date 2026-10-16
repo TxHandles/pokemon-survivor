@@ -69,6 +69,35 @@ func (b *Bot) steer() {
 			gs, gt = v, g
 		}
 	}
+	// pickups: berries when hurt, magnets, candy
+	var it *Pickup
+	for _, p := range w.Items {
+		d := dist(p.X, p.Y, P.X, P.Y)
+		if d > 420 {
+			continue
+		}
+		wt := 3.0
+		switch p.K {
+		case "berry":
+			wt = b2f(hpf < .6, 14, 1)
+		case "magnet":
+			wt = 4
+		case "bomb":
+			wt = b2f(len(near) > 60, 5, 1)
+		case "candy":
+			wt = 5
+		}
+		if v := wt / (1 + d/90); v > gs {
+			gs, gt, it = v, nil, p
+		}
+	}
+	tx, ty, hasT := 0.0, 0.0, false
+	if it != nil {
+		tx, ty, hasT = it.X, it.Y, true
+	} else if gt != nil {
+		tx, ty, hasT = gt.X, gt.Y, true
+	}
+	pools := BiomeHazard[w.Biome] != "" && w.hzK() > 0 && !has(P.Types, "flying") && !has(P.Types, "ghost")
 	hasC := cn > 0
 	ccx, ccy := P.X, P.Y
 	if hasC {
@@ -125,8 +154,37 @@ func (b *Bot) steer() {
 			}
 		}
 		c += float64(ahead) * riskw * 1.6
-		if gt != nil {
-			d0, d1 := dist(gt.X, gt.Y, P.X, P.Y), dist(gt.X, gt.Y, px, py)
+		for _, b := range w.EB {
+			bx, by := b.X+b.VX*LA, b.Y+b.VY*LA
+			if d := math.Min(dist(px, py, bx, by), dist(px, py, b.X, b.Y)); d < 55 {
+				c += (55 - d) * (2.2 + b.Dm/10)
+			}
+		}
+		for _, h := range w.HZ {
+			if dist(px, py, h.X, h.Y) < h.R+22 {
+				c += b2f(h.Gone, 400, 260)
+			}
+		}
+		for _, f := range w.FX {
+			if f.Enemy && f.Kind == "tele" && dist(px, py, f.X, f.Y) < f.R+22 {
+				c += 260
+			}
+		}
+		for _, e := range near {
+			if e.Rk == "charge" && e.cwu > 0 {
+				L := e.Sp*5*.45 + 20
+				co, si := math.Cos(e.cang), math.Sin(e.cang)
+				u, v := (px-e.X)*co+(py-e.Y)*si, -(px-e.X)*si+(py-e.Y)*co
+				if u > -10 && u < L+10 && math.Abs(v) < e.R+18 {
+					c += 300
+				}
+			}
+		}
+		if pools && w.HazAt(px, py) != "" {
+			c += 220
+		}
+		if hasT {
+			d0, d1 := dist(tx, ty, P.X, P.Y), dist(tx, ty, px, py)
 			c += (d1-d0)*.35 + d1*.02
 		} else if hasC {
 			c += math.Abs(dist(ccx, ccy, px, py)-170) * .05
@@ -138,7 +196,7 @@ func (b *Bot) steer() {
 			bc, bx, by = c, ux, uy
 		}
 	}
-	if !hasC && gt == nil {
+	if !hasC && !hasT {
 		b.wang += (b.rng.Float64() - .5) * .6
 	}
 	b.lx, b.ly = bx, by

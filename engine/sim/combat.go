@@ -135,7 +135,7 @@ var lastD float64
 // hit deals move damage to an enemy (port of the web hit()). kb: 0 none, 1 light, 2 strong;
 // (fx,fy) is where the knockback comes from. The move is w.curSlot.
 func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
-	if e.Dead {
+	if e.Dead || e.Ug {
 		return
 	}
 	s := w.curSlot
@@ -158,6 +158,9 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 		}
 		if q.F("hpx", 0) > 0 {
 			base *= .6 + .6*w.P.HP/w.P.MHP
+		}
+		if q.F("shb", 0) > 0 {
+			e.Sh = 0
 		}
 	}
 	em := eff(t, e.Type)
@@ -197,6 +200,14 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 	if d < 1 {
 		d = 1
 	}
+	if e.Arm && q.F("iarm", 0) == 0 {
+		d = math.Max(1, math.Round(d*.6))
+	}
+	if e.Sh > 0 {
+		a := math.Min(e.Sh, d)
+		e.Sh -= a
+		d -= a
+	}
 	w.damage(e, d, em, cr)
 	if v := w.pe("soothe"); v > 0 {
 		w.P.HP = math.Min(w.P.MHP, w.P.HP+math.Min(d, math.Max(0, e.HP+d))*.005*v)
@@ -230,7 +241,7 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 
 // hitRaw: damage over time and other flat hits (no type, STAB or item multipliers).
 func (w *World) hitRaw(e *Enemy, base float64, col string) {
-	if e.Dead {
+	if e.Dead || e.Ug {
 		return
 	}
 	d := math.Max(1, math.Round(base))
@@ -281,7 +292,9 @@ func (w *World) kill(e *Enemy) {
 	}
 	w.Gems = append(w.Gems, &Gem{X: e.X, Y: e.Y, V: v * (1 + w.T/300)})
 	w.addFX(&FX{Kind: "pop", X: e.X, Y: e.Y, R: e.R, Life: .3, Type: e.Type})
+	w.onDeath(e)
 	if e.Boss {
+		w.bossClear(e)
 		w.Bosses++
 		w.Shake = .5
 		if w.Bosses == 3 && !w.Won {

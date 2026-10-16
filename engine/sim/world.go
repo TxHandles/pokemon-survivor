@@ -17,10 +17,23 @@ func New(db *content.DB, id, biome string, seed int64) (*World, error) {
 	}
 	st := db.Stats[id]
 	w := &World{DB: db, Biome: biome, Seed: seed, rng: rand.New(rand.NewSource(seed)), Held: map[string]int{}, DMG: map[string]float64{},
-		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[[2]int][]Obstacle{}}
+		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[[2]int][]Obstacle{},
+		pools: map[[2]int][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6}
 	mh := math.Round(80 * st.HP)
 	w.P = &Player{ID: id, Name: p.Name, Types: p.Types, Stats: st, HP: mh, MHP: mh, Sp: 125 * st.Spd, Lv: 1, NX: 5, FX: 1, DQ: -1, AtkT: -9}
 	w.addMove(db.StartMove(id))
+	if hz := BiomeHazard[biome]; hz != "" {
+		note := ""
+		switch k := w.hzK(); {
+		case k == 0:
+			note = " (Your type is immune!)"
+		case k < 1:
+			note = " (Your type resists it.)"
+		case k > 1:
+			note = " (Your type is weak to it!)"
+		}
+		w.message(HazardText[hz] + note)
+	}
 	return w, nil
 }
 
@@ -91,6 +104,7 @@ func (w *World) spawn(a float64, t string) {
 	e.Sp = sp
 	e.Dm = dm * w.dmS() * math.Min(1, .75+w.T/720)
 	e.PokeID = w.enemySprite(t, "")
+	w.assignRole(e)
 	w.E = append(w.E, e)
 }
 
@@ -99,22 +113,27 @@ func (w *World) spawnBoss() {
 	n := w.Bosses + 1
 	t := w.Biome
 	a := w.rnd(0, 6.283)
+	bd := Bosses[t]
+	if bd == nil {
+		bd = Bosses["normal"]
+	}
 	bh := 640.0
 	if n > 1 {
 		bh = 800 * float64(n)
 	}
-	dm := 18 * w.dmS() * 1.3
+	bh *= bd.HP
+	dm := 18 * w.dmS() * bd.Dm
 	if n == 1 {
 		dm *= .85
 	}
-	e := &Enemy{X: w.P.X + math.Cos(a)*500, Y: w.P.Y + math.Sin(a)*500, Type: t, R: 36, HP: bh, MHP: bh, Sp: 60, Dm: dm, Boss: true, Seed: w.rng.Float64()}
+	e := &Enemy{X: w.P.X + math.Cos(a)*500, Y: w.P.Y + math.Sin(a)*500, Type: t, R: bd.R, HP: bh, MHP: bh, Sp: 60 * bd.Sp, Dm: dm, Boss: true, BD: bd, Seed: w.rng.Float64()}
 	e.PokeID = w.enemySprite(t, "boss")
 	w.E = append(w.E, e)
 	name := e.PokeID
 	if p := w.DB.ByID[e.PokeID]; p != nil {
 		name = p.Name
 	}
-	w.message("A wild " + name + " boss appears!")
+	w.message(bd.Name + " (" + name + ") appears!")
 }
 
 func (w *World) swarm() {
@@ -162,8 +181,11 @@ func (w *World) Step(dt float64, in Input) {
 		d.fn()
 	}
 	// spawning
+	if w.spawnHold > 0 {
+		w.spawnHold -= dt
+	}
 	w.spawnT -= dt
-	if w.spawnT <= 0 && len(w.E) < 320 {
+	if w.spawnT <= 0 && w.spawnHold <= 0 && len(w.E) < 320 {
 		ts := w.tS()
 		x := ts - 90
 		if ts < 300 {
@@ -181,9 +203,15 @@ func (w *World) Step(dt float64, in Input) {
 	}
 	if w.T >= w.nextSwarm {
 		w.nextSwarm += 120
-		w.swarm()
+		if w.spawnHold <= 0 {
+			w.swarm()
+		}
 	}
 	w.stepEnemies(dt)
+	if w.State != StatePlay {
+		return
+	}
+	w.stepEnemyAttacks(dt)
 	if w.State != StatePlay {
 		return
 	}
@@ -193,6 +221,7 @@ func (w *World) Step(dt float64, in Input) {
 	w.stepOrbits(dt)
 	w.compact()
 	w.stepGems(dt)
+	w.stepPickups(dt)
 	w.Shake = math.Max(0, w.Shake-dt)
 	if w.P.XP >= w.P.NX && w.State == StatePlay {
 		w.levelUp()
@@ -213,10 +242,27 @@ func (w *World) stepPlayer(dt float64, in Input) {
 	} else {
 		P.Still += dt
 	}
-	spm := P.Sp * (1 + .08*w.pe("boots") + b2f(P.SpdT > w.T, .2, 0))
-	P.VX, P.VY = x*spm, y*spm
-	P.X += P.VX * dt
-	P.Y += P.VY * dt
+	if P.Bat > 0 {
+		P.Bat -= dt
+	}
+	if P.Bel > 0 {
+		P.Bel -= dt
+	}
+	tm, hk := w.playerTerrain(dt)
+	P.Hazard = hk
+	if w.State != StatePlay {
+		return
+	}
+	spm := P.Sp * (1 + .08*w.pe("boots") + b2f(P.SpdT > w.T, .2, 0)) * tm
+	if hk == "ice" {
+		q := math.Min(1, dt*(1.6+(1-math.Min(1, w.hzK()))*14))
+		P.VX += (x*spm - P.VX) * q
+		P.VY += (y*spm - P.VY) * q
+	} else {
+		P.VX, P.VY = x*spm, y*spm
+	}
+	P.X += P.VX*dt + P.WX*dt
+	P.Y += P.VY*dt + P.WY*dt
 	if P.Dash != nil {
 		w.dashStep(dt)
 	}
@@ -428,10 +474,18 @@ func (w *World) stepEnemies(dt float64) {
 		if e.Dead {
 			continue
 		}
+		if g := w.Gust; g != nil && g.T > 0 {
+			wk := w.hzKe(e.Type) * b2f(e.Boss, .3, 1)
+			e.X += g.VX * wk * dt
+			e.Y += g.VY * wk * dt
+		}
 		px, py := e.X, e.Y
 		mv := 0.0
 		if !(e.Stun > 0 || e.Frz > 0 || e.Root > 0) {
-			sm := 1.0
+			sm := w.ai(e, dt)
+			if e.Dead || w.State != StatePlay {
+				continue
+			}
 			if e.Slow > 0 {
 				sm = .5
 			}
@@ -439,6 +493,9 @@ func (w *World) stepEnemies(dt float64) {
 				sm *= .5
 			}
 			aa := a
+			if e.aoSet {
+				aa = e.ao
+			}
 			if e.dtr > 0 {
 				e.dtr -= dt
 				aa += e.ds * 1.3
@@ -463,7 +520,7 @@ func (w *World) stepEnemies(dt float64) {
 				e.KX, e.KY = 0, 0
 			}
 		}
-		if !e.Boss && !has([]string{"flying", "ghost"}, e.Type) {
+		if !e.Boss && !e.Ug && !has([]string{"flying", "ghost"}, e.Type) {
 			w.push(&e.X, &e.Y, e.R)
 		}
 		// unstick from obstacles
@@ -492,8 +549,11 @@ func (w *World) stepEnemies(dt float64) {
 			w.hit(e, math.Round(4*v*(1+w.T/300)), P.Types[0], 0, 0, 0)
 			w.curSlot = prev
 		}
-		if P.Inv <= 0 && !e.Dead && !(e.Stun > 0 || e.Frz > 0 || e.Fear > 0 || e.Charm > 0) && dist(e.X, e.Y, P.X, P.Y) < e.R+12 {
+		if P.Inv <= 0 && !e.Dead && !e.Ug && !(e.Stun > 0 || e.Frz > 0 || e.Fear > 0 || e.Charm > 0) && dist(e.X, e.Y, P.X, P.Y) < e.R+12 {
 			w.hurt(e.Dm, e.Type)
+			if e.Vamp {
+				e.HP = math.Min(e.MHP, e.HP+e.Dm*2)
+			}
 			P.Inv = .5
 			w.Shake = .12
 			if w.State == StateDead {
@@ -795,12 +855,30 @@ func (w *World) compact() {
 func (w *World) stepGems(dt float64) {
 	P := w.P
 	mag := 90 * (1 + .25*w.pe("magnet"))
+	if w.magnetAll {
+		w.magnetAll = false
+		for _, g := range w.Gems {
+			g.Mag = true
+		}
+	}
 	g2 := w.Gems[:0]
 	for _, g := range w.Gems {
 		d := dist(g.X, g.Y, P.X, P.Y)
-		if d < mag {
-			g.X += (P.X - g.X) / math.Max(d, 1) * 260 * dt
-			g.Y += (P.Y - g.Y) / math.Max(d, 1) * 260 * dt
+		if g.Mag || d < mag {
+			sp := 260.0
+			if g.Mag {
+				if g.ms == 0 {
+					g.ms = 320
+				}
+				g.ms = math.Min(1800, g.ms+dt*1100)
+				sp = g.ms
+			}
+			if d < sp*dt {
+				g.X, g.Y = P.X, P.Y
+			} else {
+				g.X += (P.X - g.X) / math.Max(d, 1) * sp * dt
+				g.Y += (P.Y - g.Y) / math.Max(d, 1) * sp * dt
+			}
 		}
 		if d < 14 {
 			P.XP += g.V * (1 + .1*w.pe("exp"))
@@ -815,11 +893,12 @@ func (w *World) stepGems(dt float64) {
 			return dist(w.Gems[i].X, w.Gems[i].Y, P.X, P.Y) < dist(w.Gems[j].X, w.Gems[j].Y, P.X, P.Y)
 		})
 		tail := w.Gems[300:]
-		v := 0.0
+		v, m := 0.0, false
 		for _, g := range tail {
 			v += g.V
+			m = m || g.Mag
 		}
-		w.Gems = append(w.Gems[:300], &Gem{X: tail[0].X, Y: tail[0].Y, V: v})
+		w.Gems = append(w.Gems[:300], &Gem{X: tail[0].X, Y: tail[0].Y, V: v, Mag: m})
 	}
 }
 

@@ -117,6 +117,11 @@ type Player struct {
 	adA          *float64
 	SpdT, SashT  float64
 	AtkT         float64 // last time a move fired (for the attack animation)
+	Bat, Bel     float64 // battery (-25% cooldowns) / strength belt (+25% damage) timers
+	WebT         float64 // webbed: slowed
+	WX, WY       float64 // wind push
+	gw           float64
+	Hazard       string // hazard under the player this frame
 }
 
 type Enemy struct {
@@ -141,6 +146,29 @@ type Enemy struct {
 	stk, dtr, ds  float64
 	FaceL         bool // facing left (for the sprite)
 	Seed          float64
+	// roles (shooter, healer, burrower, phaser, charger, webber) and elites
+	Rk                 string
+	Ug                 bool // underground / phased out: can't be hit or touch you
+	rkt, rkw, btv, bwt float64
+	bs, ps             int
+	cdh, cwu, cang     float64
+	pf, pt2, dx2, dy2  float64
+	lg, sd             float64
+	pmk                bool
+	Sh, ShMax          float64 // shield
+	Mini, Arm, Vamp    bool
+	Expl, Split, Sumn  bool
+	Af                 []string
+	sut                float64
+	ao                 float64
+	aoSet              bool
+	// bosses
+	BD                  *BossDef
+	Ph                  int
+	K                   string
+	at, wu, chd, ca, tt float64
+	trl                 bool
+	c3                  int
 }
 
 type Proj struct {
@@ -175,6 +203,7 @@ type FX struct {
 	Slot            *Slot
 	Text, Col       string
 	AX, AY, BX, BY  float64
+	Enemy           bool // telegraph of an enemy attack (the bot avoids these)
 }
 
 type Zone struct {
@@ -190,7 +219,8 @@ type Zone struct {
 
 type Gem struct {
 	X, Y, V float64
-	got     bool
+	Mag     bool // flying to the player (magnet)
+	ms      float64
 }
 
 type Orb struct {
@@ -252,6 +282,16 @@ type World struct {
 	relocT                           float64
 	Msg                              string
 	MsgT                             float64
+	EB                               []*EBullet
+	HZ                               []*Hazard
+	Items                            []*Pickup
+	Gust                             *GustState
+	pools                            map[[2]int][]Pool
+	bioT, elT                        float64
+	mbT, candyT                      float64
+	spawnHold                        float64
+	magnetAll                        bool
+	noDrop                           bool
 }
 
 func hyp(x, y float64) float64 { return math.Hypot(x, y) }

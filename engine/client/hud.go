@@ -80,6 +80,22 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	if nb := 300 * math.Ceil((w.T+.01)/300); nb-w.T < 20 && w.Bosses < int(nb/300) {
 		drawText(dst, fmt.Sprintf("Boss in %.0fs", nb-w.T), sw/2, 68, 13, true, c(255, 120, 120, 255), text.AlignCenter, true)
 	}
+	// boss bar
+	for _, e := range w.E {
+		if !e.Boss || e.Dead {
+			continue
+		}
+		bw := math.Min(520, sw-360)
+		bx := sw/2 - bw/2
+		roundRect(dst, bx-8, 86, bw+16, 40, 8, panel)
+		name := e.BD.Name
+		if p := g.db.ByID[e.PokeID]; p != nil {
+			name += " · " + p.Name
+		}
+		drawText(dst, fmt.Sprintf("%s  ·  Phase %d", name, max(1, e.Ph)), sw/2, 90, 13, true, tc(e.Type), text.AlignCenter, false)
+		bar(dst, bx, 110, bw, 10, e.HP/e.MHP, c(255, 80, 80, 255), c(40, 46, 60, 255))
+		break
+	}
 	// moves (bottom-left)
 	x := 12.0
 	y := float64(g.sh) - 64

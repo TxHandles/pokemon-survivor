@@ -113,7 +113,7 @@ func (w *World) near(x, y float64, n int, ex []*Enemy, rng float64) []*Enemy {
 	}
 	var o []c
 	for _, e := range w.E {
-		if e.Dead || (len(ex) > 0 && inList(ex, e)) {
+		if e.Dead || e.Ug || (len(ex) > 0 && inList(ex, e)) {
 			continue
 		}
 		d := hyp(e.X-x, e.Y-y)
@@ -136,7 +136,7 @@ func (w *World) near1(x, y float64, rng float64) *Enemy {
 	var be *Enemy
 	bk := 1e18
 	for _, e := range w.E {
-		if e.Dead {
+		if e.Dead || e.Ug {
 			continue
 		}
 		dx, dy := e.X-x, e.Y-y
@@ -165,7 +165,7 @@ func inList(l []*Enemy, e *Enemy) bool {
 func (w *World) tgt(n int, rng float64) []*Enemy {
 	var a []*Enemy
 	for _, e := range w.E {
-		if !e.Dead && dist(w.P.X, w.P.Y, e.X, e.Y) < rng {
+		if !e.Dead && !e.Ug && dist(w.P.X, w.P.Y, e.X, e.Y) < rng {
 			a = append(a, e)
 		}
 	}

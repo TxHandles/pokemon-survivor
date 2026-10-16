@@ -54,11 +54,11 @@ func (w *World) pe(k string) float64 {
 
 func (w *World) gv() int      { return int(math.Ceil(w.pe("glove") / 2)) }
 func (w *World) rgm() float64 { return 1 + .15*w.pe("focus") }
-func (w *World) cdM() float64 { return math.Pow(.92, w.pe("claw")) }
+func (w *World) cdM() float64 { return math.Pow(.92, w.pe("claw")) * b2f(w.P.Bat > 0, .75, 1) }
 
 // dmgM: player damage multiplier (.66 x items x attack stat; shop/mastery bonuses come with the meta phase).
 func (w *World) dmgM() float64 {
-	return .66 * (1 + .12*w.pe("band")) * (1 + .1*w.pe("lifeorb")) * w.P.Stats.Atk
+	return .66 * b2f(w.P.Bel > 0, 1.25, 1) * (1 + .12*w.pe("band")) * (1 + .1*w.pe("lifeorb")) * w.P.Stats.Atk
 }
 
 // itMv: per-move item multipliers (Muscle Band, Wise Glasses, Choice Band, Metronome).
