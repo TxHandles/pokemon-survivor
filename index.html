@@ -1688,12 +1688,18 @@ function flPat(x,B,cx,cy,R){const ox=cx*CS,oy=cy*CS,p=B.pat;if(!p)return;
   for(const[dx,dy]of[[1,0],[0,1],[1,-1]]){const nx=(gx+dx+.2+fvh(gx+dx,gy+dy,BS+51)*.6)*T_,ny=(gy+dy+.2+fvh(gx+dx,gy+dy,BS+52)*.6)*T_,mx=(cxw+nx)/2-ox,my=(cyw+ny)/2-oy,vx=-(ny-cyw),vy=nx-cxw,l=Math.hypot(vx,vy)||1,hl=T_*.42;x.strokeStyle=p==='mud'?`rgba(30,18,10,${.5*a})`:`rgba(0,0,0,${.55*a})`;x.lineWidth=p==='mud'?1.6:2.2;x.beginPath();x.moveTo(mx-vx/l*hl,my-vy/l*hl);x.lineTo(mx+vx/l*hl,my+vy/l*hl);x.stroke();if(p==='basalt'&&fvh(gx,gy+dx*7,BS+53)>.94){x.strokeStyle=`rgba(255,110,40,${.45*a})`;x.lineWidth=1;x.stroke()}}
   if(p==='mud'){x.fillStyle=`rgba(255,220,170,${.04*a})`;x.beginPath();x.arc(cxw-ox,cyw-oy,T_*.3,0,6.283);x.fill()}}}}
 /* build one 300×300 chunk tile: half-res noise ground + grain, big patterns, then decals (incl. overlap from neighbours) */
-function flBuild(cx,cy){const B=curFLB(),c=document.createElement('canvas');c.width=c.height=CS;const x=c.getContext('2d'),N=CS/2+2,id=x.createImageData(N,N),D=id.data,A=frgb(B.a),Bc=frgb(B.b),C=frgb(B.c),ox=cx*CS,oy=cy*CS;
- for(let j=0;j<N;j++)for(let i=0;i<N;i++){const wx=ox+(i-1)*2+1,wy=oy+(j-1)*2+1,f=fvn(wx/150,wy/150,BS+1)*.55+fvn(wx/48,wy/48,BS+2)*.3+fvn(wx/14,wy/14,BS+3)*.15,r=fsm(.48,.72,frg(wx,wy))*.9,gr=(fvh(wx>>1,wy>>1,BS+4)-.5)*B.g*2,o=(j*N+i)*4;for(let k=0;k<3;k++){const v=A[k]+(Bc[k]-A[k])*f;D[o+k]=v+(C[k]-v)*r+gr}D[o+3]=255}
- const t=document.createElement('canvas');t.width=t.height=N;t.getContext('2d').putImageData(id,0,0);x.imageSmoothingEnabled=true;x.drawImage(t,1,1,N-2,N-2,0,0,CS,CS);
+/* a floor tile is built in two steps so tiles ahead of the player can be prepared a little each frame (no hitches):
+   flRows fills the low-res ground noise row by row, flFinish paints it up plus patterns and decals */
+let FLJ=null,FLT=null;
+function flStart(cx,cy){const N=CS/2+2;return {cx,cy,B:curFLB(),bs:BS,N,id:new ImageData(N,N),row:0,k:(cx+20000)*40009+(cy+20000)}}
+function flRows(J,t0,budget){const B=J.B,N=J.N,D=J.id.data,A=frgb(B.a),Bc=frgb(B.b),C=frgb(B.c),ox=J.cx*CS,oy=J.cy*CS;
+ while(J.row<N){const j=J.row++;for(let i=0;i<N;i++){const wx=ox+(i-1)*2+1,wy=oy+(j-1)*2+1,f=fvn(wx/150,wy/150,BS+1)*.55+fvn(wx/48,wy/48,BS+2)*.3+fvn(wx/14,wy/14,BS+3)*.15,r=fsm(.48,.72,frg(wx,wy))*.9,gr=(fvh(wx>>1,wy>>1,BS+4)-.5)*B.g*2,o=(j*N+i)*4;for(let k=0;k<3;k++){const v=A[k]+(Bc[k]-A[k])*f;D[o+k]=v+(C[k]-v)*r+gr}D[o+3]=255}if(budget&&performance.now()-t0>budget)break}return J.row>=N}
+function flFinish(J){const B=J.B,cx=J.cx,cy=J.cy,N=J.N,id=J.id,ox=cx*CS,oy=cy*CS,c=document.createElement('canvas');c.width=c.height=CS;const x=c.getContext('2d');
+ if(!FLT||FLT.width!==N){FLT=document.createElement('canvas');FLT.width=FLT.height=N}const t=FLT;t.getContext('2d').putImageData(id,0,0);x.imageSmoothingEnabled=true;x.drawImage(t,1,1,N-2,N-2,0,0,CS,CS);
  flPat(x,B,cx,cy);
  for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){for(const d of flDec(cx+di,cy+dj)){const lx=d[1]-ox,ly=d[2]-oy;if(lx<-50||ly<-50||lx>CS+50||ly>CS+50)continue;const e=d[0],R=srng(d[3]),s=e[4]*(.8+R()*.45);try{FD[e[0]](x,R,lx,ly,s,e[2],e[5])}catch(_){}}}
  return c}
+function flBuild(cx,cy){const J=flStart(cx,cy);flRows(J,0,0);return flFinish(J)}
 /* draw visible floor tiles in screen space (rounded to whole pixels so seams never show); builds a few missing tiles per frame */
 function drawFloor(sx,sy){const B=curFLB(),offx=W/2-P.x+sx,offy=H/2-P.y+sy,x0=Math.floor((P.x-sx-W/2)/CS),x1=Math.floor((P.x-sx+W/2)/CS),y0=Math.floor((P.y-sy-H/2)/CS),y1=Math.floor((P.y-sy+H/2)/CS);let built=0;const t0=performance.now(),miss=[];
  ctx.fillStyle=B.a;ctx.fillRect(0,0,W,H);
@@ -1701,8 +1707,11 @@ function drawFloor(sx,sy){const B=curFLB(),offx=W/2-P.x+sx,offy=H/2-P.y+sy,x0=Ma
  const pcx=(P.x)/CS-.5,pcy=(P.y)/CS-.5;miss.sort((a,b)=>Math.hypot(a[0]-pcx,a[1]-pcy)-Math.hypot(b[0]-pcx,b[1]-pcy));
  for(const[i,j,k]of miss){if(built&&(FLC.size>=6||performance.now()-t0>40))break;const c=flBuild(i,j);built++;FLC.set(k,c);ctx.drawImage(c,Math.round(i*CS+offx),Math.round(j*CS+offy))}
  /* pre-build one tile just outside the view in the movement direction when idle budget remains */
- if(!built){const dx=Math.sign(Math.round(P.x-FLPX)),dy=Math.sign(Math.round(P.y-FLPY)),ci=dx>0?x1+1:dx<0?x0-1:null,cj=dy>0?y1+1:dy<0?y0-1:null;const cand=[];if(ci!==null)for(let j=y0;j<=y1;j++)cand.push([ci,j]);if(cj!==null)for(let i=x0;i<=x1;i++)cand.push([i,cj]);for(const[i,j]of cand){const k=(i+20000)*40009+(j+20000);if(!FLC.has(k)){FLC.set(k,flBuild(i,j));break}}}
- FLPX=P.x;FLPY=P.y;while(FLC.size>56)FLC.delete(FLC.keys().next().value)}
+ if(FLJ&&(FLJ.bs!==BS||FLC.has(FLJ.k)))FLJ=null;
+ if(!built){if(!FLJ){const dx=Math.sign(Math.round(P.x-FLPX)),dy=Math.sign(Math.round(P.y-FLPY)),ci=dx>0?x1+1:dx<0?x0-1:null,cj=dy>0?y1+1:dy<0?y0-1:null;const cand=[];if(ci!==null)for(let j=y0;j<=y1;j++)cand.push([ci,j]);if(cj!==null)for(let i=x0;i<=x1;i++)cand.push([i,cj]);for(const[i,j]of cand){const k=(i+20000)*40009+(j+20000);if(!FLC.has(k)){FLJ=flStart(i,j);break}}}
+  if(FLJ&&flRows(FLJ,performance.now(),1.5)){FLC.set(FLJ.k,flFinish(FLJ));FLJ=null}}
+ FLPX=P.x;FLPY=P.y;{const tw=x1-x0+1,th=y1-y0+1,cap=Math.max(56,tw*th+2*(tw+th)+12);   /* visible tiles + a ring around them, so big monitors never thrash */
+ while(FLC.size>cap)FLC.delete(FLC.keys().next().value)}}
 /* ambient life: a light layer of drifting particles in world space (embers, fireflies, snow, fog, cloud shadows …) */
 const AMS={};function ambSpr(c,r,soft){const k=c+r+(soft?'s':'');if(AMS[k])return AMS[k];const s=document.createElement('canvas');s.width=s.height=r*2;const x=s.getContext('2d'),g=x.createRadialGradient(r,r,0,r,r,r);g.addColorStop(0,c);g.addColorStop(soft?.15:.35,fa(c,soft?.6:.9));g.addColorStop(1,fa(c,0));x.fillStyle=g;x.fillRect(0,0,r*2,r*2);return AMS[k]=s}
 const AMB_K={pollen:{n:14,c:'#fff6c0',r:6,vy:-4,vx:8,a:.5,l:7},ember:{n:26,c:'#ff8a3a',r:7,vy:-28,vx:5,a:.85,l:3.5,fl:1},glint:{n:18,c:'#cfefff',r:6,vy:0,vx:0,a:.55,l:1.6,tw:1},spark:{n:12,c:'#fff07a',r:6,vy:0,vx:0,a:.9,l:.5,tw:1},firefly:{n:16,c:'#d8ff7a',r:8,vy:-3,vx:6,a:.75,l:6,wob:1},snow:{n:34,c:'#ffffff',r:4,vy:22,vx:-8,a:.7,l:6,wob:1},petal:{n:12,c:'#f6b8cc',r:4,vy:12,vx:16,a:.8,l:6,wob:1,pet:1},bubble:{n:14,c:'#d48cff',r:5,vy:-6,vx:0,a:.6,l:2.2,bub:1},dust:{n:16,c:'#e0c49a',r:5,vy:-2,vx:18,a:.35,l:5},cloud:{n:4,c:'#0a1420',r:110,vy:4,vx:22,a:.16,l:18,soft:1},twinkle:{n:20,c:'#ffb8f0',r:6,vy:-3,vx:0,a:.85,l:2,tw:1},spore:{n:16,c:'#e6f08a',r:4,vy:-5,vx:5,a:.55,l:6,wob:1},fog:{n:7,c:'#8c84b8',r:120,vy:0,vx:12,a:.09,l:16,soft:1},ember2:{n:18,c:'#b494ff',r:6,vy:-20,vx:3,a:.75,l:4,fl:1},mote:{n:14,c:'#a070ff',r:5,vy:-3,vx:3,a:.5,l:5,wob:1},spark2:{n:8,c:'#ffb050',r:4,vy:30,vx:0,a:.9,l:.8,grav:1},fairy:{n:20,c:'#fff0fa',r:5,vy:-6,vx:4,a:.85,l:3,tw:1,wob:1}};
