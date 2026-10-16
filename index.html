@@ -1481,7 +1481,7 @@ function esStrips(d,k){const kp=k*DPR,key=Math.round(kp*100);d._sc=d._sc||{};let
  o=d._sc[key]={n,pcw,pch,cw:pcw/DPR,ch:pch/DPR,ox:d.ox*k,oy:d.oy*k,d,kp,U:Math.max(1,Math.ceil(kp-.01)),sharp:Math.abs(kp-Math.round(kp))<.02,cols,rows:Math.ceil(n/cols),A:[null,null,null,null]};return o}
 /* frames live in up to 4 atlas canvases per sprite size (normal / mirrored / white flash / mirrored white), each at most 2048 px wide,
    so every texture fits phone GPU limits and only a handful of canvases exist. Cells are painted the first time a frame is shown. */
-let ESB=0;   /* cells painted this draw frame (budget keeps first-sight spikes small) */
+let ESB=0,RINGPASS=0;   /* cells painted this draw frame (budget keeps first-sight spikes small) */
 function esAt(o,v){let A=o.A[v];if(!A){const c=document.createElement('canvas');c.width=o.cols*o.pcw;c.height=o.rows*o.pch;A=o.A[v]={c,x:c.getContext('2d'),ok:new Uint8Array(o.n)}}return A}
 const esHas=(o,f,flip,white)=>{const A=o.A[(flip?1:0)+(white?2:0)];return !!(A&&A.ok[f])};
 function esCell(o,f,flip,white){const v=(flip?1:0)+(white?2:0),A=esAt(o,v);const cx=(f%o.cols)*o.pcw,cy=Math.floor(f/o.cols)*o.pch;if(A.ok[f])return A;
@@ -1493,7 +1493,14 @@ function esCell(o,f,flip,white){const v=(flip?1:0)+(white?2:0),A=esAt(o,v);const
   x.imageSmoothingEnabled=!o.sharp;x.imageSmoothingQuality='high';x.drawImage(src,sx,0,sw,sh,cx,cy,o.pcw,o.pch)}
  x.restore();A.ok[f]=1;return A}
 function esDraw(o,f,flip,white,X,Y,w,h){const A=esCell(o,f,flip,white);ctx.drawImage(A.c,(f%o.cols)*o.pcw,Math.floor(f/o.cols)*o.pch,o.pcw,o.pch,X,Y,w,h)}
-const ERING={};function eRing(c,lw,r){const k=c+lw+'_'+r;if(ERING[k])return ERING[k];const W_=Math.ceil(r*2.3)+2,H_=Math.ceil(r*.84)+2,s=document.createElement('canvas');s.width=W_;s.height=H_;const x=s.getContext('2d');x.fillStyle='rgba(0,0,0,.38)';x.beginPath();x.ellipse(W_/2,H_/2,W_/2-1,H_/2-1,0,0,7);x.fill();x.strokeStyle=c;x.globalAlpha=.85;x.lineWidth=lw;x.beginPath();x.ellipse(W_/2,H_/2,Math.max(1,W_/2-1-lw/2),Math.max(1,H_/2-1-lw/2),0,0,7);x.stroke();return ERING[k]=s}
+/* one shared texture for small repeated shapes (shadow rings, gems, coins): consecutive draws from the same texture batch on the GPU */
+const MA={c:null,x:0,y:0,rh:0,map:new Map()};
+function maGet(key,w,h,paint){let q=MA.map.get(key);if(q)return q;const S=1024;if(!MA.c){MA.c=document.createElement('canvas');MA.c.width=MA.c.height=S}
+ if(MA.x+w+2>S){MA.x=0;MA.y+=MA.rh+2;MA.rh=0}if(MA.y+h+2>S){MA.c.getContext('2d').clearRect(0,0,S,S);MA.map.clear();MA.x=MA.y=MA.rh=0}
+ const x=MA.c.getContext('2d');x.save();x.translate(MA.x,MA.y);x.beginPath();x.rect(0,0,w,h);x.clip();paint(x,w,h);x.restore();q={c:MA.c,x:MA.x,y:MA.y,w,h};MA.map.set(key,q);MA.x+=w+2;MA.rh=Math.max(MA.rh,h);return q}
+const maDraw=(q,dx,dy)=>ctx.drawImage(q.c,q.x,q.y,q.w,q.h,dx,dy,q.w,q.h);
+function eRing(c,lw,r){const W_=Math.ceil(r*2.3)+2,H_=Math.ceil(r*.84)+2;return maGet('r'+c+lw+'_'+r,W_,H_,x=>{x.fillStyle='rgba(0,0,0,.38)';x.beginPath();x.ellipse(W_/2,H_/2,W_/2-1,H_/2-1,0,0,7);x.fill();x.strokeStyle=c;x.globalAlpha=.85;x.lineWidth=lw;x.beginPath();x.ellipse(W_/2,H_/2,Math.max(1,W_/2-1-lw/2),Math.max(1,H_/2-1-lw/2),0,0,7);x.stroke()})}
+function eRingDraw(e,sc){const rg=eRing(sc||COL[e.type],sc?3:2,e.r);maDraw(rg,Math.round(e.x-rg.w/2),Math.round(e.y+e.r*.9-rg.h/2))}
 function drawEnemySpr(e,sc){const id=espId(e),s=id&&CHAR_SPRITES[id];if(!s)return false;csLoad(s);const dx=P.x-e.x,dy=P.y-e.y;
  if(!e._fx)e._fx=dx<0?-1:1;else if(dx*e._fx<-10)e._fx=-e._fx;
  if(e._bv){if(dy>-Math.abs(dx)*.4)e._bv=0}else if(dy<-Math.abs(dx)*1.1&&dy<-30)e._bv=1;
@@ -1501,7 +1508,7 @@ function drawEnemySpr(e,sc){const id=espId(e),s=id&&CHAR_SPRITES[id];if(!s)retur
  const k=s.scale*e.r/12*(SPR_K[id]||.82),o=esStrips(d,k),fy=e.y+e.r*.9,frz=e.fz>0;
  const near_=dx*dx+dy*dy<(e.r+34)**2&&d.act.length,tt=frz?0:T*1000+e._ph,fr=frz?d.idle[0]:near_?csFrame(d.act,d.adur,d.atot,tt):csFrame(d.idle,d.idur,d.tot,tt*1.25);
  const fl=d.faces==='left'?(e._fx>0?-1:1):(e._fx<0?-1:1),bob=frz?0:-Math.abs(Math.sin(T*11+e._ph))*1.6,cw=o.cw,ch=o.ch,rg=eRing(sc||COL[e.type],sc?3:2,e.r);
- ctx.drawImage(rg,Math.round(e.x-rg.width/2),Math.round(fy-rg.height/2));
+ if(!RINGPASS)maDraw(rg,Math.round(e.x-rg.w/2),Math.round(fy-rg.h/2));
  const X=Math.round((fl>0?e.x+o.ox:e.x-(o.ox+cw))*DPR)/DPR,Y=Math.round((fy+o.oy+bob)*DPR)/DPR,mir=fl<0;
  if(esHas(o,fr,mir,0)||ESB<4)esDraw(o,fr,mir,0,X,Y,cw,ch);else{ctx.save();if(mir){ctx.translate(X+cw,Y);ctx.scale(-1,1)}else ctx.translate(X,Y);ctx.drawImage(d.img,fr*d.cw,0,d.cw,d.ch,0,0,cw,ch);ctx.restore()}
  if(e.fl>0&&opt('flash')){ctx.globalAlpha=.85;esDraw(o,fr,mir,1,X,Y,cw,ch);ctx.globalAlpha=1}
@@ -2624,7 +2631,7 @@ if(COOP){xpSync();useP(LOCAL);if(XPS.xp>=XPS.nx&&state==='play')coopLevel();useP
 
 {const now_=performance.now();if(now_-HUDT>50||P.hp<=0){HUDT=now_;hset('buf','t',(P.pm>0?'🔱'+Math.ceil(P.pm)+'s ':'')+(P.pbl>0?'🩸'+Math.ceil(P.pbl)+'s ':'')+(P.phs>0?'💨'+Math.ceil(P.phs)+'s ':'')+(P.pgr>0?'💰'+Math.ceil(P.pgr)+'s ':'')+(P.mg>0?'🧲 ':'')+(P.bat>0?'🔋'+Math.ceil(P.bat)+'s ':'')+(P.bel>0?'🥋'+Math.ceil(P.bel)+'s':''));hset('lv','t','Lv '+P.lv);hudEq();
 hudBars();hset('cn','t','🪙'+Math.floor(P.rc)+(P.tk?' 🎟️'+P.tk:''));hset('tm','t',(endless?'ENDLESS ':'')+locN(BI)+' · '+fmt(T)+(endless?'':' / '+fmt(RUN.len)))}}}
-const ECC=new Map();function ecirc(x,y,r,f,sk,lw){const R=Math.max(1,Math.round(r)),k=R+f+sk+lw;let c=ECC.get(k);if(!c){if(ECC.size>300)ECC.clear();const z=(R+lw+2)*2;c=document.createElement('canvas');c.width=c.height=z;const q=c.getContext('2d');q.fillStyle=f;q.beginPath();q.arc(z/2,z/2,R,0,7);q.fill();q.strokeStyle=sk;q.lineWidth=lw;q.stroke();ECC.set(k,c)}ctx.drawImage(c,x-c.width/2,y-c.height/2)}
+const ECC=new Map();function ecirc(x,y,r,f,sk,lw){const R=Math.max(1,Math.round(r)),z=(R+lw+2)*2,q=maGet('c'+R+f+sk+lw,z,z,c=>{c.fillStyle=f;c.beginPath();c.arc(z/2,z/2,R,0,7);c.fill();c.strokeStyle=sk;c.lineWidth=lw;c.stroke()});maDraw(q,x-z/2,y-z/2)}
 function draw(){ESB=0;if(COOP)useP(camIdx());ctx.setTransform(DPR,0,0,DPR,0,0);const vx_=W/2+70,vy_=H/2+70,sx=shake?rnd(-6,6)*shake*4*opt('shake'):0,sy=shake?rnd(-6,6)*shake*4*opt('shake'):0;
 drawFloor(sx,sy);ctx.save();ctx.translate(W/2-P.x+sx,H/2-P.y+sy);
 drawPatches();drawAmb();{const x0=Math.floor((P.x-W/2-60)/CS),x1=Math.floor((P.x+W/2+60)/CS),y0=Math.floor((P.y-H/2-60)/CS),y1=Math.floor((P.y+H/2+60)/CS);const ob_=[];for(let i=x0;i<=x1;i++)for(let j=y0;j<=y1;j++)for(const b of chunk(i,j))ob_.push(b);ob_.sort((a,b)=>a.y-b.y);for(const b of ob_)drawObst(b)}
@@ -2646,10 +2653,12 @@ if(f.k==='sky'){ctx.globalAlpha=Math.min(1,f.l*6);ctx.strokeStyle=COL[f.t];ctx.l
 if(f.k==='arc'){ctx.globalAlpha=Math.max(0,f.l*4);ctx.fillStyle=COL[f.t];ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.arc(f.x,f.y,f.r,f.a-f.w,f.a+f.w);ctx.closePath();ctx.fill();ctx.globalAlpha=1}
 if(f.k==='ring'){ctx.strokeStyle=COL[f.t];ctx.globalAlpha=Math.max(0,f.l*2);ctx.lineWidth=f.fat?8:5;ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,7);ctx.stroke();ctx.globalAlpha=1}
 if(f.k==='bolt'){ctx.strokeStyle=f.c||'#ffe03d';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(f.a.x,f.a.y);ctx.lineTo(f.b.x,f.b.y);ctx.stroke()}}
-EMATCH=0;ctx.imageSmoothingEnabled=false;const ES_=[];for(const e of E){if(e.x-P.x>vx_||P.x-e.x>vx_||e.y-P.y>vy_||P.y-e.y>vy_)continue;ES_.push(e)}ES_.sort((a,b)=>a.y-b.y);
+EMATCH=0;ctx.imageSmoothingEnabled=false;const ES_=[];for(const e of E){if(e.x-P.x>vx_||P.x-e.x>vx_||e.y-P.y>vy_||P.y-e.y>vy_)continue;ES_.push(e)}for(const e of ES_){e._sb=Math.floor(e.y/14);const id=espId(e),sp=id&&CHAR_SPRITES[id];e._tx=sp?(id.length*977+id.charCodeAt(0)*131+(id.charCodeAt(id.length-1)||0))%100000:0}ES_.sort((a,b)=>a._sb-b._sb||a._tx-b._tx||a.y-b.y);
+RINGPASS=1;for(const e of ES_){if(e.ug||(e.rk==='phase'&&e.ps>0))continue;const id=espId(e);if(id&&CHAR_SPRITES[id]&&CHAR_SPRITES[id].front&&CHAR_SPRITES[id].front.img){const sc=e.fz>0?'#9ff0ff':e.su>0?'#ffe03d':e.cm>0?'#ffb3e6':e.cf>0?'#d9a0ff':e.fe>0?'#a58cff':e.rt>0?'#4fd16a':e.bt>0?'#ff6a3d':e.pt>0?'#b04fd1':e.sl>0?'#3d9bff':null;eRingDraw(e,sc);e._rgd=1}else e._rgd=0}
+
 for(const e of ES_){if(e.ug&&e.rk==='burrow'){const ph=T*9+e.x,R=e.r*1.7;ctx.fillStyle='rgba(20,12,6,.55)';ctx.beginPath();ctx.ellipse(e.x,e.y+R*.35,R*1.1,R*.45,0,0,7);ctx.fill();ctx.fillStyle='#9a7446';ctx.strokeStyle='#3a2612';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(e.x,e.y+R*.25,R*.85,R*.5,0,3.14,6.283);ctx.closePath();ctx.fill();ctx.stroke();ctx.fillStyle='#e0bf86';for(let i=0;i<6;i++){const a=ph+i*1.05,u=((T*2+i*.37)%1);ctx.globalAlpha=1-u;ctx.fillRect(e.x+Math.cos(a)*R*(.5+u*.6)-1.5,e.y+R*.1-u*10+Math.sin(a)*3,3,3)}ctx.globalAlpha=1;continue}
  if(e.ug&&e.rk==='phase')continue;const fa_=e.rk==='phase'&&(e.ps===1||e.ps===3)?Math.max(.08,e.ps===1?e.pf/.35:1-e.pf/.25):1;if(fa_<1)ctx.globalAlpha=fa_;
- {const sc=e.fz>0?'#9ff0ff':e.su>0?'#ffe03d':e.cm>0?'#ffb3e6':e.cf>0?'#d9a0ff':e.fe>0?'#a58cff':e.rt>0?'#4fd16a':e.bt>0?'#ff6a3d':e.pt>0?'#b04fd1':e.sl>0?'#3d9bff':null;if(!drawEnemySpr(e,sc)){e._top=e._cy=e._cr=undefined;ecirc(e.x,e.y,e.r,e.fl&&opt('flash')?'#fff':COL[e.type],sc||'#0008',sc?3:2)}}ctx.globalAlpha=1}ctx.imageSmoothingEnabled=true;
+ {const sc=e.fz>0?'#9ff0ff':e.su>0?'#ffe03d':e.cm>0?'#ffb3e6':e.cf>0?'#d9a0ff':e.fe>0?'#a58cff':e.rt>0?'#4fd16a':e.bt>0?'#ff6a3d':e.pt>0?'#b04fd1':e.sl>0?'#3d9bff':null;RINGPASS=e._rgd;if(!drawEnemySpr(e,sc)){e._top=e._cy=e._cr=undefined;ecirc(e.x,e.y,e.r,e.fl&&opt('flash')?'#fff':COL[e.type],sc||'#0008',sc?3:2)}}ctx.globalAlpha=1}RINGPASS=0;ctx.imageSmoothingEnabled=true;
 for(const e of ES_){if(e.ug)continue;
 if(e.hp<e.mhp||e.boss||e.elite){const bw=e.boss?60:e.r*2+6,bh=e.boss?6:4,bx=e.x-bw/2,by=(e._top??e.y-e.r)-(e.boss?12:8),f=Math.max(0,e.hp/e.mhp);ctx.fillStyle='#000a';ctx.fillRect(bx-1,by-1,bw+2,bh+2);ctx.fillStyle=f>.5?'#5be37d':f>.25?'#ffd04a':'#ff4d4d';ctx.fillRect(bx,by,bw*f,bh)}edeco(e)}drawDie();drawLate();
 for(const p of PR){{const V=visOf(p.mv);if(V&&V.proj){V.proj(p);continue}}const pc=p.c||COL[p.t];if(p.w){ctx.globalAlpha=.3;ctx.fillStyle=pc;ctx.beginPath();ctx.arc(p.x,p.y,p.r*1.8,0,7);ctx.fill();ctx.globalAlpha=1}ctx.fillStyle=pc;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();if(p.bm){ctx.strokeStyle='#fff';ctx.lineWidth=2;const a=T*18;ctx.beginPath();ctx.moveTo(p.x+Math.cos(a)*p.r,p.y+Math.sin(a)*p.r);ctx.lineTo(p.x-Math.cos(a)*p.r,p.y-Math.sin(a)*p.r);ctx.stroke()}if(p.bb){ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.stroke()}}
