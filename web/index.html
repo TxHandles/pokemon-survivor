@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pokémon Survivor (Go preview)</title>
+<style>
+html,body{margin:0;height:100%;background:#10141f;overflow:hidden;color:#cfd6e6;font:15px system-ui,sans-serif}
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#bar{width:260px;height:8px;border-radius:4px;background:#232a3c;overflow:hidden}#bar i{display:block;height:100%;width:0;background:#ffd04a}
+canvas{display:block}
+</style>
+</head>
+<body>
+<div id="load"><b>Pokémon Survivor</b><div id="bar"><i></i></div><span id="msg">Loading…</span></div>
+<script src="wasm_exec.js"></script>
+<script>
+(async()=>{
+  const go=new Go(),bar=document.querySelector('#bar i'),msg=document.getElementById('msg');
+  try{
+    const r=await fetch('game.wasm'),len=+r.headers.get('content-length')||0,rd=r.body.getReader(),parts=[];let got=0;
+    for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;if(len)bar.style.width=(got/len*100)+'%'}
+    const buf=await new Blob(parts).arrayBuffer(),{instance}=await WebAssembly.instantiate(buf,go.importObject);
+    document.getElementById('load').remove();go.run(instance);
+  }catch(e){msg.textContent='Could not start: '+e}
+})();
+</script>
+</body>
+</html>
