@@ -164,6 +164,7 @@ func (w *World) spawnEliteAt(mini bool, x, y float64, cursed bool) {
 	}
 	e.PokeID = w.enemySprite(t, b2s(mini, "boss", ""))
 	w.E = append(w.E, e)
+	w.sfx("elite")
 	if mini {
 		w.message("A mini-boss approaches!")
 	} else {
@@ -243,6 +244,7 @@ func (w *World) useItem(k string) {
 	case "magnet":
 		w.magnetAll = true
 	case "berry":
+		w.sfx("heal")
 		w.heal(P.MHP * .5)
 	case "battery":
 		P.Bat = 10
@@ -270,6 +272,9 @@ func (w *World) useItem(k string) {
 		P.XP += P.NX
 	case "harvest":
 		w.heal(P.MHP * .15)
+	}
+	if k != "berry" {
+		w.sfx("pickup")
 	}
 	w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 40, Life: 2, Text: ItemText[k], Col: "gold"})
 }
@@ -683,6 +688,7 @@ func (w *World) bossAI(e *Enemy, dt float64) float64 {
 	}
 	if ph > e.Ph {
 		e.Ph = ph
+		w.sfx("phase")
 		w.addFX(&FX{Kind: "txt", X: e.X, Y: e.Y - 50, Life: 2, Text: "PHASE " + itoa(ph) + "!", Col: "crit"})
 		w.eRing(e, 16+4*ph, 0, 170, .5)
 		e.at, e.wu, e.chd = 1.5, 0, 0

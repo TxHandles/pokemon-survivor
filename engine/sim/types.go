@@ -329,6 +329,7 @@ type World struct {
 	Learned, Evolved                 map[string]bool
 	Capstone                         map[string]bool
 	Stats                            RunStats
+	Events                           []string // sound cues since the client last drained them
 }
 
 func hyp(x, y float64) float64 { return math.Hypot(x, y) }
@@ -352,4 +353,18 @@ func (w *World) later(t float64, fn func()) { w.DL = append(w.DL, &delay{t, fn})
 // RunStats counts things the meta layer records at the end of a run.
 type RunStats struct {
 	Elites, Minis, EliteTk, Cursed, Curses int
+}
+
+// sfx queues a sound cue for the client.
+func (w *World) sfx(n string) {
+	if len(w.Events) < 64 {
+		w.Events = append(w.Events, n)
+	}
+}
+
+// DrainEvents returns and clears the queued sound cues.
+func (w *World) DrainEvents() []string {
+	e := w.Events
+	w.Events = nil
+	return e
 }

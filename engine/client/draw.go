@@ -31,8 +31,8 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	w := g.W
 	sw, sh := float64(dst.Bounds().Dx()), float64(dst.Bounds().Dy())
 	shx, shy := 0.0, 0.0
-	if w.Shake > 0 {
-		k := math.Min(1, w.Shake) * 7
+	if w.Shake > 0 && g.opt("shake") > 0 {
+		k := math.Min(1, w.Shake) * 7 * g.opt("shake")
 		shx, shy = (hash01(int(w.T*60), 1, 3)-.5)*k, (hash01(int(w.T*60), 2, 5)-.5)*k
 	}
 	camX, camY := math.Round(w.P.X-sw/2+shx), math.Round(w.P.Y-sh/2+shy)
@@ -215,7 +215,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	}
 	// floating damage numbers on top
 	for _, f := range w.FX {
-		if f.Kind != "txt" {
+		if f.Kind != "txt" || (g.opt("dnum") == 0 && f.Col != "gold" && f.Col != "se" && f.Col != "conf" && f.Col != "heal") {
 			continue
 		}
 		a := math.Min(1, f.Life/(f.Life0*.5))
@@ -382,7 +382,7 @@ func (g *Game) drawEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) {
 		fr := sh.IdleFrame(int(w.T*1000 + e.Seed*5000))
 		a := 1.0
 		g.blit(dst, sh, fr, x, y+e.R*.95, sc*fl, sc, a, false)
-		if e.Flash > 0 {
+		if e.Flash > 0 && g.opt("flash") > 0 {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(sh.V.OX, sh.V.OY)
 			op.GeoM.Scale(sc*fl, sc)
@@ -499,7 +499,9 @@ func (g *Game) drawFX(dst *ebiten.Image, f *sim.FX, sx, sy func(float64) float64
 	case "pv":
 		ring(dst, x, y, f.R*(.3+.7*k), 3, alpha(c(255, 154, 216, 255), 1-k))
 	case "flash":
-		rect(dst, 0, 0, float64(dst.Bounds().Dx()), float64(dst.Bounds().Dy()), alpha(c(255, 255, 255, 255), .6*a))
+		if g.opt("flash") > 0 {
+			rect(dst, 0, 0, float64(dst.Bounds().Dx()), float64(dst.Bounds().Dy()), alpha(c(255, 255, 255, 255), .6*a))
+		}
 	}
 }
 

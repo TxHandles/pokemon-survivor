@@ -31,6 +31,13 @@ type uiState struct {
 	usedMouse  bool
 	lastMouseX int
 	lastMouseY int
+	clicked    bool // a button was activated this frame
+	tapX, tapY float64
+	tapped     bool
+	dragging   bool
+	dragY      float64
+	dragStart  float64
+	touchScrl  float64
 }
 
 func (u *uiState) reset() { u.ws = u.ws[:0] }
@@ -76,12 +83,32 @@ func (u *uiState) focused() *widget {
 
 // update handles input for this frame's widgets (call after building them).
 func (u *uiState) update() {
+	u.clicked = false
 	mx, my := ebiten.CursorPosition()
 	if mx != u.lastMouseX || my != u.lastMouseY {
 		u.usedMouse = true
 		u.lastMouseX, u.lastMouseY = mx, my
 	}
 	fx, fy := float64(mx), float64(my)
+	// touch: a short tap activates; a drag in the scrolling area scrolls it
+	u.tapped = false
+	if ids := ebiten.AppendTouchIDs(nil); len(ids) > 0 {
+		px, py := ebiten.TouchPosition(ids[0])
+		if !u.dragging {
+			u.dragging, u.dragY, u.dragStart, u.touchScrl = true, float64(py), float64(py), u.scroll
+		} else if inR(u.area, float64(px), float64(py)) {
+			u.scroll = u.touchScrl + (u.dragStart - float64(py))
+		}
+		u.dragY = float64(py)
+	} else if u.dragging {
+		u.dragging = false
+		if math.Abs(u.dragY-u.dragStart) < 12 {
+			for _, id := range inpututil.AppendJustReleasedTouchIDs(nil) {
+				px, py := inpututil.TouchPositionInPreviousTick(id)
+				u.tapX, u.tapY, u.tapped = float64(px), float64(py), true
+			}
+		}
+	}
 	// wheel scroll
 	if _, wy := ebiten.Wheel(); wy != 0 && inR(u.area, fx, fy) {
 		u.scroll -= wy * 60
@@ -93,11 +120,20 @@ func (u *uiState) update() {
 			clickable = append(clickable, w)
 		}
 	}
-	// mouse hover sets focus; click activates
+	// mouse hover sets focus; click (or a touch tap) activates
 	for _, w := range clickable {
+		if u.tapped && inR(w.r, u.tapX, u.tapY) && u.visible(w) && (!w.scroll || inR(u.area, u.tapX, u.tapY)) {
+			u.focus = w.key
+			if !w.disabled {
+				u.clicked = true
+				w.act()
+			}
+			return
+		}
 		if u.usedMouse && inR(w.r, fx, fy) && u.visible(w) && (!w.scroll || inR(u.area, fx, fy)) {
 			u.focus = w.key
 			if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !w.disabled {
+				u.clicked = true
 				w.act()
 				return
 			}
@@ -147,6 +183,7 @@ func (u *uiState) update() {
 		}
 	}
 	if confirm() && !cur.disabled {
+		u.clicked = true
 		cur.act()
 	}
 }

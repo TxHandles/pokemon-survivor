@@ -99,8 +99,16 @@ type AbilitySet struct {
 	Leg Ability   `json:"leg"`
 }
 
+// Track is a location's music with sample-exact loop points (44.1 kHz).
+type Track struct {
+	File            string `json:"file"`
+	LoopStartSample int64  `json:"loopStartSample"`
+	LoopEndSample   int64  `json:"loopEndSample"`
+}
+
 type World struct {
 	Locations map[string][]string `json:"locations"`
+	Music     map[string]*Track   `json:"music"` // "biome:locationIndex"
 }
 
 // DB is all loaded content.

@@ -164,6 +164,7 @@ func (w *World) spawnBoss() {
 	if p := w.DB.ByID[e.PokeID]; p != nil {
 		name = p.Name
 	}
+	w.sfx("boss")
 	w.message(bd.Name + " (" + name + ") appears!")
 }
 
@@ -943,6 +944,14 @@ func (w *World) stepGems(dt float64) {
 			}
 		}
 		if d < 14 {
+			switch {
+			case g.Tk:
+				w.sfx("ticket")
+			case g.C > 0:
+				w.sfx("coin")
+			default:
+				w.sfx("xp")
+			}
 			P.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp"))
 			w.Coins += g.C * (1 + w.PS.F("coin"))
 			if g.Tk {
@@ -992,6 +1001,7 @@ func (w *World) levelUp() {
 		return
 	}
 	w.State = StateLevelUp
+	w.sfx("levelup")
 }
 
 func (w *World) heldCount() int {
@@ -1110,6 +1120,7 @@ func (w *World) Choose(i int) {
 	case o.Evo:
 		w.slot(o.ID).Evo = true
 		w.Evolved[o.ID] = true
+		w.sfx("evolve")
 		w.message("EVOLVED! " + w.DB.Moves[o.ID].Name)
 	case o.Move:
 		if s := w.slot(o.ID); s != nil {

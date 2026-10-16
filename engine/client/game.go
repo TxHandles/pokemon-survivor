@@ -53,17 +53,20 @@ type Game struct {
 	tick int
 
 	// meta
-	prof        *meta.Profile
-	ui          uiState
-	csel        string // selected Pokémon
-	lineFam     string
-	toasts      []toastMsg
-	clipIn      chan string
-	xferMsg     string
-	xferPending *meta.Save
-	end         endInfo
-	finished    bool
-	banMode     bool
+	prof         *meta.Profile
+	ui           uiState
+	csel         string // selected Pokémon
+	lineFam      string
+	toasts       []toastMsg
+	clipIn       chan string
+	xferMsg      string
+	xferPending  *meta.Save
+	end          endInfo
+	finished     bool
+	banMode      bool
+	audio        *Audio
+	touch        touchState
+	settingsFrom screen
 }
 
 func New(dataFS fs.FS, db *content.DB) *Game {
@@ -74,6 +77,7 @@ func New(dataFS fs.FS, db *content.DB) *Game {
 		g.csel = "fire"
 	}
 	g.scr = scMenu
+	g.audio = NewAudio(g.opt)
 	for _, p := range db.Pokemon { // first forms: the roster you pick from in this build
 		if p.EvolvesFrom == "" && p.RegionalOf == "" && !p.Legendary {
 			g.roster = append(g.roster, p.ID)
@@ -274,21 +278,42 @@ func (g *Game) playInput() sim.Input {
 
 func (g *Game) Update() error {
 	g.tick++
+	defer g.audioTick()
 	switch g.scr {
 	case scTitle:
 		g.scr = scMenu
-	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult:
+	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings:
 		g.buildMenu()
 		g.ui.update()
+		if g.ui.clicked {
+			g.audio.Play("click")
+		}
 	case scPlay:
 		g.updatePlay()
 	case scPause:
-		if keyJust(ebiten.KeyEscape, ebiten.KeyP) || padBtn(ebiten.StandardGamepadButtonCenterRight) || confirm() {
+		g.touchInput()
+		if keyJust(ebiten.KeyEscape, ebiten.KeyP) || padBtn(ebiten.StandardGamepadButtonCenterRight) || confirm() || g.touch.pauseTapped {
 			g.scr = scPlay
+		}
+		if keyJust(ebiten.KeyS) || padBtn(ebiten.StandardGamepadButtonRightTop) {
+			g.settingsFrom = scPause
+			g.scr = scSettings
+			g.ui.focus = ""
 		}
 		if keyJust(ebiten.KeyQ) || padBtn(ebiten.StandardGamepadButtonRightRight) {
 			g.scr = scMenu // abandon: no rewards (same as the web game)
 			g.ui.focus = ""
+		}
+		if x, y, ok := g.touchTap(); ok {
+			switch g.pauseHit(x, y) {
+			case 1:
+				g.scr = scPlay
+			case 2:
+				g.settingsFrom = scPause
+				g.scr = scSettings
+			case 3:
+				g.scr = scMenu
+			}
 		}
 	case scOver:
 		g.overT += 1.0 / 60
@@ -347,7 +372,8 @@ func (g *Game) startSel() {
 
 func (g *Game) updatePlay() {
 	w := g.W
-	if keyJust(ebiten.KeyEscape, ebiten.KeyP) || padBtn(ebiten.StandardGamepadButtonCenterRight) {
+	tin, tactive := g.touchInput()
+	if keyJust(ebiten.KeyEscape, ebiten.KeyP) || padBtn(ebiten.StandardGamepadButtonCenterRight) || (g.touch.pauseTapped && !w.Waiting()) {
 		g.scr = scPause
 		return
 	}
@@ -390,6 +416,12 @@ func (g *Game) updatePlay() {
 				return
 			}
 		}
+		if tx, ty, ok := g.touchTap(); ok && g.lvDelay > .25 {
+			if i := g.cardHit(int(tx), int(ty)); i >= 0 {
+				g.pick(i)
+				return
+			}
+		}
 		if g.lvDelay > .35 && confirm() {
 			g.pick(g.lvSel)
 		}
@@ -401,7 +433,12 @@ func (g *Game) updatePlay() {
 		return
 	}
 	g.lvDelay = 0
-	w.Step(1.0/60, g.playInput())
+	in := g.playInput()
+	if tactive && !g.auto {
+		in.MoveX, in.MoveY = tin.MoveX, tin.MoveY
+		in.Dash = in.Dash || tin.Dash
+	}
+	w.Step(1.0/60, in)
 	for _, n := range w.Notes {
 		g.toast(n)
 	}
@@ -451,6 +488,9 @@ func (g *Game) Draw(dst *ebiten.Image) {
 			g.drawRoute(dst)
 		case sim.StateShrine:
 			g.drawShrine(dst)
+		}
+		if g.scr == scPlay && !g.W.Waiting() {
+			g.drawTouch(dst)
 		}
 		if g.scr == scPause {
 			g.drawPause(dst)

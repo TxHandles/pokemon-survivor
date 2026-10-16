@@ -19,10 +19,12 @@ A native rebuild in Go with [Ebitengine](https://ebitengine.org), reading the sa
 | `engine/content` | Loads `data/*.json` (stats, learnsets, tier rules) |
 | `engine/sim` | The game simulation — pure logic, no graphics, so bots can run it headless |
 | `engine/meta` | Progression: save file (same format as the web game), shop, unlocks, mastery, challenges, rewards |
-| `engine/client` | Rendering, input (keyboard, gamepad, mouse), HUD and menus |
+| `engine/synth` | Procedural sound effects and the placeholder music loop (same recipes as the web game) |
+| `engine/client` | Rendering, input (keyboard, gamepad, mouse, touch), audio, HUD and menus |
 | `cmd/game` | The playable game (Windows / browser) |
 | `cmd/sim` | Headless bot runner for balance checks: `go run ./cmd/sim -runs 20 -mins 5` |
 | `web/index.html` | Page that loads the browser build |
+| `music/` | Location and menu tracks: embedded in the Windows build, fetched by the browser build |
 
 ```
 ./tools/build_go.sh            # -> build/windows/PokemonSurvivor.exe and build/web/

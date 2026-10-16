@@ -23,6 +23,9 @@ func main() {
 		log.Fatal(err)
 	}
 	g := client.New(data.FS, db)
+	if opts["touch"] != "" { // force the touch overlay on (screenshots / testing)
+		g.ForceTouch()
+	}
 	if sc := opts["screen"]; sc != "" { // open a menu screen directly (screenshots / testing)
 		g.OpenScreen(sc)
 	}

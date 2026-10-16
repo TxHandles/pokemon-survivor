@@ -16,7 +16,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Test simulation
-        run: go test ./engine/content ./engine/sim
+        run: go test ./engine/content ./engine/sim ./engine/meta ./engine/synth
       - name: Build Windows + web
         run: ./tools/build_go.sh
       - uses: actions/upload-artifact@v4

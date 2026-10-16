@@ -382,10 +382,29 @@ func (g *Game) drawTitle(dst *ebiten.Image) {
 	drawText(dst, "Enter / A to start  ·  WASD / stick to move  ·  Shift / RB to dash  ·  Esc to pause", float64(g.sw)/2, float64(g.sh)-34, 13, false, dim, text.AlignCenter, true)
 }
 
+func (g *Game) pauseRects() [3][4]float64 {
+	cx, cy := float64(g.sw)/2, float64(g.sh)/2
+	return [3][4]float64{{cx - 140, cy + 10, 280, 46}, {cx - 140, cy + 66, 280, 46}, {cx - 140, cy + 122, 280, 46}}
+}
+
+func (g *Game) pauseHit(x, y float64) int {
+	for i, r := range g.pauseRects() {
+		if inR(r, x, y) {
+			return i + 1
+		}
+	}
+	return 0
+}
+
 func (g *Game) drawPause(dst *ebiten.Image) {
 	rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, 170))
-	drawText(dst, "PAUSED", float64(g.sw)/2, float64(g.sh)/2-60, 40, true, white, text.AlignCenter, true)
-	drawText(dst, "Esc / Enter / Start to resume  ·  Q / B to quit to title", float64(g.sw)/2, float64(g.sh)/2, 15, false, dim, text.AlignCenter, true)
+	drawText(dst, "PAUSED", float64(g.sw)/2, float64(g.sh)/2-80, 40, true, white, text.AlignCenter, true)
+	drawText(dst, "Esc / Enter / Start: resume  ·  S / Y: settings  ·  Q / B: abandon run (no rewards)", float64(g.sw)/2, float64(g.sh)/2-26, 13, false, dim, text.AlignCenter, true)
+	labels := [3]string{"Resume", "Settings", "Abandon run"}
+	cols := [3]color.NRGBA{gold, c(159, 232, 255, 255), c(255, 140, 140, 255)}
+	for i, r := range g.pauseRects() {
+		btnDraw(labels[i], "", cols[i], false)(dst, r, false)
+	}
 }
 
 func (g *Game) drawOver(dst *ebiten.Image) {

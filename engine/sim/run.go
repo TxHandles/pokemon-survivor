@@ -140,6 +140,7 @@ func (w *World) afterBoss(e *Enemy) {
 	}
 	if w.Bosses >= w.Run.Bosses && !w.Endless {
 		w.Endless, w.Won, w.ET = true, true, w.T
+		w.sfx("victory")
 		w.message("VICTORY! Endless mode begins...")
 	} else {
 		w.message("Boss defeated! Choose your next destination...")
@@ -240,6 +241,7 @@ func (w *World) stepRun(dt float64) {
 			w.Coins += cn
 			w.Tickets++
 			P.XP += P.NX
+			w.sfx("chest")
 			w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 40, Life: 2.5, Text: "CHEST! +25 coins, free level up", Col: "gold"})
 			continue
 		}
@@ -274,6 +276,7 @@ func (w *World) openChest(c *MapChest) {
 		for i := 0; i < 6; i++ {
 			w.Gems = append(w.Gems, &Gem{X: c.X + w.rnd(-30, 30), Y: c.Y + w.rnd(-30, 30), V: w.P.NX * .12})
 		}
+		w.sfx("chest")
 		w.addFX(&FX{Kind: "txt", X: c.X, Y: c.Y - 30, Life: 2, Text: "Chest opened!", Col: "gold"})
 	}
 }

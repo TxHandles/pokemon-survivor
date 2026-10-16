@@ -266,6 +266,7 @@ func (w *World) hitRaw(e *Enemy, base float64, col string) {
 }
 
 func (w *World) damage(e *Enemy, d, em float64, crit bool) {
+	w.sfx("hit")
 	lastD = d
 	if w.curSlot != nil {
 		w.DMG[w.curSlot.ID] += math.Min(d, math.Max(0, e.HP))
@@ -292,6 +293,14 @@ func (w *World) kill(e *Enemy) {
 	}
 	e.Dead = true
 	w.Kills++
+	switch {
+	case e.Boss:
+		w.sfx("bossdown")
+	case e.Elite:
+		w.sfx("elitedown")
+	default:
+		w.sfx("kill")
+	}
 	v := 1.0
 	if e.MHP > 40 {
 		v = 2
@@ -346,6 +355,7 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 	w.abHurt(h0 - P.HP)
 	if h0-P.HP > .6 {
 		P.HurtT = w.T
+		w.sfx("hurt")
 	}
 	if P.HP <= 0 && w.pe("sash") > 0 && P.SashT <= w.T {
 		P.HP, P.Inv = 1, 2
@@ -366,6 +376,7 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 		P.HP = 0
 		P.Dead = true
 		w.State = StateDead
+		w.sfx("death")
 	}
 }
 

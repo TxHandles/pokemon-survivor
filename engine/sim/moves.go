@@ -340,6 +340,7 @@ func init() {
 			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
 			const sp = 1150
 			du := L / sp
+			w.sfx("dash")
 			w.P.Dash = &DashState{VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, T: du, W: wd, D: d, Type: c.t, Slot: c.s, Cap: c.cap,
 				Phase: has(w.P.Types, "flying") || has(w.P.Types, "ghost"), Hit: map[*Enemy]bool{}}
 			w.P.Inv = math.Max(w.P.Inv, du+.15)

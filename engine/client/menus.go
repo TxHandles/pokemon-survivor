@@ -75,6 +75,8 @@ func (g *Game) buildMenu() {
 		g.menuXfer()
 	case scResult:
 		g.menuResult()
+	case scSettings:
+		g.menuSettings()
 	}
 }
 
@@ -133,6 +135,7 @@ func (g *Game) menuMain() {
 		{"shop", "Shop", "Global upgrades: rerolls, banishes, slots, choices", scShop},
 		{"chal", "Challenges", fmt.Sprintf("%d ready to claim", ready), scChal},
 		{"xfer", "Save transfer", "Move progress to and from the web version", scXfer},
+		{"settings", "Settings", "Volume, music, screen shake, touch controls", scSettings},
 	}
 	for _, it := range items {
 		it := it
@@ -144,6 +147,7 @@ func (g *Game) menuMain() {
 			col = c(120, 255, 140, 255)
 		}
 		u.button(it.k, [4]float64{x, y, bw, bh}, false, false, btnDraw(it.label, it.sub, col, false), func() {
+			g.settingsFrom = scMenu
 			g.scr = it.to
 			g.ui.focus = ""
 			g.ui.scroll = 0
@@ -957,6 +961,8 @@ func (g *Game) OpenScreen(name string) {
 		g.scr = scChal
 	case "xfer":
 		g.scr = scXfer
+	case "settings":
+		g.scr = scSettings
 	default:
 		g.scr = scMenu
 	}
