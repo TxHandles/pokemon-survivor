@@ -588,7 +588,53 @@ func (g *Game) menuLine() {
 		})
 	}
 	y += 64 + 16
-	y += g.h3("Stats", y)
+	// the line's stats with its upgrades applied, and the upgrades bought so far
+	sid := mem[0]
+	for _, m := range mem {
+		if m == g.csel {
+			sid = m
+		}
+	}
+	rows, ups := g.lineStats(fam, sid)
+	ph := 34 + 22*float64(len(rows)) + 14
+	if len(ups) > 0 {
+		ph += 24 + 18*float64(len(ups))
+	} else {
+		ph += 22
+	}
+	u.label([4]float64{sw/2 - 280, y, 560, ph}, true, func(dst *ebiten.Image, r [4]float64) {
+		webBox(dst, r[0], r[1], r[2], r[3], 12, webBorder, webPanel)
+		x0, yy := r[0]+18, r[1]+10
+		drawText(dst, "Stats · "+g.db.ByID[sid].Name, x0, yy, 15, true, webFg, text.AlignStart, false)
+		yy += 26
+		for _, rw := range rows {
+			drawText(dst, rw.label, x0, yy, 13, false, alpha(webFg, .8), text.AlignStart, false)
+			drawText(dst, rw.base, x0+200, yy, 13, false, alpha(webFg, .65), text.AlignEnd, false)
+			col := webFg
+			if rw.cur != rw.base {
+				col = hexC("#6fe38f")
+				drawText(dst, "→", x0+218, yy, 13, false, alpha(webFg, .6), text.AlignCenter, false)
+				drawText(dst, rw.cur, x0+236, yy, 13, true, col, text.AlignStart, false)
+				drawText(dst, rw.delta, r[0]+r[2]-18, yy, 13, true, col, text.AlignEnd, false)
+			}
+			yy += 22
+		}
+		yy += 6
+		rect(dst, x0, yy, r[2]-36, 1, alpha(white, .12))
+		yy += 8
+		if len(ups) == 0 {
+			drawText(dst, "No upgrades yet: buy some below.", x0, yy, 12, false, alpha(webFg, .65), text.AlignStart, false)
+			return
+		}
+		drawText(dst, "Current upgrades", x0, yy, 13, true, webFg, text.AlignStart, false)
+		yy += 22
+		for _, l := range ups {
+			drawText(dst, l, x0, yy, 12, false, hexC("#6fe38f"), text.AlignStart, false)
+			yy += 18
+		}
+	})
+	y += ph + 18
+	y += g.h3("Upgrades", y)
 	var cards []*webCard
 	for _, k := range meta.Upgrades {
 		if !k.Global {
@@ -614,6 +660,75 @@ func (g *Game) menuLine() {
 	}
 	y += g.flowCards([]*webCard{tc}, y, 900) + 18
 	u.scrollMax = math.Max(0, y-u.area[3])
+}
+
+type statRow struct{ label, base, cur, delta string }
+
+// lineStats: Pokémon id's stats without and with its line's upgrades (and training), plus a line
+// per upgrade bought ("Power ×2: +16% damage").
+func (g *Game) lineStats(fam, id string) ([]statRow, []string) {
+	pr := g.prof
+	st := g.db.Stats[id]
+	ul := func(k string) float64 { return float64(pr.UL(k, fam)) }
+	tr := float64(pr.Training(fam))
+	pct := func(v float64) string { return fmt.Sprintf("%+d%%", int(math.Round(v*100))) }
+	num0 := func(v float64) string { return strconv.Itoa(int(math.Round(v))) }
+	var rows []statRow
+	add := func(label string, base, cur float64, f func(float64) string, delta string) {
+		rows = append(rows, statRow{label, f(base), f(cur), delta})
+	}
+	hp0 := math.Round(80 * st.HP)
+	hp1 := math.Round((80 + 14*ul("hp")) * st.HP)
+	add("Max HP", hp0, hp1, num0, fmt.Sprintf("+%d", int(hp1-hp0)))
+	atk0 := 100 * st.Atk
+	atk1 := atk0 * (1 + .08*ul("dmg")) * (1 + .02*tr)
+	add("Attack", atk0, atk1, num0, pct(atk1/atk0-1))
+	def0 := 100 * st.Def
+	def1 := def0 / math.Pow(.96, ul("arm"))
+	add("Defense", def0, def1, num0, pct(1-math.Pow(.96, ul("arm")))+" less damage")
+	sp0 := 125 * st.Spd
+	sp1 := sp0 * (1 + .03*ul("spd"))
+	add("Speed", sp0, sp1, num0, pct(sp1/sp0-1))
+	add("Regeneration", 0, .3*ul("reg"), func(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) + " HP/s" }, fmt.Sprintf("+%.1f HP/s", .3*ul("reg")))
+	add("Pickup range", 100, 100*(1+.12*ul("mag")), func(v float64) string { return num0(v) + "%" }, pct(.12*ul("mag")))
+	add("XP gain", 100, 100*(1+.05*ul("xpg")), func(v float64) string { return num0(v) + "%" }, pct(.05*ul("xpg")))
+	add("Coins", 100, 100*(1+.1*ul("cg"))*(1+.01*tr), func(v float64) string { return num0(v) + "%" }, pct((1+.1*ul("cg"))*(1+.01*tr)-1))
+	var ups []string
+	for _, k := range meta.Upgrades {
+		if k.Global {
+			continue
+		}
+		n := pr.UL(k.Key, fam)
+		if n == 0 {
+			continue
+		}
+		var eff string
+		switch k.Key {
+		case "dmg":
+			eff = pct(.08*float64(n)) + " attack"
+		case "spd":
+			eff = pct(.03*float64(n)) + " speed"
+		case "hp":
+			eff = fmt.Sprintf("+%d max HP", 14*n)
+		case "reg":
+			eff = fmt.Sprintf("+%.1f HP/sec", .3*float64(n))
+		case "arm":
+			eff = pct(-(1 - math.Pow(.96, float64(n)))) + " damage taken"
+		case "mag":
+			eff = pct(.12*float64(n)) + " pickup range"
+		case "xpg":
+			eff = pct(.05*float64(n)) + " XP"
+		case "cg":
+			eff = pct(.1*float64(n)) + " coins"
+		default:
+			eff = k.Desc
+		}
+		ups = append(ups, fmt.Sprintf("%s ×%d: %s", k.Name, n, eff))
+	}
+	if tr > 0 {
+		ups = append(ups, fmt.Sprintf("Training rank %d: +%d%% damage, +%d%% coins", int(tr), 2*int(tr), int(tr)))
+	}
+	return rows, ups
 }
 
 // ---- run setup ----
