@@ -329,7 +329,7 @@ func (g *Game) startCoop() {
 	}
 	w.ViewW, w.ViewH = float64(g.sw), float64(g.sh)
 	g.W = w
-	g.floor = NewFloor(bi, w.Seed)
+	g.floor = NewFloor(bi, w.LI, w.Seed)
 	g.floorN = w.BiomeN
 	g.pas = map[int]*playerAnim{}
 	g.scr = scPlay

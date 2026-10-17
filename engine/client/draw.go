@@ -43,7 +43,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	sx := func(x float64) float64 { return x - camX }
 	sy := func(y float64) float64 { return y - camY }
 	if g.floorN != w.BiomeN { // travelled to a new biome
-		g.floor = NewFloor(w.Biome, w.Seed+int64(w.BiomeN)*7919)
+		g.floor = NewFloor(w.Biome, w.LI, w.Seed+int64(w.BiomeN)*7919)
 		g.floorN = w.BiomeN
 	}
 	g.floor.Draw(dst, camX, camY)
@@ -81,6 +81,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 			}
 		}
 	}
+	g.drawAmbient(dst, camX, camY)
 	// telegraphed hazards
 	for _, h := range w.HZ {
 		col := c(255, 70, 70, 255)
@@ -252,6 +253,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		}
 		drawText(dst, f.Text, sx(f.X), sy(f.Y), size, true, alpha(col, a), text.AlignCenter, true)
 	}
+	g.drawLocFX(dst)
 }
 
 func b2f(b bool, t, f float64) float64 {

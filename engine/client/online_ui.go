@@ -490,7 +490,7 @@ func (g *Game) startOnline(st *net.StartMsg) {
 	// every peer must simulate the same view size (it sets spawn distances)
 	w.ViewW, w.ViewH = 1280, 720
 	g.W = w
-	g.floor = NewFloor(st.Biome, w.Seed)
+	g.floor = NewFloor(st.Biome, 0, w.Seed)
 	g.floorN = w.BiomeN
 	g.pas = map[int]*playerAnim{}
 	g.coop = true

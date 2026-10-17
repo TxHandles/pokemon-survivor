@@ -28,6 +28,9 @@ const (
 
 // Game implements ebiten.Game.
 type Game struct {
+	amb    ambState
+	vigImg *ebiten.Image
+	vigV   float64
 	db     *content.DB
 	assets *Assets
 	W      *sim.World
@@ -114,6 +117,7 @@ type Game struct {
 func New(dataFS fs.FS, db *content.DB) *Game {
 	uiFS = dataFS
 	loadArt(dataFS)
+	loadFloors(dataFS)
 	g := &Game{db: db, assets: NewAssets(dataFS, db), biome: -1, sw: 1280, sh: 720, clipIn: make(chan string, 1)}
 	g.prof = meta.NewProfile(meta.LoadStored(), db)
 	g.saveGen++
@@ -152,7 +156,7 @@ func (g *Game) startCfg(id, biome string, seed int64, cfg sim.Config) {
 	}
 	w.ViewW, w.ViewH = float64(g.sw), float64(g.sh)
 	g.W = w
-	g.floor = NewFloor(biome, seed)
+	g.floor = NewFloor(biome, 0, seed)
 	g.floorN = w.BiomeN
 	g.pa = playerAnim{}
 	g.pas = map[int]*playerAnim{}

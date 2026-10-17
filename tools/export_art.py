@@ -53,6 +53,10 @@ JS = r"""
  out.meta.lmk = Object.fromEntries(Object.keys(LMK).map(k => [k, {cs: LMK[k].cs || [], fx: LMK[k].fx || null}]));
  // hazard pools: 256px, three variants
  for (const k of ['lava', 'deep', 'ice', 'toxic', 'sand', 'web']) for (let v = 0; v < 3; v++) out.pools[k + '/' + v] = png(poolSpr(k, v));
+ // ground palettes per biome & location (FLB merged with the FLV location variants), ambient life, location tints
+ const floors = {};
+ for (const bi of Object.keys(FLB)) { floors[bi] = []; for (let li = 0; li < 3; li++) { const v = (FLV[bi] || [])[li]; floors[bi].push(v ? Object.assign({}, FLB[bi], v) : FLB[bi]) } }
+ out.floors = {floors, amb: AMB_K, lfx: LFX};
  return out;
 }
 """
@@ -98,6 +102,8 @@ def main():
         'lm': atlas('landmarks', d['lm'], 160, 12),
         'pools': atlas('pools', d['pools'], 256, 6),
     }
+    with open(os.path.join(OUT, 'floors.json'), 'w') as f:
+        json.dump(d['floors'], f, separators=(',', ':'), sort_keys=True)
     with open(os.path.join(OUT, 'art.json'), 'w') as f:
         json.dump(meta, f, separators=(',', ':'), sort_keys=True)
     write_sim(meta)

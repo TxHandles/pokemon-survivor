@@ -3,6 +3,7 @@ package client
 import (
 	"image/color"
 	"math"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -18,10 +19,15 @@ type Floor struct {
 	seed  uint32
 	tiles map[[2]int]*ebiten.Image
 	free  []*ebiten.Image
+	wf    *webFloor // the web ground painter (nil = the simple fallback floor)
 }
 
-func NewFloor(biome string, seed int64) *Floor {
-	return &Floor{biome: biome, seed: uint32(seed), tiles: map[[2]int]*ebiten.Image{}}
+func NewFloor(biome string, li int, seed int64) *Floor {
+	f := &Floor{biome: biome, seed: uint32(seed), tiles: map[[2]int]*ebiten.Image{}}
+	if d := floorDefFor(biome, li); d != nil {
+		f.wf = &webFloor{d: d, bs: int(uint32(seed*2654435761) % 1000000000), dec: map[[2]int][]flDecal{}}
+	}
+	return f
 }
 
 func (f *Floor) def() floorDef {
@@ -34,16 +40,22 @@ func (f *Floor) def() floorDef {
 // Draw paints the ground covering the screen; camX/camY is the world point at the screen's top-left.
 func (f *Floor) Draw(dst *ebiten.Image, camX, camY float64) {
 	w, h := dst.Bounds().Dx(), dst.Bounds().Dy()
-	dst.Fill(f.def().A)
+	if f.wf != nil {
+		dst.Fill(cssC(f.wf.d.A))
+	} else {
+		dst.Fill(f.def().A)
+	}
 	x0, x1 := int(math.Floor(camX/cs)), int(math.Floor((camX+float64(w))/cs))
 	y0, y1 := int(math.Floor(camY/cs)), int(math.Floor((camY+float64(h))/cs))
 	built := 0
+	t0 := time.Now()
 	for j := y0; j <= y1; j++ {
 		for i := x0; i <= x1; i++ {
 			k := [2]int{i, j}
 			t := f.tiles[k]
 			if t == nil {
-				if built >= 8 {
+				// build missing tiles, but spread the work when several are missing at once
+				if built > 0 && (built >= 6 || time.Since(t0) > 30*time.Millisecond) {
 					continue
 				}
 				built++
@@ -52,6 +64,24 @@ func (f *Floor) Draw(dst *ebiten.Image, camX, camY float64) {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(math.Round(float64(i*cs)-camX), math.Round(float64(j*cs)-camY))
 			dst.DrawImage(t, op)
+		}
+	}
+	// prepare one tile just outside the view when nothing had to be built this frame
+	if built == 0 {
+		cx, cy := (camX+float64(w)/2)/cs, (camY+float64(h)/2)/cs
+		best, bd := [2]int{}, math.Inf(1)
+		for j := y0 - 1; j <= y1+1; j++ {
+			for i := x0 - 1; i <= x1+1; i++ {
+				if f.tiles[[2]int{i, j}] != nil {
+					continue
+				}
+				if d := math.Hypot(float64(i)+.5-cx, float64(j)+.5-cy); d < bd {
+					best, bd = [2]int{i, j}, d
+				}
+			}
+		}
+		if !math.IsInf(bd, 1) {
+			f.build(best[0], best[1])
 		}
 	}
 	// evict tiles far from view
@@ -73,6 +103,11 @@ func (f *Floor) build(cx, cy int) *ebiten.Image {
 		img.Clear()
 	} else {
 		img = ebiten.NewImage(cs, cs)
+	}
+	if f.wf != nil {
+		img.WritePixels(f.wf.buildTile(cx, cy).Pix)
+		f.tiles[[2]int{cx, cy}] = img
+		return img
 	}
 	d := f.def()
 	img.Fill(d.A)
