@@ -193,9 +193,11 @@ func (g *Game) menuOnline() {
 	switch g.on.mode {
 	case "join":
 		g.header("JOIN A ROOM", "Type the 5-character code your friend sees in their lobby")
-		g.backButton(scOnline)
-		if g.scr != scOnline {
+		// back returns to the Online menu (same screen, different mode); Backspace only deletes
+		u.button("back", [4]float64{20, 20, 110, 40}, false, false, btnDraw("< Back", "", dim, false), func() { g.on.mode = "menu"; g.ui.focus = "" })
+		if keyJust(ebiten.KeyEscape) || padBtn(ebiten.StandardGamepadButtonRightRight) {
 			g.on.mode = "menu"
+			g.ui.focus = ""
 			return
 		}
 		for _, ch := range ebiten.AppendInputChars(nil) {
@@ -407,6 +409,51 @@ func (g *Game) menuRoomLobby() {
 				drawText(dst, ln, x+cw/2, y+h-50+float64(j)*16, 12, true, sc, text.AlignCenter, false)
 			}
 		})
+	}
+	// my seat: click the arrows to change Pokémon, click the ability to switch it
+	if r.Me >= 0 && r.Me < len(r.Players) && len(roster) > 0 {
+		x, y := x0+float64(r.Me)*(cw+10), 110.0
+		can := !(g.on.ready && !r.Host)
+		lr, rr := [4]float64{x + 6, y + 100, 34, 56}, [4]float64{x + cw - 40, y + 100, 34, 56}
+		ar := [4]float64{x + 10, y + 236, cw - 20, 26}
+		arrow := func(dst *ebiten.Image, b [4]float64, dir float64) {
+			hot := inR(b, float64(mx), float64(my))
+			col := alpha(white, b2f(can, b2f(hot, 1, .75), .25))
+			roundRect(dst, b[0], b[1], b[2], b[3], 8, alpha(c(40, 48, 70, 255), b2f(hot && can, .95, .7)))
+			cx, cy := b[0]+b[2]/2, b[1]+b[3]/2
+			poly(dst, [][2]float64{{cx + 7*dir, cy}, {cx - 6*dir, cy - 11}, {cx - 6*dir, cy + 11}}, col)
+		}
+		u.label([4]float64{x, y, cw, 300}, false, func(dst *ebiten.Image, _ [4]float64) {
+			arrow(dst, lr, -1)
+			arrow(dst, rr, 1)
+			if can && inR(ar, float64(mx), float64(my)) {
+				webBox(dst, ar[0], ar[1], ar[2], ar[3], 8, alpha(webAcc, .8), c(0, 0, 0, 0))
+			}
+			hint := "Click the arrows to change Pokémon · click the ability to switch"
+			if !can {
+				hint = "Click Not ready to change your Pokémon"
+			}
+			for j, ln := range wrap(hint, font(11, false), cw-20) {
+				drawText(dst, ln, x+cw/2, y+(sh-230)-92+float64(j)*14, 11, false, alpha(webFg, .75), text.AlignCenter, false)
+			}
+		})
+		if can {
+			n := len(roster)
+			switch {
+			case click(lr):
+				g.on.idx = (g.on.idx - 1 + n) % n
+				g.on.ready = r.Host
+				r.SetMe(g.mySpec(), g.on.ready)
+			case click(rr):
+				g.on.idx = (g.on.idx + 1) % n
+				g.on.ready = r.Host
+				r.SetMe(g.mySpec(), g.on.ready)
+			case click(ar):
+				g.on.ability ^= 1
+				g.on.ready = r.Host
+				r.SetMe(g.mySpec(), g.on.ready)
+			}
+		}
 	}
 	if r.Host && r.Code != "" && len(r.Players) < 4 { // invite friends into the first open seat
 		g.lobbyInvites(x0+float64(len(r.Players))*(cw+10), 150, cw, click)

@@ -205,7 +205,9 @@ func (g *Game) Layout(ow, oh int) (int, int) {
 		h = int(math.Round(float64(oh) * 640 / float64(ow)))
 	}
 	g.sw, g.sh = w, h
-	if g.W != nil {
+	// the view size sets spawn distances, so it is part of the simulation: online, every peer keeps
+	// the shared 1280×720 (a different window shape would put enemies in different places = desync)
+	if g.W != nil && g.on.ls == nil {
 		g.W.ViewW, g.W.ViewH = float64(w), float64(h)
 	}
 	return w, h

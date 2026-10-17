@@ -15,7 +15,7 @@ async def main():
     keep=lambda t:'gstatic' not in t and 'ERR_' not in t and 'net: message' not in t
     h=await bh.new_page(viewport={'width':W,'height':H});h.on('console',lambda m:logs.append('H '+m.text) if keep(m.text) else None)
     await h.goto('http://localhost:8773/index.html?signal=http&host=TEST1&auto=1&nodraw=1');await h.wait_for_timeout(4000)
-    g=await bg.new_page(viewport={'width':W,'height':H});g.on('console',lambda m:logs.append('G '+m.text) if keep(m.text) else None)
+    g=await bg.new_page(viewport={'width':1280,'height':560})  # a different window shape than the host's;g.on('console',lambda m:logs.append('G '+m.text) if keep(m.text) else None)
     await g.goto('http://localhost:8773/index.html?signal=http&join=TEST1&auto=1&nodraw=1');await g.wait_for_timeout(8000)
     await h.screenshot(path=out+'_start_host.png',timeout=120000);await g.screenshot(path=out+'_start_guest.png',timeout=120000)
     await h.wait_for_timeout(secs*1000)

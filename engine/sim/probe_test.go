@@ -52,3 +52,68 @@ func TestProbeCounts(t *testing.T) {
 		_ = b
 	}
 }
+
+// What the client reads while drawing (HUD, level-up cards, map) must not change a co-op world:
+// two lockstep worlds, one of them "drawn" every tick, stay identical.
+func TestCoopDrawReadsLeaveWorldAlone(t *testing.T) {
+	db := loadDB(t)
+	specs := []PlayerSpec{{ID: "fire", Name: "A", Kind: "bot"}, {ID: "water", Name: "B", Kind: "bot"}}
+	mk := func() *World {
+		w, err := NewCoop(db, specs, "grass", 11, Config{LI: -1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		w.AutoDash = true
+		return w
+	}
+	a, b := mk(), mk()
+	read := func(w *World) {
+		for _, s := range w.Slots {
+			w.CoolFrac(s)
+			w.DashReady()
+		}
+		cx, cy := int(w.P.X/ChunkSize), int(w.P.Y/ChunkSize)
+		for i := -3; i <= 3; i++ {
+			for j := -3; j <= 3; j++ {
+				for _, o := range w.Chunk(cx+i, cy+j) {
+					w.LandmarkKind(o)
+				}
+				w.Pools(cx+i, cy+j)
+			}
+		}
+		if w.State == StateLevelUp {
+			for _, o := range w.Opts {
+				if o.Move {
+					for _, lv := range []int{1, o.Level, o.Level + 1, 10} {
+						w.MovePreview(o.ID, lv, false)
+						w.ProbeMove(o.ID, lv, false)
+						w.ProbeMove(o.ID, lv, true)
+					}
+				}
+			}
+		}
+		for _, pc := range w.PL {
+			w.DeathRecap(pc.P)
+		}
+		w.Standings()
+	}
+	for step := 0; a.T < 200 && a.State != StateDead; step++ {
+		read(b)
+		if a.Waiting() != b.Waiting() {
+			t.Fatalf("t=%.2f waiting differs", a.T)
+		}
+		if a.Waiting() {
+			a.BotDecide()
+			b.BotDecide()
+			continue
+		}
+		a.Step(1.0/60, Input{})
+		b.Step(1.0/60, Input{})
+		if step%60 == 0 && a.Hash() != b.Hash() {
+			t.Fatalf("t=%.2f: hashes differ", a.T)
+		}
+	}
+	if a.Hash() != b.Hash() {
+		t.Fatalf("end: hashes differ")
+	}
+}
