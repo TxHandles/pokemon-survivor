@@ -160,8 +160,10 @@ func (g *Game) drawEquipped(dst *ebiten.Image, x0, y0 float64) {
 	w := g.W
 	x := x0
 	for _, s := range w.Slots {
+		s := s
 		col := tc(s.Type)
 		webBox(dst, x, y0, 38, 38, 8, col, alpha(hexC("#0a0d14"), .85))
+		g.hoverTip([4]float64{x, y0, 38, 38}, func() *tipData { return g.moveTip(s.ID, s) })
 		if s.Evo {
 			soft(dst, x+19, y0+19, 22, 22, alpha(webAcc, .35))
 		}
@@ -187,6 +189,8 @@ func (g *Game) drawEquipped(dst *ebiten.Image, x0, y0 float64) {
 		disc(dst, x+19, y+19, 19, webAcc)
 		disc(dst, x+19, y+19, 17, alpha(hexC("#0a0d14"), .92))
 		drawItemIcon(dst, id, x+19, y+19, 27)
+		id, lv := id, lv
+		g.hoverTip([4]float64{x, y, 38, 38}, func() *tipData { return g.itemTip(id, lv) })
 		drawText(dst, strconv.Itoa(lv), x+36, y+24, 10, true, white, text.AlignEnd, true)
 		x += 42
 	}
@@ -349,7 +353,7 @@ func (g *Game) lvCards() []*lvCard {
 					c.tag, c.tagCol = "CAPSTONE PERK", webAcc
 				}
 				if o.Bonus != "" && !(ev && lv+1 == 20) {
-					c.tag, c.tagCol = "BONUS · "+strings.ToUpper(sim.BonusText(o.Bonus)), hexC("#7fd8ff")
+					c.tag, c.tagCol = "BONUS · "+strings.ToUpper(sim.BonusTextFor(m.Shape, o.Bonus)), hexC("#7fd8ff")
 				}
 				a, ca := w.MovePreviewB(o.ID, lv, ev, "")
 				b, cb := w.MovePreviewB(o.ID, lv+1, ev, o.Bonus)
@@ -880,6 +884,12 @@ func (g *Game) drawWebRoute(dst *ebiten.Image) {
 	if w.Endless {
 		sub = fmt.Sprintf("Endless mode · %d bosses defeated · pick your next location.", w.Bosses)
 	}
+	if len(w.PL) > 1 && w.RouteGo < 0 {
+		sub += " Votes decide · a tie goes to the host."
+	}
+	if w.RouteGo >= 0 && w.RouteGo < len(w.Route) {
+		sub = "Travelling to " + w.LocName(w.Route[w.RouteGo].Type, w.Route[w.RouteGo].LI) + "…"
+	}
 	drawText(dst, sub, sw/2, y0-20, 13, false, alpha(webFg, .9), text.AlignCenter, true)
 	X := func(x float64) float64 { return x0 + x*k }
 	Y := func(y float64) float64 { return y0 + y*k }
@@ -890,21 +900,30 @@ func (g *Game) drawWebRoute(dst *ebiten.Image) {
 		disc(dst, X(20+float64((i*97)%360)), Y(30+float64((i*61)%370)), float64(2+i%3)*k, alpha(gold, .12))
 	}
 	cx, cy, pos := routeGeom(len(w.Route))
-	// dotted paths (cubic curves, a dot every 13 px)
-	for _, p := range pos {
+	T := w.T + float64(g.tick)/60 // the world is paused here; the ticker keeps things moving
+	paths := make([][][2]float64, len(pos))
+	// dotted paths (cubic curves); the dots march towards the destinations
+	for pi, p := range pos {
 		pts := [][2]float64{{cx, cy - 30}, {cx, cy - 62}}
 		a, c1, c2, b := [2]float64{cx, cy - 62}, [2]float64{cx, (cy + p[1]) / 2}, [2]float64{p[0], (cy+p[1])/2 + 40}, [2]float64{p[0], p[1] + 86}
 		for t := .02; t <= 1.0001; t += .02 {
 			u := 1 - t
 			pts = append(pts, [2]float64{u*u*u*a[0] + 3*u*u*t*c1[0] + 3*u*t*t*c2[0] + t*t*t*b[0], u*u*u*a[1] + 3*u*u*t*c1[1] + 3*u*t*t*c2[1] + t*t*t*b[1]})
 		}
-		acc := 0.0
+		paths[pi] = pts
+		chosen := w.RouteGo == pi
+		acc := math.Mod(T*18, 13)
 		for i := 1; i < len(pts); i++ {
 			dx, dy := pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]
 			seg := math.Hypot(dx, dy)
 			for acc <= seg {
 				f := acc / seg
-				disc(dst, X(pts[i-1][0]+dx*f), Y(pts[i-1][1]+dy*f), 2.5*k, alpha(hexC("#e8d9a8"), .75))
+				col := alpha(hexC("#e8d9a8"), b2f(w.RouteGo >= 0 && !chosen, .25, .75))
+				r := 2.5
+				if chosen {
+					col, r = webAcc, 3.2
+				}
+				disc(dst, X(pts[i-1][0]+dx*f), Y(pts[i-1][1]+dy*f), r*k, col)
 				acc += 13
 			}
 			acc -= seg
@@ -912,6 +931,9 @@ func (g *Game) drawWebRoute(dst *ebiten.Image) {
 	}
 	node := func(t string, x, y, r, ir float64, hot bool) {
 		disc(dst, X(x), Y(y), (r+5)*k, c(0, 0, 0, 64))
+		if hot {
+			glow(dst, X(x), Y(y), (r+14)*k, webAcc, .35+.15*math.Sin(T*5))
+		}
 		disc(dst, X(x), Y(y), (r+1.5)*k, b2c(hot, webAcc, white))
 		disc(dst, X(x), Y(y), (r-1.5)*k, mix(tc(t), c(0, 0, 0, 255), .25))
 		soft(dst, X(x-r*.3), Y(y-r*.35), r*.8*k, r*.7*k, alpha(mix(tc(t), white, .45), .9))
@@ -923,10 +945,19 @@ func (g *Game) drawWebRoute(dst *ebiten.Image) {
 	if w.P != nil {
 		pt = w.P.Types
 	}
+	me := g.viewIdx()
 	for i, o := range w.Route {
 		p := pos[i]
-		hot := i == g.lvSel || inR(g.routeRects()[i], float64(mx), float64(my))
-		node(o.Type, p[0], p[1], 33, 54, hot)
+		voters := 0
+		for v, vi := range w.RouteVotes {
+			if vi == i && v < len(w.PL) && !w.PL[v].Gone {
+				voters++
+			}
+		}
+		mine := me < len(w.RouteVotes) && w.RouteVotes[me] == i
+		hot := w.RouteGo == i || (w.RouteGo < 0 && (mine || i == g.lvSel || inR(g.routeRects()[i], float64(mx), float64(my))))
+		bob := math.Sin(T*2.2+float64(i)*1.3) * 3
+		node(o.Type, p[0], p[1]+bob, 33, 54, hot)
 		drawText(dst, w.LocName(o.Type, o.LI), X(p[0]), Y(p[1]+40), int(math.Round(12.5*k)), true, white, text.AlignCenter, false)
 		hz := "Calm"
 		var parts []any
@@ -962,24 +993,76 @@ func (g *Game) drawWebRoute(dst *ebiten.Image) {
 		}
 		tw := richLine(nil, 0, 0, fs, false, webFg, tag...)
 		richLine(dst, X(p[0])-tw/2, Y(p[1]+69), fs, false, webFg, tag...)
+		if len(w.PL) > 1 && voters > 0 { // vote pips above the node, in each voter's colour
+			n := 0
+			for v, vi := range w.RouteVotes {
+				if vi != i || v >= len(w.PL) || w.PL[v].Gone {
+					continue
+				}
+				px := X(p[0]) + (float64(n)-float64(voters-1)/2)*16*k
+				disc(dst, px, Y(p[1]-46+bob), 6.5*k, c(10, 12, 20, 230))
+				disc(dst, px, Y(p[1]-46+bob), 5*k, playerCols[v%4])
+				n++
+			}
+		}
 	}
 	node(w.Biome, cx, cy, 27, 44, false)
 	drawText(dst, "You are here · "+w.LocName(w.Biome, w.LI), X(cx), Y(cy+36), int(math.Round(11*k)), true, hexC("#e8d9a8"), text.AlignCenter, false)
-	if w.P != nil {
-		fx, fy := X(cx), Y(cy-44)
-		soft(dst, fx, fy+13*k, 13*k, 4*k, c(0, 0, 0, 115))
-		disc(dst, fx, fy, 15.5*k, tc(w.P.Types[0]))
-		disc(dst, fx, fy, 12.5*k, alpha(webInk, .85))
-		if s := g.assets.Sprite(w.P.ID); s != nil && s.Front != nil {
-			f0 := s.Front.IdleFrame(0)
-			im := s.Front.Frame(f0)
-			bx := s.Front.Box(f0)
-			kk := math.Min(34*k/float64(bx.Dx()), 34*k/float64(bx.Dy()))
-			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Scale(kk, kk)
-			op.GeoM.Translate(fx-float64(bx.Dx())*kk/2, fy+10*k-float64(bx.Dy())*kk)
-			dst.DrawImage(im.SubImage(bx).(*ebiten.Image), op)
+	// the party as mini-figures: waiting at the start, then walking the chosen path together
+	n := len(w.PL)
+	for i, pc := range w.PL {
+		if pc.Gone {
+			continue
 		}
+		off := (float64(i) - float64(n-1)/2) * 22
+		fx, fy := X(cx+off), Y(cy-44)
+		walk := 0.0
+		if w.RouteGo >= 0 && w.RouteGo < len(paths) {
+			pr := 1 - math.Max(0, w.RouteT)/sim.RouteTravelT
+			pr = pr * pr * (3 - 2*pr)
+			pts := paths[w.RouteGo]
+			tot := 0.0
+			for j := 1; j < len(pts); j++ {
+				tot += math.Hypot(pts[j][0]-pts[j-1][0], pts[j][1]-pts[j-1][1])
+			}
+			want := tot * pr
+			px, py := pts[0][0], pts[0][1]
+			for j := 1; j < len(pts); j++ {
+				seg := math.Hypot(pts[j][0]-pts[j-1][0], pts[j][1]-pts[j-1][1])
+				if want <= seg {
+					f := want / math.Max(seg, 1e-6)
+					px, py = pts[j-1][0]+(pts[j][0]-pts[j-1][0])*f, pts[j-1][1]+(pts[j][1]-pts[j-1][1])*f
+					break
+				}
+				want -= seg
+				px, py = pts[j][0], pts[j][1]
+			}
+			fx, fy = X(px+off*(1-pr)*.6), Y(py-14)
+			walk = 1
+		}
+		hop := math.Abs(math.Sin(T*(4+6*walk)+float64(i))) * (2 + 3*walk) * k
+		col := tc(pc.P.Types[0])
+		if n > 1 {
+			col = playerCols[i%4]
+		}
+		g.miniFigure(dst, pc.P.ID, fx, fy-hop, k, col)
+	}
+}
+
+// miniFigure: a Pokémon on a little round base (route map party).
+func (g *Game) miniFigure(dst *ebiten.Image, id string, fx, fy, k float64, col color.NRGBA) {
+	soft(dst, fx, fy+13*k, 13*k, 4*k, c(0, 0, 0, 115))
+	disc(dst, fx, fy, 15.5*k, col)
+	disc(dst, fx, fy, 12.5*k, alpha(webInk, .85))
+	if s := g.assets.Sprite(id); s != nil && s.Front != nil {
+		f0 := s.Front.IdleFrame(0)
+		im := s.Front.Frame(f0)
+		bx := s.Front.Box(f0)
+		kk := math.Min(34*k/float64(bx.Dx()), 34*k/float64(bx.Dy()))
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(kk, kk)
+		op.GeoM.Translate(fx-float64(bx.Dx())*kk/2, fy+10*k-float64(bx.Dy())*kk)
+		dst.DrawImage(im.SubImage(bx).(*ebiten.Image), op)
 	}
 }
 

@@ -187,14 +187,14 @@ func b2c(b bool, t, f color.NRGBA) color.NRGBA {
 // ---- level up ----
 
 func (g *Game) cardRects() [][4]float64 {
-	if g.W != nil && g.W.State == sim.StateLevelUp {
+	if g.choiceKind() == "lv" {
 		_, rs := g.lvLayout()
 		return rs
 	}
-	if g.W != nil && g.W.State == sim.StateRoute {
+	if g.choiceKind() == "route" {
 		return g.routeRects()
 	}
-	if g.W != nil && g.W.State == sim.StateShrine {
+	if g.choiceKind() == "shrine" {
 		_, rs := g.shrineLayout()
 		return rs
 	}

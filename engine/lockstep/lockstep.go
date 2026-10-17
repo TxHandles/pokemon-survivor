@@ -261,23 +261,17 @@ func (s *Session) step() {
 }
 
 func apply(w *sim.World, p int, c Cmd) {
-	switch c.Kind {
+	switch c.Kind { // every player answers their own prompts (level-ups are simultaneous)
 	case CmdRoute:
-		w.ChooseRoute(int(c.Arg))
-		return
-	}
-	if w.Chooser != p {
-		return
-	}
-	switch c.Kind {
+		w.VoteRoute(p, int(c.Arg))
 	case CmdChoose:
-		w.Choose(int(c.Arg))
+		w.ChooseFor(p, int(c.Arg))
 	case CmdReroll:
-		w.Reroll()
+		w.RerollFor(p)
 	case CmdBanish:
-		w.Banish(int(c.Arg))
+		w.BanishFor(p, int(c.Arg))
 	case CmdBoon:
-		w.ChooseBoon(int(c.Arg))
+		w.ChooseBoonFor(p, int(c.Arg))
 	}
 }
 

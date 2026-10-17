@@ -288,6 +288,7 @@ type World struct {
 	FX           []*FX
 	ZN           []*Zone
 	Decoys       []*Decoy // Substitute
+	curHz        string   // attack name stamped on new hazards
 	Cracks       []*Crack // Earthquake fissures
 	Gems         []*Gem
 	Orbs         []Orb
@@ -316,7 +317,8 @@ type World struct {
 	nextBoss                         float64
 	nextSwarm                        float64
 	curSlot                          *Slot
-	obs, obsRaw                      map[[2]int][]Obstacle
+	obs, obsRaw                      map[ckey][]Obstacle
+	chunkMemo                        [16]chunkMemo
 	LMSP                             []Obstacle // landmarks placed around the start of the location
 	curSrc                           *DmgSrc    // the enemy whose attacks are being created
 	SwapPick                         bool       // the level-up options are "which item to swap out"
@@ -329,7 +331,7 @@ type World struct {
 	HZ                               []*Hazard
 	Items                            []*Pickup
 	Gust                             *GustState
-	pools                            map[[2]int][]Pool
+	pools                            map[ckey][]Pool
 	bioT, elT                        float64
 	mbT, candyT                      float64
 	spawnHold                        float64
@@ -342,6 +344,9 @@ type World struct {
 	Endless                          bool
 	ET                               float64 // when endless mode began
 	Route                            []RouteOpt
+	RouteVotes                       []int   // each player's vote on the route map (-1 = not yet)
+	RouteGo                          int     // the chosen destination while the party travels (-1 = voting)
+	RouteT                           float64 // travel time left
 	RouteChoices                     int
 	LI                               int // location index in the current biome
 	BiomeN                           int // biomes visited (the client reloads the floor when it changes)

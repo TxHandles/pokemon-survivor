@@ -289,6 +289,8 @@ func (g *Game) charCard(dst *ebiten.Image, lc *lineCard, x, y float64) (float64,
 		}
 		drawText(dst, fitText(ty+" type"+tagText(p), 12, false, cw-86), tx, yy+34, 12, false, alpha(webFg, .75), text.AlignStart, false)
 		drawText(dst, fitText("Starts with "+g.db.Moves[g.db.StartMove(id)].Name, 12, false, cw-86), tx, yy+52, 12, false, alpha(webFg, .75), text.AlignStart, false)
+		sm := g.db.StartMove(id)
+		g.hoverTip([4]float64{tx, yy + 50, cw - 86, 18}, func() *tipData { return g.moveTip(sm, nil) })
 	}
 	yy += 76 + 6
 	// mastery
@@ -322,8 +324,8 @@ func (g *Game) charCard(dst *ebiten.Image, lc *lineCard, x, y float64) (float64,
 		v, max float64
 		col    color.NRGBA
 	}{
-		{"HP", math.Round((80 + 14*ul("hp")) * st.HP), 150, webGreen},
-		{"ATK", math.Round(100 * st.Atk * (1 + .08*ul("dmg")) * (1 + .02*float64(pr.Training(f)))), 150, hexC("#ff7a4d")},
+		{"HP", math.Round((80 + 14*ul("hp")) * (1 + .01*float64(pr.Training(f))) * st.HP), 150, webGreen},
+		{"ATK", math.Round(100 * st.Atk * (1 + .08*ul("dmg")) * (1 + .01*float64(pr.Training(f)))), 150, hexC("#ff7a4d")},
 		{"DEF", math.Round(100 * st.Def / math.Pow(.96, ul("arm"))), 150, hexC("#6fb5ff")},
 		{"SPD", math.Round(125 * st.Spd * (1 + .03*ul("spd"))), 170, webAcc},
 	}

@@ -426,7 +426,7 @@ func (g *Game) drawBioHz(dst *ebiten.Image, h *sim.Hazard, x, y float64) {
 		}
 		return
 	}
-	a := math.Max(0, h.Fl/.25)
+	a := math.Max(0, h.Fl/.45)
 	if h.Bio == "storm" {
 		for _, st := range []struct {
 			w   float64

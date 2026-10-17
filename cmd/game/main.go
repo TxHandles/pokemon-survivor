@@ -59,6 +59,16 @@ func main() {
 		if t, _ := strconv.ParseFloat(opts["t"], 64); t > 0 {
 			g.FastForward(t)
 		}
+		if opts["then"] == "route" { // testing: the route map with votes (&rgo=1&rleft=1.1 to show travel)
+			g.TestRoute()
+			gi, err := strconv.Atoi(opts["rgo"])
+			if err != nil {
+				gi = -1
+			}
+			left, _ := strconv.ParseFloat(opts["rleft"], 64)
+			g.W.TestRouteState([]int{-1, 1, 0, 1}, gi, left)
+			g.Freeze = true
+		}
 	}
 	if opts["demo"] != "" { // the bot plays: ?demo=fire  (optionally &biome=water&seed=3&t=40 to fast-forward)
 		g.Demo(true)
@@ -87,6 +97,11 @@ func main() {
 		if id := opts["fire"]; id != "" { // testing: freeze a move's effect mid-animation (&fireT=0.1)
 			ft, _ := strconv.ParseFloat(opts["fireT"], 64)
 			g.W.TestFire(id, 5, ft)
+			g.Freeze = true
+		}
+		if k := opts["bossk"]; k != "" { // testing: a boss attack mid-telegraph (&bossT=0.6)
+			bt, _ := strconv.ParseFloat(opts["bossT"], 64)
+			g.W.TestBoss(k, bt)
 			g.Freeze = true
 		}
 		if opts["mud"] != "" {

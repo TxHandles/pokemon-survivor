@@ -21,13 +21,20 @@ type playerAnim struct {
 	lastT float64
 }
 
+// drawItem: one depth-sorted thing (no closures, so a crowded frame allocates nothing).
 type drawItem struct {
-	y  float64
-	fn func()
+	y    float64
+	kind uint8 // 0 obstacle, 1 enemy, 2 decoy, 3 player
+	i    int
+	o    *sim.Obstacle
+	e    *sim.Enemy
+	d    *sim.Decoy
 }
 
 // drawWorld renders the run. cx, cy: world point at the screen centre.
 func (g *Game) drawWorld(dst *ebiten.Image) {
+	fastVec = true
+	defer func() { fastVec = false }()
 	w := g.W
 	sw, sh := float64(dst.Bounds().Dx()), float64(dst.Bounds().Dy())
 	shx, shy := 0.0, 0.0
@@ -99,6 +106,9 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 			g.drawBioHz(dst, h, x, y)
 			continue
 		}
+		if h.K != "" && g.drawBossHz(dst, h, x, y) {
+			continue
+		}
 		if !h.Gone {
 			k := 1 - math.Max(0, h.T)/math.Max(h.T0, .01)
 			disc(dst, x, y, h.R, alpha(col, .12))
@@ -142,43 +152,54 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	}
 
 	// depth-sorted: obstacles, enemies, player
-	var items []drawItem
+	items := g.dItems[:0]
 	x0, x1 := int(math.Floor((camX-60)/cs)), int(math.Floor((camX+sw+60)/cs))
 	y0, y1 := int(math.Floor((camY-20)/cs)), int(math.Floor((camY+sh+120)/cs))
 	for j := y0; j <= y1; j++ {
 		for i := x0; i <= x1; i++ {
-			for _, o := range w.Chunk(i, j) {
-				o := o
-				items = append(items, drawItem{o.Y, func() { g.drawObst(dst, o, sx(o.X), sy(o.Y)) }})
+			ch := w.Chunk(i, j)
+			for k := range ch {
+				items = append(items, drawItem{y: ch[k].Y, kind: 0, o: &ch[k]})
 			}
 		}
 	}
 	for _, e := range w.E {
-		e := e
 		x, y := sx(e.X), sy(e.Y)
 		if x < -120 || y < -150 || x > sw+120 || y > sh+60 {
 			continue
 		}
-		items = append(items, drawItem{e.Y + e.R, func() {
-			g.drawEnemy(dst, e, x, y)
-			if e.Slp > 0 || e.LS > 0 {
-				g.drawEnemyMarks(dst, e, x, y)
-			}
-		}})
+		items = append(items, drawItem{y: e.Y + e.R, kind: 1, e: e})
 	}
 	for _, d := range w.Decoys {
-		d := d
-		items = append(items, drawItem{d.Y + 12, func() { g.drawDecoy(dst, d, sx(d.X), sy(d.Y)) }})
+		items = append(items, drawItem{y: d.Y + 12, kind: 2, d: d})
 	}
 	for i, pc := range w.PL {
-		i, pc := i, pc
-		items = append(items, drawItem{pc.P.Y + 12, func() { g.drawPlayerI(dst, i, pc, sx(pc.P.X), sy(pc.P.Y)) }})
+		items = append(items, drawItem{y: pc.P.Y + 12, kind: 3, i: i})
 	}
 	g.drawCenter(dst, sx, sy)
 	sort.SliceStable(items, func(i, j int) bool { return items[i].y < items[j].y })
 	for _, it := range items {
-		it.fn()
+		switch it.kind {
+		case 0:
+			g.drawObst(dst, *it.o, sx(it.o.X), sy(it.o.Y))
+		case 1:
+			e := it.e
+			x, y := sx(e.X), sy(e.Y)
+			g.drawEnemy(dst, e, x, y)
+			if e.Slp > 0 || e.LS > 0 {
+				g.drawEnemyMarks(dst, e, x, y)
+			}
+		case 2:
+			g.drawDecoy(dst, it.d, sx(it.d.X), sy(it.d.Y))
+		case 3:
+			pc := w.PL[it.i]
+			g.drawPlayerI(dst, it.i, pc, sx(pc.P.X), sy(pc.P.Y))
+		}
 	}
+	for k := range items { // drop pointers so the reused buffer doesn't keep old frames alive
+		items[k] = drawItem{}
+	}
+	g.dItems = items[:0]
 
 	// enemy bullets
 	for _, b := range w.EB {
@@ -193,6 +214,13 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		if b.Web {
 			g.drawWebShot(dst, b, x, y)
 			continue
+		}
+		if sp := math.Hypot(b.VX, b.VY); sp > 0 { // a short glowing tail so shots read at speed
+			ux, uy := b.VX/sp, b.VY/sp
+			for i := 1; i <= 3; i++ {
+				fi := float64(i)
+				disc(dst, x-ux*fi*b.R*1.1, y-uy*fi*b.R*1.1, b.R*(1-fi*.22), alpha(col, .45-fi*.12))
+			}
 		}
 		soft(dst, x, y, b.R*2.6, b.R*2.6, alpha(c(255, 40, 40, 255), .35))
 		disc(dst, x, y, b.R+1.5, c(40, 10, 10, 255))
@@ -254,9 +282,18 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		g.drawFX(dst, f, sx, sy)
 	}
 	g.drawPlayerOverlays(dst, sx, sy)
-	// floating damage numbers on top
-	for _, f := range w.FX {
-		if f.Kind != "txt" || (g.opt("dnum") == 0 && f.Col != "gold" && f.Col != "se" && f.Col != "conf" && f.Col != "heal") {
+	// floating damage numbers on top (newest first, capped: outlined text is costly in big fights)
+	dnum := g.opt("dnum") != 0
+	shown := 0
+	for fi := len(w.FX) - 1; fi >= 0; fi-- {
+		f := w.FX[fi]
+		if f.Kind != "txt" || (!dnum && f.Col != "gold" && f.Col != "se" && f.Col != "conf" && f.Col != "heal") {
+			continue
+		}
+		if shown++; shown > 70 && f.Col != "gold" {
+			continue
+		}
+		if x, y := sx(f.X), sy(f.Y); x < -40 || y < -40 || x > sw+40 || y > sh+40 {
 			continue
 		}
 		a := math.Min(1, f.Life/(f.Life0*.5))
@@ -464,6 +501,9 @@ func (g *Game) drawEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) {
 	}
 	if e.Boss {
 		ring(dst, x, y+e.R*.85, e.R*1.2, 2, alpha(tc(e.Type), .6+.3*math.Sin(w.T*5)))
+	}
+	if e.Boss {
+		g.drawBossWindup(dst, e, x, y)
 	}
 	if s == nil {
 		disc(dst, x, y, e.R, tc(e.Type))
@@ -776,12 +816,36 @@ func (g *Game) camCenter() (float64, float64) {
 		return w.P.X, w.P.Y
 	}
 	if g.online() {
+		if s := g.spectating(); s >= 0 { // fainted: watch a teammate who is still up
+			p := w.PL[s].P
+			return p.X, p.Y
+		}
 		if me := g.on.room.Me; me >= 0 && me < len(w.PL) && !w.PL[me].Gone {
 			p := w.PL[me].P
 			return p.X, p.Y
 		}
 	}
 	return w.Centroid()
+}
+
+// spectating: the teammate an online player watches while fainted (-1 = not spectating).
+func (g *Game) spectating() int {
+	w := g.W
+	me := g.on.room.Me
+	if me < 0 || me >= len(w.PL) || !w.PL[me].P.Dead {
+		return -1
+	}
+	var alive []int
+	for i, c := range w.PL {
+		if i != me && !c.Gone && !c.P.Dead {
+			alive = append(alive, i)
+		}
+	}
+	if len(alive) == 0 {
+		return -1
+	}
+	n := len(alive)
+	return alive[((g.specIdx%n)+n)%n]
 }
 
 // drawMud: a glossy, oozing puddle of mud left by ground attacks. It spreads out when it lands, its

@@ -77,3 +77,43 @@ func TestSleepAndSeed(t *testing.T) {
 		t.Errorf("seed: host dead %v, jumped %v", e.Dead, o.LS > 0)
 	}
 }
+
+// Melee attacks grow with range items and Range bonuses.
+func TestMeleeRange(t *testing.T) {
+	db := loadDB(t)
+	for _, id := range []string{"fighting_lowkick", "fighting_karatechop", "fighting_rollingkick", "normal_scratch"} {
+		m := db.Moves[id]
+		if m == nil {
+			continue
+		}
+		reach := func(focus, area int) float64 {
+			w, _ := New(db, "fighting", "fighting", 1)
+			w.Held["focus"] = focus
+			w.FX = nil
+			s := &Slot{ID: id, Move: m, Kind: m.Shape, Type: m.Type, Lv: 3, Q: BuildQ(m), Bon: map[string]int{BonusArea: area}}
+			w.fire(s)
+			for i := 0; i < 30; i++ {
+				w.stepFX(1.0 / 60)
+				for _, d := range w.DL {
+					d.t = 0
+				}
+				for len(w.DL) > 0 {
+					d := w.DL[0]
+					w.DL = w.DL[1:]
+					d.fn()
+				}
+			}
+			r := 0.0
+			for _, f := range w.FX {
+				if f.R > r && f.Kind != "txt" {
+					r = f.R
+				}
+			}
+			return r
+		}
+		a, b, c := reach(0, 0), reach(3, 0), reach(0, 3)
+		if !(b > a && c > a) {
+			t.Errorf("%s (%s): reach %v, with Focus %v, with Range bonuses %v", id, m.Shape, a, b, c)
+		}
+	}
+}

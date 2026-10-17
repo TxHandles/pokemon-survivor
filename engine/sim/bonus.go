@@ -14,6 +14,7 @@ const (
 	BonusSize = "size"
 	BonusSpd  = "spd"
 	BonusCnt  = "cnt"
+	BonusDur  = "dur" // spin moves: longer spins
 )
 
 // per roll
@@ -23,13 +24,14 @@ const (
 	bonusAreaK = .10 // +10% range / area
 	bonusSizeK = .12 // +12% size
 	bonusSpdK  = .12 // +12% projectile / orbit speed
+	bonusDurK  = .18 // +18% duration
 )
 
 // levelDmgGrowth: the share of the old per-level damage growth that levels still give.
 const levelDmgGrowth = .5
 
 // BonusName / BonusText: how the cards show a bonus.
-var BonusName = map[string]string{BonusDmg: "Damage", BonusCD: "Cooldown", BonusArea: "Range", BonusSize: "Size", BonusSpd: "Projectile speed", BonusCnt: "Projectiles"}
+var BonusName = map[string]string{BonusDmg: "Damage", BonusCD: "Cooldown", BonusArea: "Range", BonusSize: "Size", BonusSpd: "Projectile speed", BonusCnt: "Projectiles", BonusDur: "Duration"}
 
 func BonusText(b string) string {
 	switch b {
@@ -45,8 +47,18 @@ func BonusText(b string) string {
 		return "+12% speed"
 	case BonusCnt:
 		return "+1 projectile"
+	case BonusDur:
+		return "+18% duration"
 	}
 	return ""
+}
+
+// BonusTextFor is BonusText worded for the move's shape (a spin's extra "projectile" is a leg).
+func BonusTextFor(shape, b string) string {
+	if shape == "spin" && b == BonusCnt {
+		return "+1 kick leg"
+	}
+	return BonusText(b)
 }
 
 // BonusPool: the bonuses a move of this shape can roll.
@@ -68,6 +80,8 @@ func BonusPool(shape string) []string {
 		return []string{BonusCD, BonusArea}
 	case "protect", "magnitude", "sub":
 		return []string{BonusDmg, BonusCD, BonusArea}
+	case "spin":
+		return []string{BonusDmg, BonusCD, BonusArea, BonusDur, BonusCnt}
 	case "toss":
 		return []string{BonusDmg, BonusCD, BonusCnt, BonusArea, BonusSize}
 	case "strike", "erupt", "mine", "rupture":
@@ -103,11 +117,12 @@ func (s *Slot) BonusAreaMul() float64   { return 1 + bonusAreaK*s.bon(BonusArea)
 func (s *Slot) BonusSizeMul() float64   { return 1 + bonusSizeK*s.bon(BonusSize) }
 func (s *Slot) BonusSpdMul() float64    { return 1 + bonusSpdK*s.bon(BonusSpd) }
 func (s *Slot) BonusCount() int         { return int(s.bon(BonusCnt)) }
+func (s *Slot) BonusDurMul() float64    { return 1 + bonusDurK*s.bon(BonusDur) }
 
 // Bonuses lists a slot's rolled bonuses as "Damage ×2" style labels, in a fixed order.
 func (s *Slot) Bonuses() []string {
 	var out []string
-	for _, k := range []string{BonusDmg, BonusCD, BonusArea, BonusSize, BonusSpd, BonusCnt} {
+	for _, k := range []string{BonusDmg, BonusCD, BonusArea, BonusSize, BonusSpd, BonusCnt, BonusDur} {
 		if n := int(s.bon(k)); n > 0 {
 			out = append(out, BonusName[k]+" ×"+itoa(n))
 		}

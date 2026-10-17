@@ -530,6 +530,10 @@ func probeGo(w *World, r *Probe, shape string, q *Q, lv int, sl float64, ev bool
 	flv := float64(lv - 1)
 	rg := (1 + .15*w.pe("focus")) * (1 + w.PS.F("rng")) * bs.BonusAreaMul()
 	switch shape {
+	case "spin":
+		r.Area, r.AL = (q.F("r", 82)+q.F("rp", 7)*sl)*rg*(1+.1*w.pe("wide"))*b2f(ev, 1.25, 1), "Radius"
+		r.Du, r.DL = q.F("du", 1.4)*.82*bs.BonusDurMul()*b2f(ev, 1.3, 1), "Spin time"
+		r.N, r.NL = float64(2+bs.BonusCount()), "Kick legs"
 	case "fly":
 		r.Area, r.AL = 2*(q.F("r", 78)+q.F("rp", 3)*sl)*(1+.2*w.pe("wide"))*bs.BonusSizeMul()*b2f(ev, 1.25, 1), "Landing size"
 		r.Du, r.DL = q.F("du", 1.4), "Air time"

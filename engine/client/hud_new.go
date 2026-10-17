@@ -29,6 +29,7 @@ func (g *Game) drawNewHUD(dst *ebiten.Image) {
 		}
 	}
 	g.drawCenterArrow(dst)
+	g.drawPlayerArrows(dst)
 	g.drawHUDTail(dst)
 }
 
@@ -139,7 +140,9 @@ func (g *Game) drawEquipCards(dst *ebiten.Image) {
 	const cw, ch = 164.0, 50.0
 	x, y := 12.0, sh-12-ch
 	for _, s := range w.Slots {
+		s := s
 		g.moveCard(dst, w, s, x, y, cw, ch)
+		g.hoverTip([4]float64{x, y, cw, ch}, func() *tipData { return g.moveTip(s.ID, s) })
 		x += cw + 6
 	}
 	g.itemRow(dst, w.Held, w.HeldOrder, 12, y-8-34)
@@ -188,6 +191,8 @@ func (g *Game) itemRow(dst *ebiten.Image, held map[string]int, order []string, x
 		disc(dst, x+d/2, y+d/2, d/2, webAcc)
 		disc(dst, x+d/2, y+d/2, d/2-2, alpha(hexC("#0a0d14"), .92))
 		drawItemIcon(dst, id, x+d/2, y+d/2, d*.72)
+		id := id
+		g.hoverTip([4]float64{x, y, d, d}, func() *tipData { return g.itemTip(id, lv) })
 		disc(dst, x+d-3, y+d-4, 7.5, webAcc)
 		drawText(dst, strconv.Itoa(lv), x+d-3, y+d-11, 10, true, hexC("#0a0d14"), text.AlignCenter, false)
 		x += d + 6
@@ -213,8 +218,10 @@ func (g *Game) drawCoopEquip(dst *ebiten.Image) {
 		drawText(dst, fmt.Sprintf("P%d", i+1), 12, y+10, 13, true, col, text.AlignStart, true)
 		x := 40.0
 		for _, s := range pc.Slots {
+			s := s
 			tc0 := tc(s.Type)
 			webBox(dst, x, y, 34, 34, 8, tc0, alpha(hexC("#0a0d14"), .85))
+			g.hoverTip([4]float64{x, y, 34, 34}, func() *tipData { return g.moveTip(s.ID, s) })
 			if s.Evo {
 				soft(dst, x+17, y+17, 20, 20, alpha(webAcc, .35))
 			}
@@ -233,4 +240,60 @@ func btnLabel(b int) string {
 		return "CTRL / LB"
 	}
 	return "SHIFT / RB"
+}
+
+// drawPlayerArrows: co-op teammates off screen get an edge marker in their colour with a portrait,
+// name and distance (fainted ones show a cross).
+func (g *Game) drawPlayerArrows(dst *ebiten.Image) {
+	w := g.W
+	if len(w.PL) < 2 {
+		return
+	}
+	sw, sh := float64(g.sw), float64(g.sh)
+	cx, cy := g.camCenter()
+	me := -1
+	if g.online() {
+		me = g.on.room.Me
+	}
+	for i, pc := range w.PL {
+		if i == me || pc.Gone {
+			continue
+		}
+		dx, dy := pc.P.X-cx, pc.P.Y-cy
+		if math.Abs(dx) < sw/2-16 && math.Abs(dy) < sh/2-16 {
+			continue
+		}
+		mx, my := sw/2-60, sh/2-70
+		k := math.Min(mx/math.Max(1e-6, math.Abs(dx)), my/math.Max(1e-6, math.Abs(dy)))
+		x, y := sw/2+dx*k, sh/2+10+dy*k
+		a := math.Atan2(dy, dx)
+		col := playerCols[i%4]
+		disc(dst, x, y, 21, c(16, 20, 30, 225))
+		ring(dst, x, y, 21, 2.5, col)
+		if s := g.assets.Sprite(pc.P.ID); s != nil && s.Front != nil {
+			f0 := s.Front.IdleFrame(0)
+			im := s.Front.Frame(f0)
+			bx := s.Front.Box(f0)
+			kk := math.Min(30/float64(bx.Dx()), 30/float64(bx.Dy()))
+			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(kk, kk)
+			op.GeoM.Translate(x-float64(bx.Dx())*kk/2, y-float64(bx.Dy())*kk/2)
+			if pc.P.Dead {
+				op.ColorScale.Scale(.45, .45, .45, 1)
+			}
+			dst.DrawImage(im.SubImage(bx).(*ebiten.Image), op)
+		}
+		if pc.P.Dead {
+			line(dst, x-8, y-8, x+8, y+8, 3, c(255, 90, 90, 255))
+			line(dst, x+8, y-8, x-8, y+8, 3, c(255, 90, 90, 255))
+		}
+		ax, ay := x+math.Cos(a)*29, y+math.Sin(a)*29
+		poly(dst, [][2]float64{{ax + math.Cos(a)*9, ay + math.Sin(a)*9}, {ax + math.Cos(a+2.2)*8, ay + math.Sin(a+2.2)*8}, {ax + math.Cos(a-2.2)*8, ay + math.Sin(a-2.2)*8}}, col)
+		lbl := fmt.Sprintf("%s · %dm", pc.Name, int(math.Hypot(dx, dy)/10))
+		ly := y + 26
+		if y > sh/2 {
+			ly = y - 40
+		}
+		drawText(dst, lbl, x, ly, 11, true, col, text.AlignCenter, true)
+	}
 }

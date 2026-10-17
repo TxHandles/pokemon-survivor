@@ -299,3 +299,47 @@ func (w *World) TestMud() {
 		w.ZN = append(w.ZN, &Zone{X: w.P.X + math.Cos(a)*(70+float64(i)*25), Y: w.P.Y + math.Sin(a)*(60+float64(i)*20), R: 30, L: 1.2 - float64(i)*.2, Life0: 1.2, Tk: 9, Type: "ground", D: 1, Mud: true})
 	}
 }
+
+// TestBoss (screenshots): spawns the biome boss near the player, makes it use attack k, and runs
+// the world for `after` seconds.
+func (w *World) TestBoss(k string, after float64) {
+	var b *Enemy
+	for _, e := range w.E {
+		if e.Boss && !e.Dead {
+			b = e
+		}
+	}
+	if b == nil {
+		w.spawnBoss()
+		b = w.E[len(w.E)-1]
+	}
+	b.X, b.Y = w.P.X+170, w.P.Y-40
+	b.Ph = 2
+	w.useP(0)
+	if !w.bossMove(b, k) {
+		w.curHz = k
+		switch k {
+		case "slam":
+			w.hz(w.P.X, w.P.Y, 78, 1.2, 0, b.Type, "")
+		case "charge":
+			b.K, b.wu, b.ca = "charge", .8, math.Atan2(w.P.Y-b.Y, w.P.X-b.X)
+		}
+		w.curHz = ""
+	}
+	inv := w.P.Inv
+	for t := 0.0; t < after; t += 1.0 / 60 {
+		w.P.Inv = 9
+		w.Step(1.0/60, Input{})
+	}
+	w.P.Inv = inv
+}
+
+// TestRouteState (screenshots): sets the route map's votes, and optionally the chosen destination
+// with travel time left.
+func (w *World) TestRouteState(votes []int, goTo int, left float64) {
+	if w.State != StateRoute {
+		return
+	}
+	copy(w.RouteVotes, votes)
+	w.RouteGo, w.RouteT = goTo, left
+}

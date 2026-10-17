@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"math"
 	"sort"
+	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -167,6 +168,8 @@ func (g *Game) menuColl() {
 		}
 		c := &webCard{key: "cm:" + m.ID, minW: 220, maxW: 220}
 		if flag(m.ID, "d") {
+			id := m.ID
+			c.tip = func() *tipData { return g.moveTip(id, nil) }
 			c.title, c.titleCol = m.Name, tc(m.Type)
 			c.lines = []string{m.Desc, "Evolves at Lv 10 holding " + itemName(m.HeldItem)}
 			st := []any{"● Found"}
@@ -198,6 +201,8 @@ func (g *Game) menuColl() {
 		l := int(num(ci[it.ID]))
 		c := &webCard{key: "ci:" + it.ID, minW: 173, maxW: 173}
 		if l > 0 {
+			iid := it.ID
+			c.tip = func() *tipData { return g.itemTip(iid, 0) }
 			c.title, c.lines = it.Name, []string{it.Desc}
 			s := fmt.Sprintf("Best level: %d/10", l)
 			c.price = []any{s}
@@ -225,21 +230,46 @@ func (g *Game) menuLife() {
 	cs, _ := pr.S.M["cs"].(map[string]any)
 	csOf := func(id string) map[string]any { m, _ := cs[id].(map[string]any); return m }
 	y := 4.0
-	chips := []chipItem{{key: "lc:all", label: "All characters", sub: fmt.Sprintf("%d played", len(cs)), col: white, on: g.lifeSel == "all", act: func() { g.lifeSel = "all" }}}
-	for _, p := range g.db.Pokemon {
-		id := p.ID
-		chips = append(chips, chipItem{key: "lc:" + id, label: p.Name, sub: fmt.Sprintf("%d runs", int(num(csOf(id)["r"]))), col: tc(p.Types[0]), on: g.lifeSel == id, act: func() { g.lifeSel = id }})
+	// only lines you have played get a chip (by evolution line, most played first)
+	type lineRuns struct {
+		root, name string
+		runs       float64
+		col        color.NRGBA
 	}
-	y += g.chipFlow(chips, y, 720) + 14
+	byLine := map[string]*lineRuns{}
+	var lines []*lineRuns
+	for _, p := range g.db.Pokemon {
+		r := num(csOf(p.ID)["r"])
+		if r <= 0 {
+			continue
+		}
+		root := pr.LineRoot(p.ID)
+		l := byLine[root]
+		if l == nil {
+			rp := g.db.ByID[root]
+			l = &lineRuns{root: root, name: rp.Name, col: tc(rp.Types[0])}
+			byLine[root] = l
+			lines = append(lines, l)
+		}
+		l.runs += r
+	}
+	sort.SliceStable(lines, func(i, j int) bool { return lines[i].runs > lines[j].runs })
+	chips := []chipItem{{key: "lc:all", label: "All characters", col: white, on: g.lifeSel == "all", act: func() { g.lifeSel = "all" }}}
+	for _, l := range lines {
+		l := l
+		chips = append(chips, chipItem{key: "lc:" + l.root, label: fmt.Sprintf("%s line · %d", l.name, int(l.runs)), col: l.col, on: g.lifeSel == l.root, act: func() { g.lifeSel = l.root }})
+	}
+	if len(lines) == 0 {
+		y += g.para("Play a run and your stats will show up here.", y, 480, 14, false, alpha(webFg, .8)) + 10
+	}
+	y += g.chipFlow(chips, y, 760) + 16
 	var A []map[string]any
-	if g.lifeSel == "all" {
-		for _, v := range cs {
-			if m, ok := v.(map[string]any); ok {
+	for _, p := range g.db.Pokemon {
+		if g.lifeSel == "all" || pr.LineRoot(p.ID) == g.lifeSel {
+			if m := csOf(p.ID); m != nil {
 				A = append(A, m)
 			}
 		}
-	} else if m := csOf(g.lifeSel); m != nil {
-		A = append(A, m)
 	}
 	sum := func(k string) float64 {
 		t := 0.0
@@ -264,19 +294,36 @@ func (g *Game) menuLife() {
 		return fmt.Sprintf("%dm %ds", s/60, s%60)
 	}
 	runs := sum("r")
-	vic := fn(sum("w"))
+	winPct := "—"
 	if runs > 0 {
-		vic += fmt.Sprintf(" (%d%%)", int(math.Round(sum("w")/runs*100)))
+		winPct = fmt.Sprintf("%d%% of runs", int(math.Round(sum("w")/runs*100)))
 	}
 	avg := "—"
 	if runs > 0 {
 		avg = ft(sum("tm") / runs)
 	}
-	rows := [][2]string{{"Runs played", fn(runs)}, {"Victories", vic}, {"Time played", ft(sum("tm"))}, {"Longest run", ft(mx("bt"))}, {"Average run", avg},
-		{"Enemies defeated", fn(sum("k"))}, {"Bosses defeated", fn(sum("bk"))}, {"Elites & mini-bosses", fn(sum("ek"))}, {"Coins earned", fn(sum("g"))},
-		{"Highest level", fn(mx("lv"))}, {"Damage dealt", fn(sum("dm"))}}
+	gw := math.Min(780, sw*.94)
+	// headline tiles
+	heads := []struct{ v, l, sub string }{{fn(runs), "Runs", ft(sum("tm")) + " played"}, {fn(sum("w")), "Victories", winPct},
+		{ft(mx("bt")), "Longest run", "average " + avg}, {fn(sum("k")), "Enemies defeated", fn(sum("bk")) + " bosses"}}
+	hw := (gw - 3*10) / 4
+	for i, h := range heads {
+		h := h
+		x := sw/2 - gw/2 + float64(i)*(hw+10)
+		u.label([4]float64{x, y, hw, 78}, true, func(dst *ebiten.Image, rr [4]float64) {
+			webBox(dst, rr[0], rr[1], rr[2], rr[3], 12, webBorder, webPanel)
+			drawText(dst, h.v, rr[0]+rr[2]/2, rr[1]+10, 24, true, webAcc, text.AlignCenter, false)
+			drawText(dst, h.l, rr[0]+rr[2]/2, rr[1]+40, 13, true, webFg, text.AlignCenter, false)
+			drawText(dst, h.sub, rr[0]+rr[2]/2, rr[1]+58, 11, false, alpha(webFg, .65), text.AlignCenter, false)
+		})
+	}
+	y += 78 + 22
+	// two compact columns of the rest
+	left := [][2]string{{"Elites & mini-bosses", fn(sum("ek"))}, {"Damage dealt", fn(sum("dm"))}, {"Highest level", fn(mx("lv"))}}
+	right := [][2]string{{"Coins earned", fn(sum("g"))}}
 	if g.lifeSel != "all" {
-		rows = append(rows, [2]string{"Mastery rank", fmt.Sprintf("%d / %d", pr.Training(pr.Fam(g.lifeSel)), 20)})
+		r0, _, _ := pr.Mastery(g.lifeSel)
+		right = append(right, [2]string{"Mastery rank", strconv.Itoa(r0)}, [2]string{"Training rank", fmt.Sprintf("%d / %d", pr.Training(pr.Fam(g.lifeSel)), 20)})
 	} else {
 		col, _ := pr.S.M["col"].(map[string]any)
 		d := 0
@@ -285,21 +332,42 @@ func (g *Game) menuLife() {
 				d++
 			}
 		}
-		rows = append(rows, [2]string{"Moves discovered", fmt.Sprintf("%d / %d", d, len(g.learnable()))})
+		right = append(right, [2]string{"Moves discovered", fmt.Sprintf("%d / %d", d, len(g.learnable()))}, [2]string{"Lines played", strconv.Itoa(len(lines))})
 	}
-	gw := math.Min(760, sw*.94)
-	cols := 3
-	cw := (gw - 16) / 3
-	for i, r := range rows {
-		r := r
-		x := sw/2 - gw/2 + float64(i%cols)*(cw+8)
-		u.label([4]float64{x, y + float64(i/cols)*48, cw, 40}, true, func(dst *ebiten.Image, rr [4]float64) {
-			webBox(dst, rr[0], rr[1], rr[2], rr[3], 10, webBorder, webPanel)
-			drawText(dst, r[0], rr[0]+14, rr[1]+10, 16, false, alpha(webFg, .8), text.AlignStart, false)
-			drawText(dst, r[1], rr[0]+rr[2]-14, rr[1]+10, 16, true, webFg, text.AlignEnd, false)
-		})
+	cw := (gw - 12) / 2
+	rowsH := 0.0
+	for ci, list := range [][][2]string{left, right} {
+		x := sw/2 - gw/2 + float64(ci)*(cw+12)
+		for i, r := range list {
+			r := r
+			u.label([4]float64{x, y + float64(i)*30, cw, 28}, true, func(dst *ebiten.Image, rr [4]float64) {
+				line(dst, rr[0], rr[1]+rr[3], rr[0]+rr[2], rr[1]+rr[3], 1, alpha(webBorder, .8))
+				drawText(dst, r[0], rr[0]+4, rr[1]+6, 14, false, alpha(webFg, .8), text.AlignStart, false)
+				drawText(dst, r[1], rr[0]+rr[2]-4, rr[1]+6, 14, true, webFg, text.AlignEnd, false)
+			})
+		}
+		rowsH = math.Max(rowsH, float64(len(list))*30)
 	}
-	y += float64((len(rows)+cols-1)/cols)*48 + 16
+	y += rowsH + 20
+	if g.lifeSel == "all" && len(lines) > 1 { // most played lines
+		y += g.h3("Most played", y)
+		top := lines
+		if len(top) > 5 {
+			top = top[:5]
+		}
+		for _, l := range top {
+			l := l
+			tm := top[0].runs
+			u.label([4]float64{sw/2 - 245, y, 490, 19}, true, func(dst *ebiten.Image, rr [4]float64) {
+				drawText(dst, fitText(l.name+" line", 13, false, 150), rr[0]+75, rr[1], 13, false, webFg, text.AlignCenter, false)
+				bw := math.Max(2, l.runs/tm*200)
+				roundRect(dst, rr[0]+160, rr[1]+5, bw, 8, 4, l.col)
+				drawText(dst, fmt.Sprintf("%d runs", int(l.runs)), rr[0]+166+bw, rr[1], 13, false, alpha(webFg, .8), text.AlignStart, false)
+			})
+			y += 19
+		}
+		y += 16
+	}
 	y += g.h3("Top attacks by damage", y)
 	md := map[string]float64{}
 	for _, c := range A {

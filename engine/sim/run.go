@@ -87,24 +87,98 @@ func (w *World) openRoute() {
 		w.Route = append(w.Route, RouteOpt{t, w.rng.Intn(3)})
 	}
 	w.State = StateRoute
+	w.RouteGo, w.RouteT = -1, 0
+	w.RouteVotes = make([]int, len(w.PL))
+	for i, c := range w.PL {
+		w.RouteVotes[i] = -1
+		if c.Kind == "bot" { // bots vote at once
+			w.RouteVotes[i] = w.rng.Intn(len(w.Route))
+		}
+	}
+	w.tallyRoute()
 }
 
-// ChooseRoute travels to route option i.
+// RouteTravelT: seconds the map shows the party travelling before the next biome loads.
+const RouteTravelT = 2.2
+
+// VoteRoute records player p's vote. When everyone still in the run has voted, the most-voted
+// destination wins (a tie goes to the host's pick) and the party travels there.
+func (w *World) VoteRoute(p, i int) {
+	if w.State != StateRoute || w.RouteGo >= 0 || i < 0 || i >= len(w.Route) || p < 0 || p >= len(w.RouteVotes) {
+		return
+	}
+	w.RouteVotes[p] = i
+	w.tallyRoute()
+}
+
+func (w *World) tallyRoute() {
+	cnt := make([]int, len(w.Route))
+	host := -1
+	for p, c := range w.PL {
+		if c.Gone {
+			continue
+		}
+		v := w.RouteVotes[p]
+		if v < 0 {
+			return // still waiting on someone
+		}
+		cnt[v]++
+		if host < 0 {
+			host = v
+		}
+	}
+	best := host
+	for i, n := range cnt {
+		if best < 0 || n > cnt[best] {
+			best = i
+		}
+	}
+	if best < 0 {
+		return
+	}
+	w.RouteGo, w.RouteT = best, RouteTravelT
+}
+
+// stepRouteTravel runs the travel animation, then enters the chosen biome.
+func (w *World) stepRouteTravel(dt float64) {
+	if w.State != StateRoute || w.RouteGo < 0 {
+		return
+	}
+	w.RouteT -= dt
+	if w.RouteT <= 0 {
+		w.ChooseRouteNow(w.RouteGo)
+	}
+}
+
+// ChooseRoute votes option i for every player (solo and same-screen co-op).
 func (w *World) ChooseRoute(i int) {
+	if w.State != StateRoute || w.RouteGo >= 0 || i < 0 || i >= len(w.Route) {
+		return
+	}
+	for p := range w.RouteVotes {
+		w.RouteVotes[p] = i
+	}
+	w.tallyRoute()
+}
+
+// ChooseRouteNow travels to route option i at once.
+func (w *World) ChooseRouteNow(i int) {
 	if w.State != StateRoute || i < 0 || i >= len(w.Route) {
 		return
 	}
 	o := w.Route[i]
-	w.Route = nil
+	w.Route, w.RouteGo, w.RouteVotes = nil, -1, nil
 	w.State = StatePlay
 	w.enterBiome(o.Type, o.LI, false)
 }
 
 func (w *World) enterBiome(t string, li int, first bool) {
 	w.Biome, w.LI = t, li
-	w.pools = map[[2]int][]Pool{}
+	w.pools = map[ckey][]Pool{}
 	w.Gust = nil
-	w.P.WX, w.P.WY, w.P.gw = 0, 0, 0
+	for _, c := range w.PL {
+		c.P.WX, c.P.WY, c.P.gw = 0, 0, 0
+	}
 	w.bioT = 6
 	w.BiomeN++
 	w.placeLandmarks()
@@ -296,21 +370,21 @@ func (w *World) openChest(c *MapChest) {
 	}
 }
 
-// ChooseBoon takes shrine boon i (or leaves with -1 / out of range) for the player choosing.
-func (w *World) ChooseBoon(i int) {
-	if w.State != StateShrine || w.Chooser < 0 {
+// ChooseBoon takes shrine boon i (or leaves with -1 / out of range) for the first player choosing.
+func (w *World) ChooseBoon(i int) { w.ChooseBoonFor(w.Chooser, i) }
+
+// ChooseBoonFor: player p takes shrine boon i (or leaves).
+func (w *World) ChooseBoonFor(p, i int) {
+	if w.PendingKind(p) != "shrine" {
 		return
 	}
-	w.useP(w.Chooser)
+	w.useP(p)
 	if i >= 0 && i < len(w.Boons) {
 		w.applyBoon(w.Boons[i])
 	}
-	c := w.PL[w.Chooser]
-	if len(c.Queue) > 0 {
-		c.Queue = c.Queue[1:]
-	}
+	c := w.PL[p]
+	c.Queue = c.Queue[1:]
 	w.Boons = nil
-	w.State = StatePlay
 	w.prompt()
 }
 
@@ -351,8 +425,13 @@ func (w *World) Waiting() bool {
 func (w *World) BotDecide() {
 	switch w.State {
 	case StateLevelUp:
+		w.useP(w.Chooser)
 		w.Choose(w.BotPick())
 	case StateRoute:
+		if w.RouteGo >= 0 { // headless: skip the travel animation
+			w.ChooseRouteNow(w.RouteGo)
+			return
+		}
 		w.ChooseRoute(w.rng.Intn(len(w.Route)))
 	case StateShrine:
 		w.ChooseBoon(0)

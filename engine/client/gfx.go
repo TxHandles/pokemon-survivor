@@ -166,23 +166,35 @@ func rect(dst *ebiten.Image, x, y, w, h float64, col color.NRGBA) {
 	vector.DrawFilledRect(dst, float32(x), float32(y), float32(w), float32(h), col, false)
 }
 
+// fastVec: drawing the game world, where effects come by the hundred — vector shapes skip
+// anti-aliasing (each AA draw renders through its own 2× offscreen buffer) and strokes batch.
+var fastVec bool
+
+// reusable vertex / index buffers (vector drawing allocates nothing per shape)
+var vBuf []ebiten.Vertex
+var iBuf []uint16
+
 func fillPath(dst *ebiten.Image, p *vector.Path, col color.NRGBA) {
-	vs, is := p.AppendVerticesAndIndicesForFilling(nil, nil)
-	paint(dst, vs, is, col)
+	vBuf, iBuf = p.AppendVerticesAndIndicesForFilling(vBuf[:0], iBuf[:0])
+	paint(dst, vBuf, iBuf, col, false)
 }
 
 func strokePath(dst *ebiten.Image, p *vector.Path, w float64, col color.NRGBA) {
-	vs, is := p.AppendVerticesAndIndicesForStroke(nil, nil, &vector.StrokeOptions{Width: float32(w), LineJoin: vector.LineJoinRound, LineCap: vector.LineCapRound})
-	paint(dst, vs, is, col)
+	vBuf, iBuf = p.AppendVerticesAndIndicesForStroke(vBuf[:0], iBuf[:0], &vector.StrokeOptions{Width: float32(w), LineJoin: vector.LineJoinRound, LineCap: vector.LineCapRound})
+	paint(dst, vBuf, iBuf, col, true)
 }
 
-func paint(dst *ebiten.Image, vs []ebiten.Vertex, is []uint16, col color.NRGBA) {
+func paint(dst *ebiten.Image, vs []ebiten.Vertex, is []uint16, col color.NRGBA, stroke bool) {
 	r, g, b, a := col.RGBA()
 	for i := range vs {
 		vs[i].SrcX, vs[i].SrcY = 1, 1
 		vs[i].ColorR, vs[i].ColorG, vs[i].ColorB, vs[i].ColorA = float32(r)/0xffff, float32(g)/0xffff, float32(b)/0xffff, float32(a)/0xffff
 	}
-	dst.DrawTriangles(vs, is, whiteSub, &ebiten.DrawTrianglesOptions{AntiAlias: true, FillRule: ebiten.FillRuleNonZero})
+	op := &ebiten.DrawTrianglesOptions{AntiAlias: !fastVec, FillRule: ebiten.FillRuleNonZero}
+	if fastVec && stroke { // stroke triangles need no stencil: they batch with sprites and discs
+		op.FillRule = ebiten.FillRuleFillAll
+	}
+	dst.DrawTriangles(vs, is, whiteSub, op)
 }
 
 // sector: filled pie slice centred on angle a with half-angle hw.

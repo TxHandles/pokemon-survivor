@@ -67,6 +67,7 @@ type webCard struct {
 	maxW     float64
 	act      func()
 	extra    []string // wrapped continuation of the last line
+	tip      func() *tipData
 }
 
 func (c *webCard) size() (w float64, wrapped []string) {
@@ -153,6 +154,9 @@ func (g *Game) flowCards(cards []*webCard, y, maxW float64) float64 {
 		r := [4]float64{x, cy, p.w, rowH[p.row]}
 		g.ui.button(p.c.key, r, true, p.c.disabled, func(dst *ebiten.Image, rr [4]float64, hot bool) {
 			webBtnDraw(dst, rr, hot, p.c.on, p.c.disabled)
+			if p.c.tip != nil {
+				g.hoverTip(rr, p.c.tip)
+			}
 			a := 1.0
 			if p.c.disabled {
 				a = .5
@@ -649,7 +653,7 @@ func (g *Game) menuLine() {
 	r := pr.Training(fam)
 	cost := meta.TrainingCost(r)
 	mx := r >= meta.TrainingMax
-	tc := &webCard{key: "train", title: fmt.Sprintf("Training Rank %d/%d", r, meta.TrainingMax), lines: []string{fmt.Sprintf("+2%% damage and +1%% coins per rank (now +%d%% / +%d%%)", 2*r, r)}, minW: 200}
+	tc := &webCard{key: "train", title: fmt.Sprintf("Training Rank %d/%d", r, meta.TrainingMax), lines: []string{fmt.Sprintf("+1%% HP and +1%% damage per rank (now +%d%% / +%d%%)", r, r)}, minW: 200}
 	if mx {
 		tc.price = []any{"MAX"}
 	} else {
@@ -681,10 +685,10 @@ func (g *Game) lineStats(fam, id string) ([]statRow, []string) {
 		rows = append(rows, statRow{label, f(base), f(cur), delta})
 	}
 	hp0 := math.Round(80 * st.HP)
-	hp1 := math.Round((80 + 14*ul("hp")) * st.HP)
+	hp1 := math.Round((80 + 14*ul("hp")) * (1 + .01*tr) * st.HP)
 	add("Max HP", hp0, hp1, num0, fmt.Sprintf("+%d", int(hp1-hp0)))
 	atk0 := 100 * st.Atk
-	atk1 := atk0 * (1 + .08*ul("dmg")) * (1 + .02*tr)
+	atk1 := atk0 * (1 + .08*ul("dmg")) * (1 + .01*tr)
 	add("Attack", atk0, atk1, num0, pct(atk1/atk0-1))
 	def0 := 100 * st.Def
 	def1 := def0 / math.Pow(.96, ul("arm"))
@@ -695,7 +699,8 @@ func (g *Game) lineStats(fam, id string) ([]statRow, []string) {
 	add("Regeneration", 0, .3*ul("reg"), func(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) + " HP/s" }, fmt.Sprintf("+%.1f HP/s", .3*ul("reg")))
 	add("Pickup range", 100, 100*(1+.12*ul("mag")), func(v float64) string { return num0(v) + "%" }, pct(.12*ul("mag")))
 	add("XP gain", 100, 100*(1+.05*ul("xpg")), func(v float64) string { return num0(v) + "%" }, pct(.05*ul("xpg")))
-	add("Coins", 100, 100*(1+.1*ul("cg"))*(1+.01*tr), func(v float64) string { return num0(v) + "%" }, pct((1+.1*ul("cg"))*(1+.01*tr)-1))
+	add("Mastery XP", 100, 100*(1+.1*ul("mxg")), func(v float64) string { return num0(v) + "%" }, pct(.1*ul("mxg")))
+	add("Coins", 100, 100*(1+.1*ul("cg")), func(v float64) string { return num0(v) + "%" }, pct(.1*ul("cg")))
 	var ups []string
 	for _, k := range meta.Upgrades {
 		if k.Global {
@@ -723,13 +728,15 @@ func (g *Game) lineStats(fam, id string) ([]statRow, []string) {
 			eff = pct(.05*float64(n)) + " XP"
 		case "cg":
 			eff = pct(.1*float64(n)) + " coins"
+		case "mxg":
+			eff = pct(.1*float64(n)) + " Mastery XP"
 		default:
 			eff = k.Desc
 		}
 		ups = append(ups, fmt.Sprintf("%s ×%d: %s", k.Name, n, eff))
 	}
 	if tr > 0 {
-		ups = append(ups, fmt.Sprintf("Training rank %d: +%d%% damage, +%d%% coins", int(tr), 2*int(tr), int(tr)))
+		ups = append(ups, fmt.Sprintf("Training rank %d: +%d%% HP, +%d%% damage", int(tr), int(tr), int(tr)))
 	}
 	return rows, ups
 }

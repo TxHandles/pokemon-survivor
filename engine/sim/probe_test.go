@@ -126,6 +126,7 @@ func TestSwapPick(t *testing.T) {
 	w.HeldOrder = []string{"band", "lens"}
 	w.State, w.Chooser = StateLevelUp, 0
 	w.Opts = []Option{{ID: "metal", New: true, Swap: "band", SwapAsk: true}}
+	w.PL[0].Queue = []*Prompt{{Kind: "lv", Opts: w.Opts}}
 	w.Choose(0)
 	if !w.SwapPick || len(w.Opts) != 2 || w.State != StateLevelUp {
 		t.Fatalf("expected a swap pick, got %+v", w.Opts)
@@ -133,5 +134,52 @@ func TestSwapPick(t *testing.T) {
 	w.Choose(1) // give up lens
 	if w.Held["lens"] != 0 || w.Held["metal"] != 1 || w.Held["band"] != 2 || w.SwapPick {
 		t.Fatalf("held after swap: %v", w.Held)
+	}
+}
+
+// Co-op level-ups: every player picks at the same time; play resumes when all are done.
+func TestSimultaneousLevelUps(t *testing.T) {
+	db := loadDB(t)
+	specs := []PlayerSpec{{ID: "fire", Name: "A", Kind: "net"}, {ID: "water", Name: "B", Kind: "net"}}
+	w, _ := NewCoop(db, specs, "fire", 5, Config{})
+	w.XPS.XP = w.XPS.NX
+	w.Step(1.0/60, Input{})
+	if w.State != StateLevelUp || w.PendingKind(0) != "lv" || w.PendingKind(1) != "lv" {
+		t.Fatalf("state %v pending %q %q", w.State, w.PendingKind(0), w.PendingKind(1))
+	}
+	w.ChooseFor(1, 0)
+	if w.PendingKind(1) != "" || w.State != StateLevelUp {
+		t.Fatalf("B done, A still choosing: state %v pending B %q", w.State, w.PendingKind(1))
+	}
+	w.ChooseFor(0, 0)
+	if w.State != StatePlay {
+		t.Fatalf("both done: state %v", w.State)
+	}
+}
+
+// Route map: votes decide, a tie goes to the host.
+func TestRouteVote(t *testing.T) {
+	db := loadDB(t)
+	specs := []PlayerSpec{{ID: "fire", Name: "A", Kind: "net"}, {ID: "water", Name: "B", Kind: "net"}}
+	w, _ := NewCoop(db, specs, "fire", 5, Config{})
+	w.State = StatePlay
+	w.openRoute()
+	if len(w.Route) < 2 {
+		t.Skip("route too short")
+	}
+	w.VoteRoute(1, 1)
+	if w.RouteGo >= 0 {
+		t.Fatal("decided before everyone voted")
+	}
+	w.VoteRoute(0, 0)
+	if w.RouteGo != 0 {
+		t.Fatalf("tie should go to the host's pick, got %d", w.RouteGo)
+	}
+	want := w.Route[0].Type
+	for i := 0; i < 200 && w.State == StateRoute; i++ {
+		w.Step(1.0/60, Input{})
+	}
+	if w.State != StatePlay || w.Biome != want {
+		t.Fatalf("after travel: state %v biome %s (want %s)", w.State, w.Biome, want)
 	}
 }

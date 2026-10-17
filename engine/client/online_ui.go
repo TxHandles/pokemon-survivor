@@ -615,11 +615,12 @@ func (g *Game) myTurn() bool {
 	if !g.online() {
 		return true
 	}
+	me := g.on.room.Me
 	switch w.State {
-	case sim.StateRoute:
-		return g.on.room.Host
-	case sim.StateLevelUp, sim.StateShrine:
-		return w.Chooser == g.on.room.Me
+	case sim.StateRoute: // everyone votes until the party sets off
+		return w.RouteGo < 0 && me < len(w.RouteVotes) && w.RouteVotes[me] < 0
+	case sim.StateLevelUp, sim.StateShrine: // everyone picks their own cards at the same time
+		return w.PendingKind(me) != ""
 	}
 	return true
 }
@@ -695,14 +696,31 @@ func (g *Game) drawOnlineOverlay(dst *ebiten.Image) {
 		roundRect(dst, sw/2-200, 80, 400, 34, 10, c(5, 8, 15, 200))
 		drawText(dst, s, sw/2, 88, 14, true, c(255, 208, 74, 255), text.AlignCenter, false)
 	}
+	if s := g.spectating(); s >= 0 && !g.W.Waiting() {
+		roundRect(dst, sw/2-230, sh-70, 460, 44, 10, c(5, 8, 15, 210))
+		drawText(dst, "You fainted · watching "+g.W.PL[s].Name, sw/2, sh-64, 15, true, gold, text.AlignCenter, false)
+		drawText(dst, "Shift / RB next · Ctrl / LB previous · a Pokémon Center can revive you", sw/2, sh-44, 11, false, dim, text.AlignCenter, false)
+	}
 	if g.W.Waiting() && !g.myTurn() {
-		rect(dst, 0, 0, sw, sh, c(5, 8, 15, 170))
-		who := g.W.ChooserName()
-		if g.W.State == sim.StateRoute {
-			who = "The host"
+		if g.W.State == sim.StateRoute { // the map stays up: show who we're waiting on
+			if g.W.RouteGo < 0 {
+				var l []string
+				for i, v := range g.W.RouteVotes {
+					if v < 0 && i < len(g.W.PL) && !g.W.PL[i].Gone {
+						l = append(l, g.W.PL[i].Name)
+					}
+				}
+				if len(l) > 0 {
+					roundRect(dst, sw/2-220, sh-64, 440, 34, 10, c(5, 8, 15, 210))
+					drawText(dst, "Waiting for "+strings.Join(l, ", ")+" to vote…", sw/2, sh-56, 14, true, gold, text.AlignCenter, false)
+				}
+			}
+			return
 		}
-		drawText(dst, who+" is choosing…", sw/2, sh/2-20, 26, true, gold, text.AlignCenter, true)
-		drawText(dst, "The run continues when they pick", sw/2, sh/2+20, 13, false, dim, text.AlignCenter, true)
+		rect(dst, 0, 0, sw, sh, c(5, 8, 15, 170))
+		who := strings.Join(g.W.Choosing(), ", ")
+		drawText(dst, "Waiting for "+who+"…", sw/2, sh/2-20, 26, true, gold, text.AlignCenter, true)
+		drawText(dst, "The run continues when everyone has picked", sw/2, sh/2+20, 13, false, dim, text.AlignCenter, true)
 	}
 }
 
@@ -741,17 +759,25 @@ func (g *Game) updateOnlinePlay() {
 		g.onlineStep(sim.Input{})
 		return
 	}
+	if g.spectating() >= 0 { // fainted: cycle through the teammates still up
+		if keyJust(ebiten.KeyShiftLeft, ebiten.KeyShiftRight, ebiten.KeyTab) || padBtn(ebiten.StandardGamepadButtonFrontTopRight) {
+			g.specIdx++
+		}
+		if keyJust(ebiten.KeyControlLeft) || padBtn(ebiten.StandardGamepadButtonFrontTopLeft) {
+			g.specIdx--
+		}
+	}
 	var in sim.Input
 	if w.Waiting() {
 		g.lvDelay += 1.0 / 60
 		if g.myTurn() {
 			if g.auto && g.lvDelay > .6 { // demo / testing: pick like the bot
-				switch w.State {
-				case sim.StateLevelUp:
+				switch g.choiceKind() {
+				case "lv":
 					g.onlineCmd(lockstep.CmdChoose, w.BotPick())
-				case sim.StateShrine:
+				case "shrine":
 					g.onlineCmd(lockstep.CmdBoon, 0)
-				case sim.StateRoute:
+				case "route":
 					g.onlineCmd(lockstep.CmdRoute, 0)
 				}
 				g.lvDelay = 0

@@ -700,8 +700,9 @@ func (g *Game) visSpin(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float6
 		disc(dst, x+math.Cos(a)*d, y+6+math.Sin(a)*d*.47-ph*(1-ph)*30, 2.2*(1-ph)+.6, c(190, 160, 120, uint8(200*(1-ph))))
 	}
 	rot := T * 11
-	for k := 0; k < 2; k++ {
-		h := rot + float64(k)*math.Pi
+	legs := 2 + f.Slot.BonusCount() // extra legs from level-up bonuses
+	for k := 0; k < legs; k++ {
+		h := rot + float64(k)*2*math.Pi/float64(legs)
 		rr := R * (.82 + .06*math.Sin(T*7+float64(k)*2))
 		// the tail, squashed a little for a top-down tilt
 		const N = 18

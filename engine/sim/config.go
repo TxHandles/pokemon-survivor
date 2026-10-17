@@ -12,7 +12,7 @@ type Config struct {
 	Ability  int
 	LI       int            // starting location index (-1 = random)
 	Up       map[string]int // shop levels: dmg spd hp reg arm mag xpg cg rr bn m3 m4 h3 h4 ch rt
-	Training int            // training rank (+2% damage)
+	Training int            // training rank (+1% HP and +1% damage per rank)
 	Tier     int            // difficulty tier 0-10
 	Mods     []string       // swift tough brutal horde famine glass titans drought
 	Stage    int            // 1-3: 15 / 30 / 45 minute runs (3 / 6 / 9 bosses)
@@ -146,7 +146,7 @@ func (w *World) specAI(e *Enemy, dt float64) float64 {
 					}
 				}
 			} else {
-				e.st = 2.6
+				e.st = 3.2
 				if d < 460 {
 					w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: dx / d * 200, VY: dy / d * 200, L: 3, R: 6, Dm: e.Dm * .7, Type: e.Type, Src: w.curSrc})
 				}
@@ -177,7 +177,7 @@ func (w *World) specAI(e *Enemy, dt float64) float64 {
 		m = 1.35
 		if d < 44 {
 			e.Dead = true
-			w.HZ = append(w.HZ, &Hazard{X: e.X, Y: e.Y, R: 70, T: .8, T0: .8, Dm: e.Dm * 1.5, Type: e.Type, Src: w.curSrc})
+			w.HZ = append(w.HZ, &Hazard{K: "burst", X: e.X, Y: e.Y, R: 70, T: .8 * warnK, T0: .8 * warnK, Dm: e.Dm * 1.5, Type: e.Type, Src: w.curSrc})
 		}
 	}
 	return m
@@ -185,40 +185,45 @@ func (w *World) specAI(e *Enemy, dt float64) float64 {
 
 // ---- rerolls and banishes on level-up ----
 
-// Reroll redraws the level-up cards (uses one reroll).
-func (w *World) Reroll() bool {
-	if w.State != StateLevelUp || w.Rerolls <= 0 || w.SwapPick {
+// Reroll redraws the level-up cards of the first player choosing (uses one reroll).
+func (w *World) Reroll() bool { return w.RerollFor(w.Chooser) }
+
+// RerollFor redraws player p's level-up cards (uses one of their rerolls).
+func (w *World) RerollFor(p int) bool {
+	if w.PendingKind(p) != "lv" {
+		return false
+	}
+	w.useP(p)
+	if w.Rerolls <= 0 || w.SwapPick {
 		return false
 	}
 	w.Rerolls--
 	w.Opts = w.genOpts()
-	if c := w.PL[w.Chooser]; len(c.Queue) > 0 {
-		c.Queue[0].Opts = w.Opts
-	}
+	w.PL[p].Queue[0].Opts = w.Opts
 	return true
 }
 
 // Banish removes card i from this run's offers for good and redraws (uses one banish).
-func (w *World) Banish(i int) bool {
-	if w.SwapPick {
+func (w *World) Banish(i int) bool { return w.BanishFor(w.Chooser, i) }
+
+// BanishFor: player p banishes card i.
+func (w *World) BanishFor(p, i int) bool {
+	if w.PendingKind(p) != "lv" {
 		return false
 	}
-	if w.State != StateLevelUp || w.Banishes <= 0 || i < 0 || i >= len(w.Opts) {
+	w.useP(p)
+	if w.SwapPick || w.Banishes <= 0 || i < 0 || i >= len(w.Opts) {
 		return false
 	}
 	w.Banishes--
 	o := w.Opts[i]
 	w.Ban[banKey(o)] = true
 	w.Opts = w.genOpts()
-	if c := w.PL[w.Chooser]; len(c.Queue) > 0 {
-		c.Queue[0].Opts = w.Opts
-	}
+	c := w.PL[p]
+	c.Queue[0].Opts = w.Opts
 	if len(w.Opts) == 0 {
-		if c := w.PL[w.Chooser]; len(c.Queue) > 0 {
-			c.Queue = c.Queue[1:]
-		}
+		c.Queue = c.Queue[1:]
 		w.Opts = nil
-		w.State = StatePlay
 		w.prompt()
 	}
 	return true

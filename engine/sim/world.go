@@ -33,8 +33,8 @@ func NewCoop(db *content.DB, players []PlayerSpec, biome string, seed int64, cfg
 		cfg.Up = map[string]int{}
 	}
 	w := &World{DB: db, Biome: biome, Seed: seed, rng: rand.New(rand.NewSource(seed)),
-		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[[2]int][]Obstacle{}, obsRaw: map[[2]int][]Obstacle{},
-		pools: map[[2]int][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6, Cfg: cfg, Run: makeRun(cfg), Chooser: -1}
+		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[ckey][]Obstacle{}, obsRaw: map[ckey][]Obstacle{},
+		pools: map[ckey][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6, Cfg: cfg, Run: makeRun(cfg), Chooser: -1}
 	n := len(players)
 	w.Run.HM *= coC.hp[n]
 	w.Run.XM *= coC.xp[n]
@@ -81,6 +81,9 @@ func (w *World) addMove(id string) *Slot {
 	w.Slots = append(w.Slots, s)
 	return s
 }
+
+// SlotOf is the current player's equipped slot for move id (nil if not equipped).
+func (w *World) SlotOf(id string) *Slot { return w.slot(id) }
 
 func (w *World) slot(id string) *Slot {
 	for _, s := range w.Slots {
@@ -210,7 +213,9 @@ func (w *World) swarm() {
 
 // Step advances the run by dt seconds.
 func (w *World) Step(dt float64, in Input) {
+	w.useP(0) // clients may have switched the viewed player; a tick always starts from player 0
 	if w.State != StatePlay {
+		w.stepRouteTravel(dt)
 		return
 	}
 	w.T += dt
@@ -487,6 +492,10 @@ func (w *World) relocate(dt float64) {
 }
 
 func (w *World) stepEnemies(dt float64) {
+	helm := make([]float64, len(w.PL)) // Rocky Helmet level per player (looked up once per tick)
+	for i := range w.PL {
+		w.with(i, func() { helm[i] = w.pe("helmet") })
+	}
 	for _, e := range w.E {
 		if e.Dead {
 			continue
@@ -497,10 +506,17 @@ func (w *World) stepEnemies(dt float64) {
 		}
 		w.useP(w.nearP(e.X, e.Y))
 		P := w.P
-		a := math.Atan2(P.Y-e.Y, P.X-e.X)
-		if e.Fear > 0 {
-			a += math.Pi
+		// heading as a unit vector (cheaper than an angle); custom headings fall back to angles
+		ux, uy := P.X-e.X, P.Y-e.Y
+		if l := phyp(ux, uy); l > 0 {
+			ux, uy = ux/l, uy/l
+		} else {
+			ux, uy = 1, 0
 		}
+		if e.Fear > 0 {
+			ux, uy = -ux, -uy
+		}
+		a, angled := 0.0, false
 		if e.Charm > 0 {
 			var tg *Enemy
 			bd := 1e18
@@ -513,7 +529,7 @@ func (w *World) stepEnemies(dt float64) {
 				}
 			}
 			if tg != nil {
-				a = math.Atan2(tg.Y-e.Y, tg.X-e.X)
+				a, angled = math.Atan2(tg.Y-e.Y, tg.X-e.X), true
 				if bd < (e.R+tg.R+4)*(e.R+tg.R+4) && e.cx <= w.T {
 					e.cx = w.T + .4
 					w.hitRaw(tg, math.Round(e.Dm*3), "charm")
@@ -583,21 +599,28 @@ func (w *World) stepEnemies(dt float64) {
 			}
 			aa := a
 			if e.aoSet {
-				aa = e.ao
+				aa, angled = e.ao, true
 			}
 			if lured { // a Substitute draws it in
-				aa = lureA
+				aa, angled = lureA, true
 			}
 			if e.dtr > 0 {
 				e.dtr -= dt
+				if !angled {
+					aa, angled = math.Atan2(uy, ux), true
+				}
 				aa += e.ds * 1.3
 			}
+			hx, hy := ux, uy
+			if angled {
+				hx, hy = math.Cos(aa), math.Sin(aa)
+			}
 			mv = e.Sp * sm * dt
-			e.X += math.Cos(aa) * mv
-			e.Y += math.Sin(aa) * mv
-			if math.Cos(aa) < -.05 {
+			e.X += hx * mv
+			e.Y += hy * mv
+			if hx < -.05 {
 				e.FaceL = true
-			} else if math.Cos(aa) > .05 {
+			} else if hx > .05 {
 				e.FaceL = false
 			}
 		}
@@ -641,7 +664,7 @@ func (w *World) stepEnemies(dt float64) {
 				e.stk = math.Max(0, e.stk-dt*2)
 			}
 		}
-		if v := w.pe("helmet"); v > 0 && e.th <= w.T && dist(e.X, e.Y, P.X, P.Y) < e.R+11 {
+		if v := helm[w.CUR]; v > 0 && e.th <= w.T && dist(e.X, e.Y, P.X, P.Y) < e.R+11 {
 			e.th = w.T + .5
 			prev := w.curSlot
 			w.curSlot = nil
@@ -1006,11 +1029,18 @@ func (w *World) stepGems(dt float64) {
 			g.Mag = true
 		}
 	}
+	mags := make([]float64, len(w.PL)) // pickup radius per player (looked up once per tick)
+	for i := range w.PL {
+		w.with(i, func() { mags[i] = 90 * (1 + .12*w.up("mag") + .25*w.pe("magnet") + w.PS.F("mag")) })
+	}
+	if len(w.Gems) > 260 && int(w.T*60)%120 == 0 {
+		w.mergeGems()
+	}
 	g2 := w.Gems[:0]
 	for _, g := range w.Gems {
-		w.useP(w.nearP(g.X, g.Y))
-		P := w.P
-		mag := 90 * (1 + .12*w.up("mag") + .25*w.pe("magnet") + w.PS.F("mag"))
+		pi := w.nearP(g.X, g.Y)
+		P := w.PL[pi].P
+		mag := mags[pi]
 		d := dist(g.X, g.Y, P.X, P.Y)
 		if g.Mag || d < mag {
 			sp := 260.0
@@ -1029,6 +1059,7 @@ func (w *World) stepGems(dt float64) {
 			}
 		}
 		if d < 14 {
+			w.useP(pi)
 			switch {
 			case g.Tk:
 				w.sfx("ticket")
@@ -1039,7 +1070,7 @@ func (w *World) stepGems(dt float64) {
 			}
 			w.XPS.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp"))
 			P.XP = w.XPS.XP
-			w.Coins += g.C * (1 + w.PS.F("coin"))
+			w.Coins += g.C * coinK * (1 + w.PS.F("coin"))
 			if g.Tk {
 				w.Tickets++
 				if g.Ed {
@@ -1182,12 +1213,18 @@ func (w *World) genOpts() []Option {
 	return o
 }
 
-// Choose applies level-up card i for the player currently choosing, then serves the next prompt.
-func (w *World) Choose(i int) {
-	if w.State != StateLevelUp || i < 0 || i >= len(w.Opts) || w.Chooser < 0 {
+// Choose applies level-up card i for the first player choosing (solo, bots, same-screen co-op).
+func (w *World) Choose(i int) { w.ChooseFor(w.Chooser, i) }
+
+// ChooseFor applies level-up card i for player p, then serves their next prompt.
+func (w *World) ChooseFor(p, i int) {
+	if w.PendingKind(p) != "lv" {
 		return
 	}
-	w.useP(w.Chooser)
+	w.useP(p)
+	if i < 0 || i >= len(w.Opts) {
+		return
+	}
 	if o := w.Opts[i]; o.SwapAsk { // ask which held item to give up
 		var l []Option
 		for _, h := range w.HeldOrder {
@@ -1202,12 +1239,11 @@ func (w *World) Choose(i int) {
 	}
 	w.SwapPick = false
 	w.applyOpt(w.Opts[i])
-	c := w.PL[w.Chooser]
+	c := w.PL[p]
 	if len(c.Queue) > 0 {
 		c.Queue = c.Queue[1:]
 	}
 	w.Opts = nil
-	w.State = StatePlay
 	w.prompt()
 }
 
@@ -1341,4 +1377,31 @@ func (w *World) ButtonReady(btn int) float64 {
 		}
 	}
 	return best
+}
+
+// coinK scales coin pickups (a 20-minute run was paying about twice what it should).
+const coinK = .5
+
+// mergeGems folds plain XP gems lying close together into one (same total XP), so long runs don't
+// carry hundreds of them.
+func (w *World) mergeGems() {
+	cell := map[ckey]*Gem{}
+	out := w.Gems[:0]
+	for _, g := range w.Gems {
+		if g.C > 0 || g.Tk || g.Mag || g.ms > 0 {
+			out = append(out, g)
+			continue
+		}
+		k := ck(int(math.Floor(g.X/48)), int(math.Floor(g.Y/48)))
+		if h := cell[k]; h != nil {
+			h.V += g.V
+			continue
+		}
+		cell[k] = g
+		out = append(out, g)
+	}
+	for i := len(out); i < len(w.Gems); i++ {
+		w.Gems[i] = nil
+	}
+	w.Gems = out
 }

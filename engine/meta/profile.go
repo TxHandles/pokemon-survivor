@@ -297,6 +297,7 @@ var Upgrades = []Upgrade{
 	{Key: "arm", Name: "Armor", Desc: "-4% damage taken", Max: 8, Cost: 50},
 	{Key: "mag", Name: "Magnet", Desc: "+12% pickup range", Max: 5, Cost: 30},
 	{Key: "xpg", Name: "Fast Learner", Desc: "+5% XP gain", Max: 5, Cost: 45},
+	{Key: "mxg", Name: "Dedicated Trainer", Desc: "+10% Mastery XP", Max: 5, Cost: 50},
 	{Key: "cg", Name: "Lucky Coin", Desc: "+10% coins", Max: 5, Cost: 60},
 	{Key: "rr", Name: "Reroll", Desc: "+1 reroll per run", Max: 10, Cost: 120, Global: true},
 	{Key: "bn", Name: "Banish", Desc: "+1 banish per run", Max: 10, Cost: 120, Global: true},
@@ -368,7 +369,7 @@ func (p *Profile) BuyUpgrade(key, fam string) bool {
 	return true
 }
 
-// Training rank (SV.ms): +2% damage and +1% coins per rank, up to 20.
+// Training rank (SV.ms): +1% HP and +1% damage per rank, up to 20.
 const TrainingMax = 20
 
 func (p *Profile) Training(fam string) int { return int(num(p.S.obj("ms")[fam])) }
@@ -828,7 +829,7 @@ type RunResult struct {
 func (p *Profile) Finish(r RunResult) (gain int, mxGain int, unlocked []string) {
 	s := p.S
 	root := p.LineRoot(r.CID)
-	mxGain = MrGain(r.T, float64(r.Kills), r.Win)
+	mxGain = int(math.Round(float64(MrGain(r.T, float64(r.Kills), r.Win)) * (1 + .1*float64(p.UL("mxg", p.Fam(r.CID))))))
 	mx := s.obj("mx")
 	mx[root] = num(mx[root]) + float64(mxGain)
 	w := 0.0
@@ -839,7 +840,7 @@ func (p *Profile) Finish(r RunResult) (gain int, mxGain int, unlocked []string) 
 	if mult == 0 {
 		mult = 1
 	}
-	gain = int(math.Floor((r.Coins + w + r.T/30) * mult * (1 + .01*float64(p.Training(p.Fam(r.CID))))))
+	gain = int(math.Floor((r.Coins + w + r.T/30) * mult))
 	s.Add("coins", float64(gain))
 	s.Add("tickets", float64(r.Tickets))
 	s.AddStat("k", float64(r.Kills))

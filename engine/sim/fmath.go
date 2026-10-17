@@ -11,7 +11,10 @@ import "math"
 func pexp(x float64) float64    { return exp(x) }
 func plog(x float64) float64    { return log(x) }
 func ppow(x, y float64) float64 { return pow(x, y) }
-func phyp(p, q float64) float64 { return hypot(p, q) }
+
+// phyp: the game's distance. Sqrt is correctly rounded on every target, so this stays identical
+// across native and wasm builds (and is several times faster than a scaled hypot).
+func phyp(p, q float64) float64 { return math.Sqrt(p*p + q*q) }
 
 func exp(x float64) float64 {
 	const (

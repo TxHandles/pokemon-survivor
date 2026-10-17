@@ -86,7 +86,12 @@ type Game struct {
 	collSel      string
 	lifeSel      string
 	chalOpen     bool
-	chalCat      map[string]bool // challenge groups opened / closed by hand (default: open if something is claimable)
+	chalCat      map[string]bool
+	specIdx      int        // online co-op: which living teammate a fainted player watches
+	tip          *tipData   // hover tooltip for this frame
+	dItems       []drawItem // reused depth-sort buffer
+	tipW         *sim.World // scratch world for menu tooltips' numbers
+	tipWID       string     // challenge groups opened / closed by hand (default: open if something is claimable)
 	lbNameEdit   string
 	boardsFrom   screen
 	pauseSel     int
@@ -474,6 +479,7 @@ func (g *Game) updatePlay() {
 		return
 	}
 	w := g.W
+	w.UseLocal(g.viewIdx())
 	// the HUD's pause button (mouse)
 	if mx, my := ebiten.CursorPosition(); inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !w.Waiting() && !g.coop && inR(g.pauseBtnRect(), float64(mx), float64(my)) {
 		g.scr = scPause
@@ -544,7 +550,7 @@ func (g *Game) updatePlay() {
 // choiceKeys handles the keys, clicks and taps on a choice screen (level-up, route, shrine).
 func (g *Game) choiceKeys() {
 	w := g.W
-	if w.State == sim.StateLevelUp {
+	if g.choiceKind() == "lv" {
 		if keyJust(ebiten.KeyR) || padBtn(ebiten.StandardGamepadButtonRightLeft) {
 			if g.online() {
 				g.onlineCmd(lockstep.CmdReroll, 0)
@@ -590,21 +596,53 @@ func (g *Game) choiceKeys() {
 
 // choiceCount: cards on the current choice screen (shrines add "Leave it").
 func (g *Game) choiceCount() int {
-	switch g.W.State {
-	case sim.StateRoute:
+	switch g.choiceKind() {
+	case "route":
+		if g.W.RouteGo >= 0 {
+			return 0
+		}
 		return len(g.W.Route)
-	case sim.StateShrine:
+	case "shrine":
 		return len(g.W.Boons) + 1
+	case "lv":
+		return len(g.W.Opts)
 	}
-	return len(g.W.Opts)
+	return 0
+}
+
+// viewIdx: the player whose screen this is (online: me; same-screen co-op: whoever is choosing).
+func (g *Game) viewIdx() int {
+	w := g.W
+	if w == nil {
+		return 0
+	}
+	if g.online() {
+		return g.on.room.Me
+	}
+	if (w.State == sim.StateLevelUp || w.State == sim.StateShrine) && w.Chooser >= 0 {
+		return w.Chooser
+	}
+	return 0
+}
+
+// choiceKind: which choice the viewed player has open: "lv", "shrine", "route" or "".
+func (g *Game) choiceKind() string {
+	w := g.W
+	if w == nil {
+		return ""
+	}
+	if w.State == sim.StateRoute {
+		return "route"
+	}
+	return w.PendingKind(g.viewIdx())
 }
 
 func (g *Game) pick(i int) {
 	if g.online() {
-		switch g.W.State {
-		case sim.StateRoute:
+		switch g.choiceKind() {
+		case "route":
 			g.onlineCmd(lockstep.CmdRoute, i)
-		case sim.StateShrine:
+		case "shrine":
 			g.onlineCmd(lockstep.CmdBoon, i)
 		default:
 			if g.banMode {
@@ -618,10 +656,10 @@ func (g *Game) pick(i int) {
 		g.lvDelay = 0
 		return
 	}
-	switch g.W.State {
-	case sim.StateRoute:
+	switch g.choiceKind() {
+	case "route":
 		g.W.ChooseRoute(i)
-	case sim.StateShrine:
+	case "shrine":
 		g.W.ChooseBoon(i)
 	default:
 		if g.banMode {
@@ -646,14 +684,15 @@ func (g *Game) Draw(dst *ebiten.Image) {
 	case scTitle:
 		g.drawTitle(dst)
 	case scPlay, scPause, scOver:
+		g.W.UseLocal(g.viewIdx())
 		g.drawWorld(dst)
 		g.drawHUD(dst)
-		switch g.W.State {
-		case sim.StateLevelUp:
+		switch g.choiceKind() {
+		case "lv":
 			g.drawLevelUp(dst)
-		case sim.StateRoute:
+		case "route":
 			g.drawRoute(dst)
-		case sim.StateShrine:
+		case "shrine":
 			g.drawShrine(dst)
 		}
 		g.drawOnlineOverlay(dst)
@@ -676,6 +715,7 @@ func (g *Game) Draw(dst *ebiten.Image) {
 		g.drawBackdrop(dst)
 		g.ui.draw(dst)
 	}
+	g.drawTip(dst)
 	g.drawToasts(dst)
 }
 

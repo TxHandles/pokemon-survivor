@@ -123,11 +123,12 @@ func main() {
 		f := lockstep.Quantise(bot.Input(lockstep.Tick))
 		if w.Waiting() {
 			switch {
-			case w.State == sim.StateLevelUp && w.Chooser == ls.Me:
+			case w.PendingKind(ls.Me) == "lv":
+				w.UseLocal(ls.Me)
 				f.Cmds = append(f.Cmds, lockstep.Cmd{Kind: lockstep.CmdChoose, Arg: int8(w.BotPick())})
-			case w.State == sim.StateShrine && w.Chooser == ls.Me:
+			case w.PendingKind(ls.Me) == "shrine":
 				f.Cmds = append(f.Cmds, lockstep.Cmd{Kind: lockstep.CmdBoon})
-			case w.State == sim.StateRoute && r.Host:
+			case w.State == sim.StateRoute && w.RouteGo < 0 && ls.Me < len(w.RouteVotes) && w.RouteVotes[ls.Me] < 0:
 				f.Cmds = append(f.Cmds, lockstep.Cmd{Kind: lockstep.CmdRoute})
 			}
 		}

@@ -47,6 +47,9 @@ type PlayerCtx struct {
 	Bot                        *Bot
 	In                         Input
 	Queue                      []*Prompt
+	Opts                       []Option // this player's level-up cards while choosing
+	Boons                      []Boon
+	SwapPick                   bool
 	Deaths, Revives, Kills     int
 	Gone                       bool
 	DT                         float64 // time of death
@@ -88,6 +91,7 @@ func (w *World) saveCtx() {
 	c.P, c.Slots, c.Held, c.HeldOrder, c.PS, c.ab, c.DMG = w.P, w.Slots, w.Held, w.HeldOrder, w.PS, w.ab, w.DMG
 	c.Ban, c.Rerolls, c.Banishes = w.Ban, w.Rerolls, w.Banishes
 	c.Learned, c.Evolved, c.Capstone, c.Orbs = w.Learned, w.Evolved, w.Capstone, w.Orbs
+	c.Opts, c.Boons, c.SwapPick = w.Opts, w.Boons, w.SwapPick
 }
 
 // useP makes player i the current one.
@@ -101,7 +105,11 @@ func (w *World) useP(i int) {
 	w.P, w.Slots, w.Held, w.HeldOrder, w.PS, w.ab, w.DMG = c.P, c.Slots, c.Held, c.HeldOrder, c.PS, c.ab, c.DMG
 	w.Ban, w.Rerolls, w.Banishes = c.Ban, c.Rerolls, c.Banishes
 	w.Learned, w.Evolved, w.Capstone, w.Orbs = c.Learned, c.Evolved, c.Capstone, c.Orbs
+	w.Opts, w.Boons, w.SwapPick = c.Opts, c.Boons, c.SwapPick
 	w.Cfg.Up, w.Cfg.Training, w.Ability = c.Up, c.Training, c.Ability
+	// each player's own shop upgrades decide their attack and held-item slots
+	w.MoveSlots = 2 + int(w.up("m3")) + int(w.up("m4"))
+	w.HeldSlots = 2 + int(w.up("h3")) + int(w.up("h4"))
 }
 
 // with runs f as player i and switches back.
@@ -194,7 +202,7 @@ func (w *World) addPlayer(db *content.DB, spec PlayerSpec) (*PlayerCtx, error) {
 	if pl := c.PS.L("pulse"); len(pl) == 3 {
 		c.ab.pt = pl[0]
 	}
-	mh := math.Round((80 + 14*up("hp")) * b2f(w.Run.Glass, .5, 1) * (1 + c.PS.F("hpM")) * st.HP)
+	mh := math.Round((80 + 14*up("hp")) * b2f(w.Run.Glass, .5, 1) * (1 + c.PS.F("hpM")) * (1 + .01*float64(spec.Training)) * st.HP)
 	c.P = &Player{ID: spec.ID, Name: p.Name, Types: p.Types, Stats: st, HP: mh, MHP: mh, Sp: 125 * st.Spd * (1 + .03*up("spd")), Lv: 1, NX: 5, FX: 1, DQ: -1, DQ2: -1, AtkT: -9}
 	sm := db.StartMove(spec.ID)
 	c.Slots = []*Slot{{ID: sm, Move: db.Moves[sm], Kind: db.Moves[sm].Shape, Type: db.Moves[sm].Type, Lv: 1, Q: BuildQ(db.Moves[sm]), Owner: len(w.PL)}}
@@ -344,8 +352,8 @@ func (w *World) coopLevel() {
 	w.prompt()
 }
 
-// prompt serves pending choices: bots answer at once; the first local player with a prompt gets the
-// screen (Chooser); when nobody is waiting, play resumes.
+// prompt serves pending choices: bots answer at once; every other player gets their own cards at
+// the same time (level-ups in co-op are picked simultaneously), and play resumes when everyone is done.
 func (w *World) prompt() {
 	for i, c := range w.PL {
 		if c.Kind != "bot" && !c.Gone {
@@ -369,39 +377,64 @@ func (w *World) prompt() {
 			})
 		}
 	}
+	w.Chooser = -1
+	lv, sh := false, false
 	for i, c := range w.PL {
-		if c.Gone || len(c.Queue) == 0 {
-			continue
-		}
-		pr := c.Queue[0]
-		w.useP(i)
-		w.Chooser = i
-		switch pr.Kind {
-		case "lv":
-			if pr.Opts == nil {
+		for !c.Gone && len(c.Queue) > 0 {
+			pr := c.Queue[0]
+			if pr.Kind == "lv" && pr.Opts == nil {
+				w.useP(i)
 				pr.Opts = w.genOpts()
 				if len(pr.Opts) == 0 { // nothing to offer: full heal instead (web)
 					w.P.HP = w.P.MHP
 					c.Queue = c.Queue[1:]
-					w.prompt()
-					return
+					continue
 				}
+				w.Opts, w.SwapPick = pr.Opts, false
 			}
-			w.Opts = pr.Opts
-			w.State = StateLevelUp
-		case "shrine":
-			w.Boons = pr.Boons
-			w.State = StateShrine
+			if pr.Kind == "shrine" && pr.Opts == nil {
+				w.useP(i)
+				w.Boons = pr.Boons
+				pr.Opts = []Option{} // served
+			}
+			if w.Chooser < 0 {
+				w.Chooser = i
+			}
+			lv = lv || pr.Kind == "lv"
+			sh = sh || pr.Kind == "shrine"
+			break
 		}
-		return
 	}
-	w.Chooser = -1
-	if w.State == StateLevelUp || w.State == StateShrine {
+	switch {
+	case lv:
+		w.State = StateLevelUp
+	case sh:
+		w.State = StateShrine
+	case w.State == StateLevelUp || w.State == StateShrine:
 		w.State = StatePlay
 	}
 }
 
-// ChooserName is the player currently choosing on a shared screen.
+// PendingKind is what player i is choosing right now: "lv", "shrine" or "".
+func (w *World) PendingKind(i int) string {
+	if i < 0 || i >= len(w.PL) || w.PL[i].Gone || len(w.PL[i].Queue) == 0 {
+		return ""
+	}
+	return w.PL[i].Queue[0].Kind
+}
+
+// Choosing lists the players still making a choice.
+func (w *World) Choosing() []string {
+	var l []string
+	for i, c := range w.PL {
+		if w.PendingKind(i) != "" {
+			l = append(l, c.Name)
+		}
+	}
+	return l
+}
+
+// ChooserName is the first player still choosing.
 func (w *World) ChooserName() string {
 	if w.Chooser >= 0 && w.Chooser < len(w.PL) {
 		return w.PL[w.Chooser].Name
@@ -462,12 +495,17 @@ func (w *World) Drop(i int) {
 	}
 	c := w.PL[i]
 	c.Gone = true
-	c.Queue = nil
-	c.In = Input{}
-	if w.Chooser == i && (w.State == StateLevelUp || w.State == StateShrine) {
+	had := len(c.Queue) > 0
+	c.Queue, c.Opts, c.Boons = nil, nil, nil
+	if i == w.CUR {
 		w.Opts, w.Boons = nil, nil
-		w.State = StatePlay
+	}
+	c.In = Input{}
+	if had {
 		w.prompt()
+	}
+	if w.State == StateRoute && w.RouteGo < 0 && w.RouteVotes != nil {
+		w.tallyRoute()
 	}
 	if len(w.aliveIdx()) == 0 && w.State != StateDead {
 		w.State = StateDead

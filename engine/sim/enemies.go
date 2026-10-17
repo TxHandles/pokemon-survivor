@@ -25,6 +25,7 @@ type Hazard struct {
 	Fl                 float64
 	Bio                string // biome event hazard (storm / rockfall): type immunity applies
 	Src                *DmgSrc
+	K                  string // what made it (boss attack name, "expl" …) — picks its animation
 }
 
 // Pickup is a map item: magnet, berry, battery, belt, bomb, candy.
@@ -72,14 +73,15 @@ var HazardText = map[string]string{"lava": "Lava pools burn you badly while you 
 
 // role spawn chances (web SHOOT_P etc.)
 const (
-	shootP = .09
-	healP  = .3
-	burP   = .3
-	phaP   = .15
-	chgP   = .25
-	webP   = .25
-	shdP   = .3
-	healR  = 130.0
+	shootP   = .07
+	shootMax = 8 // shooters alive at once (they were the biggest damage source in co-op)
+	healP    = .3
+	burP     = .3
+	phaP     = .15
+	chgP     = .25
+	webP     = .25
+	shdP     = .3
+	healR    = 130.0
 )
 
 var shootT = map[string]bool{"fire": true, "water": true, "dragon": true, "normal": true}
@@ -106,9 +108,19 @@ func (w *World) assignRole(e *Enemy) {
 	case e.Type == "steel" && r() < shdP:
 		e.Sh = e.HP * .4
 		e.ShMax = e.Sh
-	case shootT[e.Type] && r() < shootP:
+	case shootT[e.Type] && r() < shootP && w.shooters() < shootMax:
 		e.Rk, e.rkt = "shoot", w.rnd(1, 3)
 	}
+}
+
+func (w *World) shooters() int {
+	n := 0
+	for _, o := range w.E {
+		if o.Rk == "shoot" && !o.Dead {
+			n++
+		}
+	}
+	return n
 }
 
 func (w *World) minion(x, y float64, t string) {
@@ -188,7 +200,7 @@ func (w *World) onDeath(e *Enemy) {
 		w.seedJump(e)
 	}
 	if e.Expl {
-		w.HZ = append(w.HZ, &Hazard{X: e.X, Y: e.Y, R: 85, T: 1, T0: 1, Dm: e.Dm * 1.5, Col: "255,153,85", Src: srcExpl})
+		w.HZ = append(w.HZ, &Hazard{K: "expl", X: e.X, Y: e.Y, R: 85, T: warnK, T0: warnK, Dm: e.Dm * 1.5, Col: "255,153,85", Src: srcExpl})
 	}
 	if e.Split {
 		for i := 0; i < 4; i++ {
@@ -211,19 +223,24 @@ func (w *World) onDeath(e *Enemy) {
 		for i := 0; i < n; i++ {
 			w.Gems = append(w.Gems, &Gem{X: e.X + w.rnd(-24, 24), Y: e.Y + w.rnd(-24, 24), V: w.XPS.NX * .15})
 		}
-		w.dropItem(e.X, e.Y)
+		if w.rng.Float64() < math.Max(.35, w.dropK()) {
+			w.dropItem(e.X, e.Y)
+		}
 		if e.Mini {
 			w.dropItem(e.X+10, e.Y)
 		}
 		w.addFX(&FX{Kind: "txt", X: e.X, Y: e.Y - 30, Life: 1.5, Text: b2s(e.Mini, "MINI-BOSS DEFEATED", "Elite defeated!"), Col: "gold"})
 	}
-	if !e.Boss && !e.Elite && !w.noDrop && w.rng.Float64() < b2f(e.Big, .008, .0015) {
+	if !e.Boss && !e.Elite && !w.noDrop && w.rng.Float64() < b2f(e.Big, .008, .0015)*w.dropK() {
 		w.dropItem(e.X, e.Y)
 	}
 	if !e.Boss && w.rng.Float64() < b2f(e.Big, .0015, .00005) {
 		w.Gems = append(w.Gems, &Gem{X: e.X - 5, Y: e.Y, Tk: true})
 	}
 }
+
+// dropK: power-up and bomb drops thin out as a run goes on (half at 10:00, a third at 20:00).
+func (w *World) dropK() float64 { return 1 / (1 + w.T/600) }
 
 func (w *World) dropItem(x, y float64) {
 	r := w.rng.Float64()
@@ -385,8 +402,8 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 			e.btv -= dt
 			e.steer(ang)
 			if e.btv <= 0 || d < 46 {
-				e.bs, e.bwt = 2, .55
-				w.addFX(&FX{Kind: "tele", X: e.X, Y: e.Y, R: 46, Life: .55, Type: "ground", Enemy: true})
+				e.bs, e.bwt = 2, .55*warnK
+				w.addFX(&FX{Kind: "tele", X: e.X, Y: e.Y, R: 46, Life: .55 * warnK, Type: "ground", Enemy: true})
 			}
 			return 1.7
 		}
@@ -416,7 +433,7 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 		e.rkt -= dt
 		if e.rkt <= 0 {
 			if d < 300 && d > 60 {
-				e.cwu, e.cang, e.rkt = .6, ang, w.rnd(3.5, 5)
+				e.cwu, e.cang, e.rkt = .6*warnK, ang, w.rnd(3.5, 5)
 			} else {
 				e.rkt = .4
 			}
@@ -458,7 +475,7 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 		case 1:
 			e.pf -= dt
 			if e.pf <= 0 {
-				e.ps, e.Ug, e.pt2 = 2, true, .85
+				e.ps, e.Ug, e.pt2 = 2, true, .3+.55*warnK
 				a, r := w.rnd(0, 6.283), w.rnd(130, 180)
 				e.dx2, e.dy2 = P.X+math.Cos(a)*r, P.Y+math.Sin(a)*r
 				e.pmk = false
@@ -466,9 +483,9 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 			return 0
 		case 2:
 			e.pt2 -= dt
-			if e.pt2 <= .55 && !e.pmk {
+			if e.pt2 <= .55*warnK && !e.pmk {
 				e.pmk = true
-				w.addFX(&FX{Kind: "tele", X: e.dx2, Y: e.dy2, R: 24, Life: .55, Type: "ghost"})
+				w.addFX(&FX{Kind: "tele", X: e.dx2, Y: e.dy2, R: 24, Life: .55 * warnK, Type: "ghost"})
 			}
 			if e.pt2 <= 0 {
 				e.X, e.Y = e.dx2, e.dy2
@@ -522,7 +539,7 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 	if e.rkt <= 0 {
 		if e.Rk == "shoot" {
 			if d < 480 {
-				e.rkt, e.rkw = 3.2, .35
+				e.rkt, e.rkw = 3.8, .35
 			} else {
 				e.rkt = .5
 			}
@@ -584,12 +601,18 @@ func (w *World) bul(e *Enemy, a, sp, k float64, homing bool) {
 	w.EB = append(w.EB, b)
 }
 
+// warnK stretches every warning (hazard telegraphs, boss wind-ups) so attacks can be dodged.
+const warnK = 1.2
+
 func (w *World) hz(x, y, r, t, dm float64, typ, col string) {
-	w.HZ = append(w.HZ, &Hazard{X: x, Y: y, R: r, T: t, T0: t, Dm: dm, Type: typ, Col: col, Src: w.curSrc})
+	t *= warnK
+	w.HZ = append(w.HZ, &Hazard{X: x, Y: y, R: r, T: t, T0: t, Dm: dm, Type: typ, Col: col, Src: w.curSrc, K: w.curHz})
 }
 
 // boss attack kit (web NA + atkGo)
 func (w *World) bossMove(e *Enemy, k string) bool {
+	w.curHz = k
+	defer func() { w.curHz = "" }()
 	P := w.P
 	ph := float64(e.Ph)
 	alive := func(fn func()) func() {
@@ -608,10 +631,10 @@ func (w *World) bossMove(e *Enemy, k string) bool {
 		}
 	case "quake":
 		w.hz(e.X, e.Y, 115, 1, e.Dm*1.4, e.Type, "")
-		w.later(1, alive(func() { w.eRing(e, 14+3*e.Ph, w.rnd(0, 6), 190, .5) }))
+		w.later(warnK, alive(func() { w.eRing(e, 14+3*e.Ph, w.rnd(0, 6), 190, .5) }))
 	case "pulse":
 		w.hz(e.X, e.Y, 150, 1, e.Dm*1.2, e.Type, "80,170,255")
-		w.later(1, alive(func() {
+		w.later(warnK, alive(func() {
 			w.eRing(e, 16+2*e.Ph, 0, 170, .45)
 			w.later(.35, alive(func() { w.eRing(e, 16+2*e.Ph, .2, 230, .45) }))
 		}))
@@ -640,7 +663,7 @@ func (w *World) bossMove(e *Enemy, k string) bool {
 		a := w.rnd(0, 6.283)
 		x, y := P.X+math.Cos(a)*130, P.Y+math.Sin(a)*130
 		w.hz(x, y, 42, .8, 0, "", "200,120,255")
-		w.later(.8, alive(func() {
+		w.later(.8*warnK, alive(func() {
 			e.X, e.Y = x, y
 			w.eRing(e, 10+2*e.Ph, w.rnd(0, 6), 200, .5)
 			w.hz(P.X, P.Y, 70, .7, e.Dm*1.5, e.Type, "")
@@ -648,7 +671,7 @@ func (w *World) bossMove(e *Enemy, k string) bool {
 	case "leap":
 		x, y := P.X, P.Y
 		w.hz(x, y, 100, 1, e.Dm*1.8, e.Type, "")
-		w.later(1, alive(func() {
+		w.later(warnK, alive(func() {
 			e.X, e.Y = x, y
 			w.Shake = .5
 			w.eRing(e, 10, 0, 160, .5)
@@ -660,9 +683,9 @@ func (w *World) bossMove(e *Enemy, k string) bool {
 			w.hz(e.X+math.Cos(a)*fi*95, e.Y+math.Sin(a)*fi*95, 46, .7+fi*.12, e.Dm*1.3, e.Type, "")
 		}
 	case "rush":
-		e.ca, e.wu, e.K, e.trl = math.Atan2(P.Y-e.Y, P.X-e.X), .8, "charge", true
+		e.ca, e.wu, e.K, e.trl = math.Atan2(P.Y-e.Y, P.X-e.X), .8*warnK, "charge", true
 	case "charge3":
-		e.ca, e.wu, e.K, e.c3 = math.Atan2(P.Y-e.Y, P.X-e.X), .8, "charge", 2
+		e.ca, e.wu, e.K, e.c3 = math.Atan2(P.Y-e.Y, P.X-e.X), .8*warnK, "charge", 2
 	default:
 		_ = ph
 		return false
@@ -718,7 +741,9 @@ func (w *World) bossAI(e *Enemy, dt float64) float64 {
 			e.tt -= dt
 			if e.tt <= 0 {
 				e.tt = .14
+				w.curHz = "trail"
 				w.hz(e.X, e.Y, 40, .9, e.Dm, e.Type, "")
+				w.curHz = ""
 			}
 		}
 		if e.chd <= 0 && e.c3 > 0 {
@@ -726,7 +751,7 @@ func (w *World) bossAI(e *Enemy, dt float64) float64 {
 			w.later(.35, func() {
 				if !e.Dead {
 					e.ca = math.Atan2(P.Y-e.Y, P.X-e.X)
-					e.wu = .5
+					e.wu = .5 * warnK
 				}
 			})
 		}
@@ -741,6 +766,7 @@ func (w *World) bossAI(e *Enemy, dt float64) float64 {
 		if w.bossMove(e, e.K) {
 			return 1 + .15*float64(e.Ph-1)
 		}
+		w.curHz = e.K
 		switch e.K {
 		case "slam":
 			w.hz(P.X, P.Y, 78, 1.2, e.Dm*1.6, e.Type, "")
@@ -750,9 +776,10 @@ func (w *World) bossAI(e *Enemy, dt float64) float64 {
 				w.hz(P.X+P.FX*140*fi, P.Y+P.FY*140*fi, 70, 1.1+.3*fi, e.Dm*1.4, e.Type, "")
 			}
 		default:
-			e.wu = b2f(e.K == "charge", .8, .6)
+			e.wu = b2f(e.K == "charge", .8, .6) * warnK
 			e.ca = math.Atan2(P.Y-e.Y, P.X-e.X)
 		}
+		w.curHz = ""
 	}
 	return 1 + .15*float64(e.Ph-1)
 }
@@ -841,7 +868,7 @@ func (w *World) stepEnemyAttacks(dt float64) {
 	for _, h := range w.HZ {
 		h.T -= dt
 		if !h.Gone && h.T <= 0 {
-			h.Gone, h.Fl = true, .25
+			h.Gone, h.Fl = true, .45
 			w.Shake = math.Max(w.Shake, .15)
 			for _, pi := range w.aliveIdx() {
 				w.useP(pi)
@@ -910,12 +937,12 @@ func (w *World) Pools(cx, cy int) []Pool {
 	if k == "" || k == "storm" || k == "rockfall" || k == "gust" {
 		return nil
 	}
-	key := [2]int{cx, cy}
+	key := ck(cx, cy)
 	if p, ok := w.pools[key]; ok {
 		return p
 	}
 	if len(w.pools) > 600 {
-		w.pools = map[[2]int][]Pool{}
+		w.pools = map[ckey][]Pool{}
 	}
 	r := jsRng(uint32(int32(cx)*-1640531535) ^ uint32(int32(cy)*40503) ^ uint32(w.Seed) ^ 0x5bd1e995)
 	var out []Pool
@@ -1061,3 +1088,9 @@ var _ = rand.Int
 
 // ChargingUp: a charger is winding up (drawn as a warning ring).
 func (e *Enemy) ChargingUp() bool { return e.cwu > 0 }
+
+// Windup reports a boss's pending attack: its name, wind-up seconds left, aim angle and whether it
+// is mid-charge (for drawing telegraphs).
+func (e *Enemy) Windup() (k string, wu, aim float64, charging bool) {
+	return e.K, e.wu, e.ca, e.chd > 0
+}

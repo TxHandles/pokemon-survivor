@@ -33,12 +33,12 @@ func jsRng(a uint32) func() float64 {
 
 // chunkRaw: the seeded trees, rocks and the odd landmark of chunk (cx, cy) (web chunkRaw).
 func (w *World) chunkRaw(cx, cy int) []Obstacle {
-	k := [2]int{cx, cy}
+	k := ck(cx, cy)
 	if c, ok := w.obsRaw[k]; ok {
 		return c
 	}
 	if len(w.obsRaw) > 600 {
-		w.obsRaw = map[[2]int][]Obstacle{}
+		w.obsRaw = map[ckey][]Obstacle{}
 	}
 	ws := uint32(w.Seed)
 	r := jsRng(uint32(int32(cx)*73856093) ^ uint32(int32(cy)*19349663) ^ ws)
@@ -82,12 +82,18 @@ const lmClear = 150 // nothing else grows this close to a landmark
 // kept out of lava / ice / deep water, landmarks out of hazard pools, and the ground around
 // landmarks is cleared.
 func (w *World) Chunk(cx, cy int) []Obstacle {
-	k := [2]int{cx, cy}
+	k := ck(cx, cy)
+	slot := &w.chunkMemo[(cx&3)*4+(cy&3)] // tiny memo in front of the map (push asks 4-9 times per mover)
+	if slot.ok && slot.k == k {
+		return slot.v
+	}
 	if c, ok := w.obs[k]; ok {
+		*slot = chunkMemo{k, c, true}
 		return c
 	}
 	if len(w.obs) > 500 {
-		w.obs = map[[2]int][]Obstacle{}
+		w.obs = map[ckey][]Obstacle{}
+		w.chunkMemo = [16]chunkMemo{}
 	}
 	raw := w.chunkRaw(cx, cy)
 	c := make([]Obstacle, 0, len(raw)+1)
@@ -251,7 +257,8 @@ func (o Obstacle) Circles() [][3]float64 { return o.cs }
 // location starts (web lmPlace). The angle comes from the run seed, not the gameplay rng.
 func (w *World) placeLandmarks() {
 	w.LMSP = nil
-	w.obs = map[[2]int][]Obstacle{}
+	w.obs = map[ckey][]Obstacle{}
+	w.chunkMemo = [16]chunkMemo{}
 	if w.P == nil {
 		return
 	}
@@ -267,11 +274,45 @@ func (w *World) placeLandmarks() {
 }
 
 // push moves (x,y) out of any obstacle it overlaps (web push).
+// maxObstR bounds how far any obstacle's collision reaches from the point that files it in its chunk
+// (measured at ~85 over every biome and location; kept with margin). push skips chunks beyond it.
+const maxObstR = 110.0
+
+type chunkMemo struct {
+	k  ckey
+	v  []Obstacle
+	ok bool
+}
+
+// ckey: a chunk's map key (an int64 hashes much faster than a [2]int).
+type ckey int64
+
+func ck(cx, cy int) ckey { return ckey(int64(cx)<<32 | int64(uint32(cy))) }
+
 func (w *World) push(x, y *float64, rad float64) {
 	cx, cy := int(math.Floor(*x/ChunkSize)), int(math.Floor(*y/ChunkSize))
-	for i := -1; i <= 1; i++ {
-		for j := -1; j <= 1; j++ {
-			for _, b := range w.Chunk(cx+i, cy+j) {
+	// only neighbouring chunks the circle can reach
+	fx, fy := *x/ChunkSize-float64(cx), *y/ChunkSize-float64(cy)
+	i0, i1, j0, j1 := -1, 1, -1, 1
+	if m := (rad + maxObstR) / ChunkSize; m < .5 {
+		if fx > m {
+			i0 = 0
+		}
+		if fx < 1-m {
+			i1 = 0
+		}
+		if fy > m {
+			j0 = 0
+		}
+		if fy < 1-m {
+			j1 = 0
+		}
+	}
+	for i := i0; i <= i1; i++ {
+		for j := j0; j <= j1; j++ {
+			ch := w.Chunk(cx+i, cy+j)
+			for k := range ch {
+				b := &ch[k]
 				qx, qy, qm := *x-b.bx, *y-b.by, b.br+rad
 				if qx*qx+qy*qy >= qm*qm {
 					continue
