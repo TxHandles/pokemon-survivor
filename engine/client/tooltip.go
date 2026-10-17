@@ -135,25 +135,34 @@ func (g *Game) moveTip(id string, s *sim.Slot) *tipData {
 
 // itemTip: a held item's tooltip (lv 0 = not held).
 func (g *Game) itemTip(id string, lv int) *tipData {
-	it := sim.ItemByID[id]
+	it := sim.ItemInfo(id)
 	if it == nil {
 		return nil
 	}
 	t := &tipData{title: it.Name, col: webAcc}
 	kind := "Held item"
+	if sim.IsFused(id) {
+		kind, t.col = "Fused item", hexC("#c49bff")
+	}
 	if lv > 0 {
-		kind = fmt.Sprintf("Held item · Level %d", lv)
+		kind += fmt.Sprintf(" · Level %d", lv)
+		if tr := sim.OverTier(lv); tr > 0 {
+			kind += " · " + []string{"", "Bronze", "Silver", "Gold"}[tr] + " overcharge"
+		}
 	}
 	t.lines = append(t.lines, tipLine{kind, alpha(webFg, .85), 12, true})
 	for _, ln := range wrap("Each level: "+it.Desc, font(12, false), 260) {
 		t.lines = append(t.lines, tipLine{ln, webFg, 12, false})
 	}
 	if lv > 5 {
-		t.lines = append(t.lines, tipLine{"Levels past 5 count half", alpha(webFg, .7), 11, false})
+		t.lines = append(t.lines, tipLine{"Levels 6–10 count half, overcharge levels (11–20) a quarter", alpha(webFg, .7), 11, false})
+	}
+	if lv >= sim.ItemMax && !sim.IsFused(id) && g.W != nil {
+		t.lines = append(t.lines, tipLine{"Maxed: fuse it with another Lv 10 item from a level-up", hexC("#c49bff"), 11, false})
 	}
 	var evo []string
 	for _, m := range g.db.MoveList {
-		if m.HeldItem == id && len(evo) < 4 && (g.W == nil || g.W.SlotOf(m.ID) != nil) {
+		if (m.HeldItem == id || (sim.IsFused(id) && strings.Contains(id, m.HeldItem))) && len(evo) < 4 && (g.W == nil || g.W.SlotOf(m.ID) != nil) {
 			evo = append(evo, m.Name)
 		}
 	}
@@ -219,4 +228,28 @@ func (g *Game) drawTip(dst *ebiten.Image) {
 		drawText(dst, l.s, x+12, yy, l.size, l.bold, l.col, text.AlignStart, false)
 		yy += float64(l.size) + 5
 	}
+}
+
+// tierCol: overcharge tier colours (bronze, silver, gold).
+func tierCol(t int) color.NRGBA {
+	switch t {
+	case 1:
+		return hexC("#d08a4c")
+	case 2:
+		return hexC("#d9e2ee")
+	case 3:
+		return hexC("#ffd84a")
+	}
+	return webAcc
+}
+
+// itemRimCol: a held item's ring on the HUD (fusions purple, overcharged items by tier).
+func itemRimCol(id string, lv int) color.NRGBA {
+	if t := sim.OverTier(lv); t > 0 {
+		return tierCol(t)
+	}
+	if sim.IsFused(id) {
+		return hexC("#c49bff")
+	}
+	return webAcc
 }

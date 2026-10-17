@@ -153,7 +153,7 @@ func (g *Game) drawHUDCommon(dst *ebiten.Image) {
 		if w.Held[id] == 0 {
 			continue
 		}
-		it := sim.ItemByID[id]
+		it := sim.ItemInfo(id)
 		label := fmt.Sprintf("%s  %d", it.Name, w.Held[id])
 		tw, _ := text.Measure(label, font(12, true), 0)
 		x -= tw + 22

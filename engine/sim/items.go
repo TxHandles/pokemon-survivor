@@ -43,31 +43,36 @@ var ItemByID = func() map[string]*Item {
 var meleeK = map[string]bool{"arc": true, "jab": true, "dash": true, "blast": true, "aura": true, "spin": true}
 var specK = map[string]bool{"proj": true, "beam": true, "homing": true, "boom": true, "burst": true, "twin": true, "sludge": true, "chain": true, "cone": true}
 
-// pe: effective item level (levels past 5 count half).
+// pe: effective item level (levels past 5 count half, overcharge levels past 10 a quarter).
 func (w *World) pe(k string) float64 {
 	v := float64(w.Held[k])
+	if v > 10 {
+		return 7.5 + (v-10)*.25
+	}
 	if v > 5 {
 		return 5 + (v-5)*.5
 	}
 	return v
 }
 
-func (w *World) gvBase() int { return int(math.Ceil(w.pe("glove")/2)) + int(w.PS.F("cnt")) }
+func (w *World) gvBase() int {
+	return int(math.Ceil(w.pe("glove")/2)) + int(w.PS.F("cnt")) + b2i(w.fz("volley"))
+}
 
 // gv: extra projectiles / orbs / jumps (glove, ability, and the firing move's rolled bonuses)
 func (w *World) gv() int { return w.gvBase() + w.curSlot.BonusCount() }
 
 // rgm: range multiplier (Focus Lens, ability, and the firing move's rolled bonuses)
 func (w *World) rgm() float64 {
-	return (1 + .15*w.pe("focus")) * (1 + w.PS.F("rng")) * w.curSlot.BonusAreaMul()
+	return (1 + .15*w.pe("focus")) * (1 + w.PS.F("rng")) * w.curSlot.BonusAreaMul() * b2f(w.fz("panorama"), 1.15, 1)
 }
 func (w *World) cdM() float64 {
-	return ppow(.92, w.pe("claw")) * b2f(w.P.Bat > 0, .75, 1) * b2f(w.P.Phs > 0, .8, 1) * (1 - w.abCd())
+	return ppow(.92, w.pe("claw")) * b2f(w.fz("tempo"), .9, 1) * b2f(w.P.Bat > 0, .75, 1) * b2f(w.P.Phs > 0, .8, 1) * (1 - w.abCd())
 }
 
 // dmgM: player damage multiplier (.66 x items x attack stat; shop/mastery bonuses come with the meta phase).
 func (w *World) dmgM() float64 {
-	return .66 * (1 + .08*w.up("dmg")) * (1 + .01*float64(w.Cfg.Training)) * b2f(w.P.Bel > 0, 1.25, 1) * (1 + .12*w.pe("band")) * (1 + .1*w.pe("lifeorb")) * b2f(w.P.Pm > 0, 1.3, 1) * b2f(w.P.Pbl > 0, 1.5, 1) * w.psD() * w.P.Stats.Atk
+	return .66 * (1 + .08*w.up("dmg")) * (1 + .01*float64(w.Cfg.Training)) * b2f(w.P.Bel > 0, 1.25, 1) * (1 + .12*w.pe("band")) * (1 + .1*w.pe("lifeorb")) * b2f(w.P.Pm > 0, 1.3, 1) * b2f(w.P.Pbl > 0, 1.5, 1) * w.psD() * (1 + fuseGenericK*float64(w.genericFusions())) * w.P.Stats.Atk
 }
 
 // itMv: per-move item multipliers (Muscle Band, Wise Glasses, Choice Band, Metronome).
@@ -75,6 +80,9 @@ func (w *World) itMv(s *Slot) float64 {
 	x := 1.0
 	if v := w.pe("muscle"); v > 0 && meleeK[s.Kind] {
 		x *= 1 + .14*v
+	}
+	if meleeK[s.Kind] && w.fz("champion") {
+		x *= 1.15
 	}
 	if v := w.pe("wise"); v > 0 && specK[s.Kind] {
 		x *= 1 + .14*v

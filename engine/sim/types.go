@@ -277,6 +277,7 @@ type Option struct {
 	// SwapAsk: taking this held item when every slot is full; choosing it asks which held
 	// item to give up (the next options are one per held item, with Swap set)
 	SwapAsk bool
+	Fuse    bool // fuse two maxed held items into ID (fusion.go)
 }
 
 // World is one run.

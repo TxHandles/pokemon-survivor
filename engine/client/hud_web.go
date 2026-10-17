@@ -140,7 +140,7 @@ func (g *Game) drawBossBar(dst *ebiten.Image) {
 // itemAbbr: a two-letter label for a held item (the web version shows emoji icons, which this
 // build's font does not have).
 func itemAbbr(id string) string {
-	it := sim.ItemByID[id]
+	it := sim.ItemInfo(id)
 	if it == nil {
 		return "?"
 	}
@@ -186,7 +186,7 @@ func (g *Game) drawEquipped(dst *ebiten.Image, x0, y0 float64) {
 		if lv == 0 {
 			continue
 		}
-		disc(dst, x+19, y+19, 19, webAcc)
+		disc(dst, x+19, y+19, 19, itemRimCol(id, lv))
 		disc(dst, x+19, y+19, 17, alpha(hexC("#0a0d14"), .92))
 		drawItemIcon(dst, id, x+19, y+19, 27)
 		id, lv := id, lv
@@ -285,12 +285,12 @@ func (g *Game) lvCards() []*lvCard {
 	for i, o := range w.Opts {
 		c := &lvCard{num: i + 1, titleCol: webFg, tagCol: webFg}
 		if w.SwapPick && o.Swap != "" { // choosing the held item to give up
-			old := sim.ItemByID[o.Swap]
+			old := sim.ItemInfo(o.Swap)
 			c.abbr = o.Swap
 			c.title = "Give up " + old.Name
 			c.badge = fmt.Sprintf("Lv %d", w.Held[o.Swap])
 			c.tag, c.tagCol = "SWAP", hexC("#7fd8ff")
-			c.note("Take "+sim.ItemByID[o.ID].Name+" (Lv 1) in its place", hexC("#7fd8ff"))
+			c.note("Take "+sim.ItemInfo(o.ID).Name+" (Lv 1) in its place", hexC("#7fd8ff"))
 			for _, s := range w.Slots {
 				if s.Move.HeldItem == o.Swap {
 					c.note("Needed by "+s.Move.Name+" to evolve", webAcc)
@@ -375,7 +375,7 @@ func (g *Game) lvCards() []*lvCard {
 				}
 			}
 		} else {
-			it := sim.ItemByID[o.ID]
+			it := sim.ItemInfo(o.ID)
 			c.abbr = o.ID // item id: drawn as its icon
 			c.title = it.Name
 			lv := o.Level
@@ -383,16 +383,47 @@ func (g *Game) lvCards() []*lvCard {
 			if lv > 0 {
 				c.badge = fmt.Sprintf("Lv %d → %d", lv, lv+1)
 			}
-			for _, fx := range itemFX[o.ID] {
-				a, b := fx.f(sim.PE(lv)), fx.f(sim.PE(lv+1))
-				c.rows = append(c.rows, lvRow{label: fx.label, a: fmtFX(a, fx.unit), b: fmtFX(b, fx.unit)})
+			parts := []string{o.ID}
+			if sim.IsFused(o.ID) {
+				a, b := sim.FusedParts(o.ID)
+				parts = []string{a, b}
+			}
+			if o.Fuse { // fusing two maxed items
+				a, b := parts[0], parts[1]
+				c.title = it.Name
+				c.badge = "FUSION"
+				c.tag, c.tagCol = "ITEM FUSION", hexC("#c49bff")
+				c.note(fmt.Sprintf("%s (Lv %d) + %s (Lv %d) become one item", sim.ItemByID[a].Name, w.Held[a], sim.ItemByID[b].Name, w.Held[b]), webFg)
+				c.note("Keeps both effects · frees a held-item slot", hexC("#6fe38f"))
+				if _, bonus, ok := strings.Cut(it.Desc, " · "); ok {
+					c.note("Bonus: "+bonus, hexC("#c49bff"))
+				}
+				c.note("Can be overcharged up to Lv 20", alpha(webFg, .75))
+				out = append(out, c)
+				continue
+			}
+			if lv >= sim.ItemMax {
+				c.tag, c.tagCol = "OVERCHARGE · "+[]string{"", "BRONZE", "SILVER", "GOLD"}[sim.OverTier(lv+1)], tierCol(sim.OverTier(lv+1))
+			}
+			for _, p := range parts {
+				for _, fx := range itemFX[p] {
+					a, b := fx.f(sim.PE(lv)), fx.f(sim.PE(lv+1))
+					lbl := fx.label
+					if len(parts) > 1 {
+						lbl = sim.ItemByID[p].Name + ": " + lbl
+					}
+					c.rows = append(c.rows, lvRow{label: lbl, a: fmtFX(a, fx.unit), b: fmtFX(b, fx.unit)})
+				}
 			}
 			if lv > 0 {
 				c.note("Each level: "+it.Desc, alpha(webFg, .75))
 			} else {
 				c.note(it.Desc, alpha(webFg, .75))
 			}
-			if lv >= 5 {
+			switch {
+			case lv >= sim.ItemMax:
+				c.note("Overcharge: levels past 10 give a quarter effect (up to Lv 20)", alpha(webFg, .75))
+			case lv >= 5:
 				c.note("Levels 6–10 give half effect", alpha(webFg, .75))
 			}
 			if o.SwapAsk {
@@ -400,7 +431,7 @@ func (g *Game) lvCards() []*lvCard {
 				c.note("Your item slots are full: pick which held item to give up", hexC("#7fd8ff"))
 			} else if o.Swap != "" {
 				c.badge = "SWAP"
-				c.note(fmt.Sprintf("Replaces %s (Lv %d)", sim.ItemByID[o.Swap].Name, w.Held[o.Swap]), hexC("#7fd8ff"))
+				c.note(fmt.Sprintf("Replaces %s (Lv %d)", sim.ItemInfo(o.Swap).Name, w.Held[o.Swap]), hexC("#7fd8ff"))
 			}
 			for _, s := range w.Slots {
 				if s.Move.HeldItem == o.ID {

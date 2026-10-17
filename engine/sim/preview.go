@@ -343,3 +343,15 @@ func (w *World) TestRouteState(votes []int, goTo int, left float64) {
 	copy(w.RouteVotes, votes)
 	w.RouteGo, w.RouteT = goTo, left
 }
+
+// TestMaxItems (screenshots): gives the current player maxed items (fused first when fuse is set).
+func (w *World) TestMaxItems(fuse bool) {
+	w.Held = map[string]int{"band": 10, "lens": 10, "claw": 13}
+	w.HeldOrder = []string{"band", "lens", "claw"}
+	if fuse {
+		w.fuse(FusedID("band", "lens"))
+		w.Held["glove"], w.Held["wise"] = 10, 10
+		w.HeldOrder = append(w.HeldOrder, "glove", "wise")
+	}
+	w.HeldSlots = 4
+}

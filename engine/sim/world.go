@@ -348,7 +348,7 @@ func (w *World) stepPlayer(dt float64, in Input) {
 			*t -= dt
 		}
 	}
-	spm := P.Sp * (1 + .08*w.pe("boots") + w.abSpd() + b2f(P.SpdT > w.T, .2, 0)) * b2f(w.ab.kbst > 0, 1+w.PS.F("kspd"), 1) * b2f(P.Phs > 0, 1.25, 1) * tm * b2f(P.Fly != nil, 1.45, 1)
+	spm := P.Sp * (1 + .08*w.pe("boots") + b2f(w.fz("hover"), .08, 0) + w.abSpd() + b2f(P.SpdT > w.T, .2, 0)) * b2f(w.ab.kbst > 0, 1+w.PS.F("kspd"), 1) * b2f(P.Phs > 0, 1.25, 1) * tm * b2f(P.Fly != nil, 1.45, 1)
 	if hk == "ice" {
 		q := math.Min(1, dt*(1.6+(1-math.Min(1, w.hzK()))*14))
 		P.VX += (x*spm - P.VX) * q
@@ -373,11 +373,11 @@ func (w *World) stepPlayer(dt float64, in Input) {
 		P.Prot -= dt
 	}
 	P.Inv = math.Max(0, P.Inv-dt)
-	if v := w.pe("lifeorb"); v > 0 && P.HP > P.MHP*.5 {
+	if v := w.pe("lifeorb"); v > 0 && P.HP > P.MHP*.5 && !w.fz("secondwind") {
 		P.HP -= P.MHP * .0015 * v * dt
 	}
 	if !w.Run.NoHeal {
-		P.HP = math.Min(P.MHP, P.HP+(.45*w.pe("left")+.3*w.up("reg")+w.abReg())*dt)
+		P.HP = math.Min(P.MHP, P.HP+(.45*w.pe("left")*b2f(w.fz("lullaby"), 1.5, 1)+.3*w.up("reg")+w.abReg())*dt)
 	}
 	w.abTick(dt)
 	// moves
@@ -494,7 +494,7 @@ func (w *World) relocate(dt float64) {
 func (w *World) stepEnemies(dt float64) {
 	helm := make([]float64, len(w.PL)) // Rocky Helmet level per player (looked up once per tick)
 	for i := range w.PL {
-		w.with(i, func() { helm[i] = w.pe("helmet") })
+		w.with(i, func() { helm[i] = w.pe("helmet") * b2f(w.fz("barbs"), 2, 1) })
 	}
 	for _, e := range w.E {
 		if e.Dead {
@@ -1031,7 +1031,9 @@ func (w *World) stepGems(dt float64) {
 	}
 	mags := make([]float64, len(w.PL)) // pickup radius per player (looked up once per tick)
 	for i := range w.PL {
-		w.with(i, func() { mags[i] = 90 * (1 + .12*w.up("mag") + .25*w.pe("magnet") + w.PS.F("mag")) })
+		w.with(i, func() {
+			mags[i] = 90 * (1 + .12*w.up("mag") + .25*w.pe("magnet") + w.PS.F("mag")) * b2f(w.fz("hover"), 1.5, 1)
+		})
 	}
 	if len(w.Gems) > 260 && int(w.T*60)%120 == 0 {
 		w.mergeGems()
@@ -1068,7 +1070,7 @@ func (w *World) stepGems(dt float64) {
 			default:
 				w.sfx("xp")
 			}
-			w.XPS.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp"))
+			w.XPS.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp") + b2f(w.fz("study"), .15, 0))
 			P.XP = w.XPS.XP
 			w.Coins += g.C * coinK * (1 + w.PS.F("coin"))
 			if g.Tk {
@@ -1102,10 +1104,10 @@ func (w *World) stepGems(dt float64) {
 
 func (w *World) levelUp() { w.coopLevel() }
 
-func (w *World) heldCount() int {
+func (w *World) heldCount() int { // slots in use (a fused item takes one)
 	n := 0
-	for _, v := range w.Held {
-		if v > 0 {
+	for _, h := range w.HeldOrder {
+		if w.Held[h] > 0 {
 			n++
 		}
 	}
@@ -1143,10 +1145,19 @@ func (w *World) options() []Option {
 	}
 	hc := w.heldCount()
 	for _, it := range Items {
-		if v := w.Held[it.ID]; (v > 0 && v < 10) || (v == 0 && hc < w.HeldSlots) {
+		if w.fusedInto(it.ID) != "" { // levels with its fusion
+			continue
+		}
+		if v := w.Held[it.ID]; (v > 0 && v < ItemOverMax) || (v == 0 && hc < w.HeldSlots) {
 			o = append(o, Option{ID: it.ID, New: v == 0, Level: v})
 		}
 	}
+	for _, h := range w.HeldOrder { // fused items overcharge too
+		if v := w.Held[h]; IsFused(h) && v > 0 && v < ItemOverMax {
+			o = append(o, Option{ID: h, Level: v})
+		}
+	}
+	o = append(o, w.fusionOptions()...)
 	if hc >= w.HeldSlots { // offer swapping an unused held item for one a Lv 10 move needs to evolve
 		feeds := func(h string) bool {
 			for _, s := range w.Slots {
@@ -1196,7 +1207,7 @@ func (w *World) genOpts() []Option {
 		if x.Evo {
 			return 2
 		}
-		if !x.Move && (need[x.ID] || x.Swap != "") {
+		if !x.Move && (need[x.ID] || x.Swap != "" || x.Fuse) {
 			return 1
 		}
 		return 0
@@ -1272,14 +1283,16 @@ func (w *World) applyOpt(o Option) {
 			w.addMove(o.ID)
 			w.Learned[o.ID] = true
 		}
+	case o.Fuse:
+		w.fuse(o.ID)
 	default:
 		if o.Swap != "" {
-			w.Held[o.Swap] = 0
+			w.dropHeld(o.Swap)
 		}
 		if w.Held[o.ID] == 0 {
 			w.HeldOrder = append(w.HeldOrder, o.ID)
 		}
-		w.Held[o.ID]++
+		w.levelHeld(o.ID)
 	}
 }
 
@@ -1320,6 +1333,12 @@ func (w *World) botPickFrom(opts []Option) int {
 		}
 		if o.Swap != "" {
 			return 93
+		}
+		if o.Fuse {
+			return 90
+		}
+		if o.Level >= ItemMax { // overcharge: nice to have, below new moves and levels
+			return 22
 		}
 		if w.Held[o.ID] == 0 && need[o.ID] {
 			return 95

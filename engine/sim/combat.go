@@ -195,18 +195,18 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 		}
 		mv *= w.itMv(s)
 	}
-	cc := .08*w.pe("lens") + .03*w.pe("razor") + q.F("cr", 0) + w.PS.F("crit")
+	cc := .08*w.pe("lens") + .03*w.pe("razor") + q.F("cr", 0) + w.PS.F("crit") + b2f(w.fz("keen"), .05, 0)
 	if e.Psn > 0 {
 		cc += w.PS.F("critVsPsn")
 	}
 	cr := w.ab.agT > w.T || w.rng.Float64() < cc
 	crit := 1.0
 	if cr {
-		crit = 2 + .2*w.pe("razor") + w.PS.F("critMul")
+		crit = 2 + .2*w.pe("razor") + w.PS.F("critMul") + b2f(w.fz("razorband"), .5, 0)
 	}
 	heat := 1.0
 	if w.pe("heat") > 0 && (e.Burn > 0 || e.Psn > 0) {
-		heat = 1 + .04*w.pe("heat")
+		heat = (1 + .04*w.pe("heat")) * b2f(w.fz("inferno"), 1.15, 1)
 	}
 	d := math.Round(base * m * w.dmgM() * mv * crit * heat * w.abHitMul(e, t, em))
 	if v := q.F("pct", 0); v > 0 && !e.Boss && !e.Elite {
@@ -225,7 +225,7 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 	}
 	w.damage(e, d, em, cr)
 	if v := w.pe("soothe"); v > 0 {
-		w.P.HP = math.Min(w.P.MHP, w.P.HP+math.Min(d, math.Max(0, e.HP+d))*.005*v)
+		w.P.HP = math.Min(w.P.MHP, w.P.HP+math.Min(d, math.Max(0, e.HP+d))*.005*v*b2f(w.fz("lullaby"), 1.5, 1))
 	}
 	if s != nil {
 		if v := q.F("lsx", 0); v > 0 {
@@ -238,7 +238,7 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 			fx, fy = w.P.X, w.P.Y
 		}
 	}
-	if kl := w.pe("eject") + knockType[t]; kb > 0 && kl > 0 {
+	if kl := w.pe("eject") + knockType[t] + b2f(w.fz("keen"), 1, 0); kb > 0 && kl > 0 {
 		ks := 40.0
 		if kb == 2 {
 			ks = 140
@@ -369,7 +369,7 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 	if P.Still > 1 {
 		red += w.PS.F("redStill")
 	}
-	P.HP -= d * ppow(.96, w.up("arm")) * ppow(.93, w.pe("metal")) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
+	P.HP -= d * ppow(.96, w.up("arm")) * ppow(.93, w.pe("metal")) * b2f(w.fz("barbs"), .9, 1) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
 	src := s.src
 	if src == nil {
 		src = srcUnknown
@@ -383,7 +383,7 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 	}
 	if P.HP <= 0 && w.pe("sash") > 0 && P.SashT <= w.T {
 		P.HP, P.Inv = 1, 2
-		P.SashT = w.T + math.Max(60, 150-12*w.pe("sash"))
+		P.SashT = w.T + math.Max(60, 150-12*w.pe("sash"))*b2f(w.fz("secondwind"), .5, 1)
 		w.Shake = .3
 		w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 50, Life: 2, Text: "Focus Sash!", Col: "gold"})
 	}

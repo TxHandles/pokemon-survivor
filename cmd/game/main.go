@@ -108,6 +108,9 @@ func main() {
 			g.W.TestMud()
 			g.Freeze = true
 		}
+		if v := opts["maxitems"]; v != "" {
+			g.W.TestMaxItems(v == "fused")
+		}
 		switch opts["then"] { // testing: open a screen after fast-forwarding
 		case "pause":
 			g.TestPause()

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/TxHandles/pokemon-survivor/engine/sim"
 	"image"
 	"math"
 
@@ -34,6 +35,13 @@ func itemIcon(id string) *ebiten.Image {
 
 // drawItemIcon draws item id's icon centred on (cx, cy) at size s.
 func drawItemIcon(dst *ebiten.Image, id string, cx, cy, s float64) {
+	if sim.IsFused(id) { // a fusion: both parts overlapping inside a swirl
+		a, b := sim.FusedParts(id)
+		strokeEllipse(dst, cx, cy, s*.5, s*.5, 0, 2*math.Pi, 1.5, alpha(hexC("#c49bff"), .8))
+		drawItemIcon(dst, a, cx-s*.2, cy-s*.12, s*.68)
+		drawItemIcon(dst, b, cx+s*.2, cy+s*.14, s*.68)
+		return
+	}
 	if im := itemIcon(id); im != nil {
 		stamp(dst, im, cx, cy, s, 0, 1)
 		return

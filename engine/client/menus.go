@@ -472,6 +472,11 @@ func (g *Game) finishRun() {
 	var items [][2]any
 	for _, k := range w.HeldOrder {
 		if w.Held[k] > 0 {
+			if sim.IsFused(k) { // saves list the parts (the web version doesn't know fusions)
+				a, b := sim.FusedParts(k)
+				items = append(items, [2]any{a, float64(w.Held[a])}, [2]any{b, float64(w.Held[b])})
+				continue
+			}
 			items = append(items, [2]any{k, float64(w.Held[k])})
 		}
 	}

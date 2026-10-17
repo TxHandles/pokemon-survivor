@@ -204,7 +204,10 @@ func (g *Game) menuColl() {
 			iid := it.ID
 			c.tip = func() *tipData { return g.itemTip(iid, 0) }
 			c.title, c.lines = it.Name, []string{it.Desc}
-			s := fmt.Sprintf("Best level: %d/10", l)
+			s := fmt.Sprintf("Best level: %d/10", min(l, 10))
+			if l > 10 {
+				s = fmt.Sprintf("Best level: %d (overcharged)", l)
+			}
 			c.price = []any{s}
 			if l >= 10 {
 				c.price = []any{s + " ", gCheck}

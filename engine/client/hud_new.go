@@ -188,7 +188,7 @@ func (g *Game) itemRow(dst *ebiten.Image, held map[string]int, order []string, x
 		if lv == 0 {
 			continue
 		}
-		disc(dst, x+d/2, y+d/2, d/2, webAcc)
+		disc(dst, x+d/2, y+d/2, d/2, itemRimCol(id, lv))
 		disc(dst, x+d/2, y+d/2, d/2-2, alpha(hexC("#0a0d14"), .92))
 		drawItemIcon(dst, id, x+d/2, y+d/2, d*.72)
 		id := id
