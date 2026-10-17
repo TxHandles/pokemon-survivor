@@ -79,7 +79,7 @@ func (w *World) esrc(e *Enemy, contact bool) *DmgSrc {
 	}
 	switch {
 	case e.Boss && e.BD != nil:
-		s.Name, s.Kind, s.Boss = e.BD.Name+add(" (contact)", " · attack"), add("contact", "area"), true
+		s.Name, s.Kind, s.Boss = nm+" (Boss)"+add("", " · attack"), add("contact", "area"), true
 	case e.Elite:
 		pre := "Elite "
 		if e.Mini {

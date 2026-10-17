@@ -273,6 +273,16 @@ type Upgrade struct {
 	Global          bool
 }
 
+// LockStat is stat k for an unlock rule. "bm" (bosses beaten in one run) is new, so older saves that
+// already survived 15:00 count as having beaten the 10:00 boss.
+func (p *Profile) LockStat(k string) float64 {
+	v := p.S.Stat(k)
+	if k == "bm" && p.S.Stat("t") >= 900 {
+		v = math.Max(v, 2)
+	}
+	return v
+}
+
 type Lock struct {
 	Stat string
 	Need float64
@@ -292,7 +302,7 @@ var Upgrades = []Upgrade{
 	{Key: "bn", Name: "Banish", Desc: "+1 banish per run", Max: 10, Cost: 120, Global: true},
 	{Key: "m3", Name: "Attack Slot 3", Desc: "Equip a 3rd attack", Max: 1, Cost: 800, Global: true, Lock: &Lock{"k", 5000, "Defeat 5,000 enemies"}},
 	{Key: "m4", Name: "Attack Slot 4", Desc: "Equip a 4th attack", Max: 1, Cost: 2000, Global: true, Req: "m3", Lock: &Lock{"k", 10000, "Defeat 10,000 enemies"}},
-	{Key: "h3", Name: "Held Item Slot 3", Desc: "Equip a 3rd held item", Max: 1, Cost: 700, Global: true, Lock: &Lock{"t", 900, "Survive 15:00 in one run"}},
+	{Key: "h3", Name: "Held Item Slot 3", Desc: "Equip a 3rd held item", Max: 1, Cost: 700, Global: true, Lock: &Lock{"bm", 2, "Defeat the 10:00 boss"}},
 	{Key: "h4", Name: "Held Item Slot 4", Desc: "Equip a 4th held item", Max: 1, Cost: 1800, Global: true, Req: "h3", Lock: &Lock{"t", 1800, "Survive 30:00 in one run"}},
 	{Key: "ch", Name: "Wider Choice", Desc: "+1 level-up choice (3 → 4 → 5)", Max: 2, Cost: 1500, Global: true},
 	{Key: "rt", Name: "Route Planner", Desc: "+1 biome to choose from on the route map after each boss", Max: 3, Cost: 3000, Global: true},
@@ -333,7 +343,7 @@ func (p *Profile) UpState(key, fam string) string {
 			return "OWNED"
 		}
 		return "MAX"
-	case u.Lock != nil && l == 0 && p.S.Stat(u.Lock.Stat) < u.Lock.Need:
+	case u.Lock != nil && l == 0 && p.LockStat(u.Lock.Stat) < u.Lock.Need:
 		return "Locked: " + u.Lock.Text
 	case u.Req != "" && p.UL(u.Req, fam) == 0:
 		return "Needs " + upgradeByKey[u.Req].Name
@@ -846,6 +856,7 @@ func (p *Profile) Finish(r RunResult) (gain int, mxGain int, unlocked []string) 
 	}
 	s.AddStat("b", float64(r.Bosses))
 	s.MaxStat("t", r.T)
+	s.MaxStat("bm", float64(r.Bosses)) // most bosses beaten in one run
 	s.AddStat("r", 1)
 	if r.Win {
 		s.AddStat("w", 1)

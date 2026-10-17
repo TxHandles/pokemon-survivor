@@ -486,14 +486,17 @@ func (g *Game) upCard(k meta.Upgrade, fam string) *webCard {
 	}
 	cost := pr.UpCost(k.Key, fam)
 	mx := l >= k.Max
-	lk := k.Lock != nil && l == 0 && pr.S.Stat(k.Lock.Stat) < k.Lock.Need
+	lk := k.Lock != nil && l == 0 && pr.LockStat(k.Lock.Stat) < k.Lock.Need
 	rq := k.Req != "" && pr.UL(k.Req, fam) == 0
 	switch {
 	case mx:
 		c.price = []any{b2s(k.Max == 1, "OWNED", "MAX")}
 	case lk:
-		have := math.Min(k.Lock.Need, pr.S.Stat(k.Lock.Stat))
+		have := math.Min(k.Lock.Need, pr.LockStat(k.Lock.Stat))
 		prog := commas(int(have)) + "/" + commas(int(k.Lock.Need))
+		if k.Lock.Stat == "bm" {
+			prog = fmt.Sprintf("%d/%d bosses in one run", int(have), int(k.Lock.Need))
+		}
 		if k.Lock.Stat == "t" {
 			prog = fmt.Sprintf("%d/%d min", int(have/60), int(k.Lock.Need/60))
 		}

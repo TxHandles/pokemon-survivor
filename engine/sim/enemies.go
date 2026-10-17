@@ -13,6 +13,7 @@ type EBullet struct {
 	Type                   string // damage type ("" = neutral)
 	Web, Homing            bool
 	Src                    *DmgSrc
+	sl                     bool // speed scaled (see ebSpd)
 }
 
 // Hazard is a telegraphed area attack: it shows for T0 seconds, then hits once.
@@ -563,6 +564,8 @@ func (w *World) dodge() bool {
 	return false
 }
 
+const ebSpd = .8
+
 func (w *World) eRing(e *Enemy, n int, o, sp, k float64) {
 	for i := 0; i < n; i++ {
 		a := o + float64(i)*6.283/float64(n)
@@ -798,6 +801,10 @@ func (w *World) stepEnemyAttacks(dt float64) {
 	for _, b := range w.EB {
 		w.useP(w.nearP(b.X, b.Y))
 		P := w.P
+		if !b.sl { // enemy shots fly a bit slower (same range), so they can be dodged up close
+			b.sl = true
+			b.VX, b.VY, b.L = b.VX*ebSpd, b.VY*ebSpd, b.L/ebSpd
+		}
 		if b.Homing {
 			a := math.Atan2(P.Y-b.Y, P.X-b.X)
 			cu := math.Atan2(b.VY, b.VX)
