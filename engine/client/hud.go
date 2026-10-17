@@ -61,9 +61,8 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	w := g.W
 	P := w.P
 	sw := float64(g.sw)
-	if g.coop {
-		g.drawCoopHUD(dst)
-		g.drawHUDCommon(dst)
+	if g.coop || g.opt("hud") == 0 {
+		g.drawNewHUD(dst)
 		return
 	}
 	g.drawWebHUD(dst)

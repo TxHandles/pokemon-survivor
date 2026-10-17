@@ -15,7 +15,7 @@ import (
 const scSettings screen = 120
 
 // Settings live in the save under "opt" (same keys and values as the web game).
-var optDefaults = map[string]float64{"vol": .6, "sfxv": .7, "musv": .6, "shake": 1, "dnum": 1, "flash": 1, "touch": 2, "eq": 1, "autop": 1}
+var optDefaults = map[string]float64{"vol": .6, "sfxv": .7, "musv": .6, "shake": 1, "dnum": 1, "flash": 1, "touch": 2, "eq": 1, "autop": 1, "hud": 0}
 
 func (g *Game) opt(k string) float64 {
 	if g.prof != nil {
@@ -54,6 +54,7 @@ var optRows = []optRow{
 	{"shake", "Screen shake", "Camera shake on hits, bosses and explosions", []optChoice{{"Off", 0}, {"Reduced", .4}, {"Full", 1}}},
 	{"dnum", "Damage numbers", "Floating numbers when you hit enemies", []optChoice{{"Off", 0}, {"On", 1}}},
 	{"flash", "Flashing", "Screen flashes, enemy hit flashes and the low-health pulse", []optChoice{{"Reduced", 0}, {"Normal", 1}}},
+	{"hud", "HUD layout", "New: party on the left, attacks and items bottom-left. Web: everything along the top", []optChoice{{"New", 0}, {"Web", 1}}},
 	{"eq", "Equipped bar", "Show your attacks and items on screen during a run", []optChoice{{"Hide", 0}, {"Show", 1}}},
 	{"autop", "Auto-pause", "Pause automatically when you switch to another window or tab", []optChoice{{"Off", 0}, {"On", 1}}},
 	{"touch", "Touch controls", "On-screen stick and dash button", []optChoice{{"Off", 0}, {"On", 1}, {"Auto", 2}}},

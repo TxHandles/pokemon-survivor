@@ -23,13 +23,26 @@ import (
 
 func (g *Game) pauseBtnRect() [4]float64 { return [4]float64{float64(g.sw) - 50, 38, 38, 26} }
 
-// drawWebHUD is the solo HUD.
+// drawWebHUD is the web-style HUD (Settings → HUD layout: Web): bars on top, equipped bar under them.
 func (g *Game) drawWebHUD(dst *ebiten.Image) {
+	g.drawTopBars(dst)
+	g.drawBossWarn(dst)
+	if g.opt("eq") != 0 {
+		g.drawEquipped(dst, 8, 72)
+	}
+	g.drawHUDTail(dst)
+}
+
+// drawTopBars: level pill + XP bar, then the HP bar (solo), coins, location and time, pause button.
+func (g *Game) drawTopBars(dst *ebiten.Image) {
 	w := g.W
 	P := w.P
 	sw := float64(g.sw)
 	// level pill + XP bar
 	lv := "Lv " + strconv.Itoa(P.Lv)
+	if g.coop {
+		lv = "Team Lv " + strconv.Itoa(w.XPS.Lv)
+	}
 	pw := math.Max(56, textW(lv, 14, true)+22)
 	soft(dst, 12+pw/2, 19, pw*.7, 16, alpha(hexC("#5ad1ff"), .35))
 	webBox(dst, 12, 8, pw, 24, 9, hexC("#5ad1ff"), hexC("#0a0d14"))
@@ -48,26 +61,30 @@ func (g *Game) drawWebHUD(dst *ebiten.Image) {
 		rect(dst, bx+2+(bw-4)*float64(i)/10-1, 10, 1, 20, alpha(white, .15))
 	}
 	drawText(dst, fmt.Sprintf("%d / %d XP", int(w.XPS.XP), int(w.XPS.NX)), bx+bw/2, 13, 11, true, white, text.AlignCenter, true)
-	// HP bar
-	hpf := math.Max(0, math.Min(1, P.HP/P.MHP))
-	border := hexC("#3a2a2a")
-	if hpf < .25 && (g.opt("flash") == 0 || g.tick/20%2 == 0) {
-		border = hexC("#ff4d4d")
-	}
-	webBox(dst, 12, 38, 234, 24, 11, border, hexC("#080b12"))
-	if hpf > 0 {
-		top, mid := hexC("#8ff5a6"), hexC("#2fc45a")
-		if hpf < .25 {
-			top, mid = hexC("#ff9a8a"), hexC("#ee3b2b")
-		} else if hpf < .5 {
-			top, mid = hexC("#ffe58a"), hexC("#f0b429")
-		}
-		roundRect(dst, 14, 40, 230*hpf, 20, 9, mid)
-		roundRect(dst, 14, 40, 230*hpf, 8, 4, alpha(top, .85))
-	}
-	drawText(dst, fmt.Sprintf("%d / %d", int(math.Ceil(P.HP)), int(P.MHP)), 12+117, 42, 12, true, white, text.AlignCenter, true)
-	// coins, location and time, buffs
 	x := 258.0
+	if g.coop {
+		x = 12
+	} else {
+		// HP bar
+		hpf := math.Max(0, math.Min(1, P.HP/P.MHP))
+		border := hexC("#3a2a2a")
+		if hpf < .25 && (g.opt("flash") == 0 || g.tick/20%2 == 0) {
+			border = hexC("#ff4d4d")
+		}
+		webBox(dst, 12, 38, 234, 24, 11, border, hexC("#080b12"))
+		if hpf > 0 {
+			top, mid := hexC("#8ff5a6"), hexC("#2fc45a")
+			if hpf < .25 {
+				top, mid = hexC("#ff9a8a"), hexC("#ee3b2b")
+			} else if hpf < .5 {
+				top, mid = hexC("#ffe58a"), hexC("#f0b429")
+			}
+			roundRect(dst, 14, 40, 230*hpf, 20, 9, mid)
+			roundRect(dst, 14, 40, 230*hpf, 8, 4, alpha(top, .85))
+		}
+		drawText(dst, fmt.Sprintf("%d / %d", int(math.Ceil(P.HP)), int(P.MHP)), 12+117, 42, 12, true, white, text.AlignCenter, true)
+	}
+	// coins, location and time, buffs
 	x += richLine(dst, x, 41, 15, true, webFg, gCoin, strconv.Itoa(int(w.Coins))) + 14
 	tm := w.LocName(w.Biome, w.LI) + " · " + fmtT(w.T) + " / " + fmtT(w.Run.Len)
 	if w.Endless {
@@ -79,19 +96,23 @@ func (g *Game) drawWebHUD(dst *ebiten.Image) {
 		drawText(dst, bt, x, 42, 13, true, c(127, 224, 255, 255), text.AlignStart, true)
 	}
 	// pause button
+	if g.coop {
+		return
+	}
 	pr := g.pauseBtnRect()
 	webBox(dst, pr[0], pr[1], pr[2], pr[3], 8, webBorder, alpha(hexC("#0a0d14"), .8))
 	rect(dst, pr[0]+pr[2]/2-5, pr[1]+7, 3.5, 12, webFg)
 	rect(dst, pr[0]+pr[2]/2+1.5, pr[1]+7, 3.5, 12, webFg)
+}
+
+func (g *Game) drawBossWarn(dst *ebiten.Image) {
+	w := g.W
+	sw := float64(g.sw)
 	// boss warning and boss bar (centre)
 	if nb := 300 * math.Ceil((w.T+.01)/300); nb-w.T < 20 && w.Bosses < int(nb/300) {
 		drawText(dst, fmt.Sprintf("Boss in %.0fs", nb-w.T), sw/2, 72, 14, true, c(255, 120, 120, 255), text.AlignCenter, true)
 	}
 	g.drawBossBar(dst)
-	if g.opt("eq") != 0 {
-		g.drawEquipped(dst, 8, 72)
-	}
-	g.drawHUDTail(dst)
 }
 
 func (g *Game) drawBossBar(dst *ebiten.Image) {
