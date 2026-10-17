@@ -190,7 +190,7 @@ func (g *Game) itemRow(dst *ebiten.Image, held map[string]int, order []string, x
 		}
 		disc(dst, x+d/2, y+d/2, d/2, webAcc)
 		disc(dst, x+d/2, y+d/2, d/2-2, alpha(hexC("#0a0d14"), .92))
-		drawText(dst, itemAbbr(id), x+d/2, y+9, 12, true, webFg, text.AlignCenter, false)
+		drawItemIcon(dst, id, x+d/2, y+d/2, d*.72)
 		disc(dst, x+d-3, y+d-4, 7.5, webAcc)
 		drawText(dst, strconv.Itoa(lv), x+d-3, y+d-11, 10, true, hexC("#0a0d14"), text.AlignCenter, false)
 		x += d + 6

@@ -186,7 +186,7 @@ func (g *Game) drawEquipped(dst *ebiten.Image, x0, y0 float64) {
 		}
 		disc(dst, x+19, y+19, 19, webAcc)
 		disc(dst, x+19, y+19, 17, alpha(hexC("#0a0d14"), .92))
-		drawText(dst, itemAbbr(id), x+19, y+12, 13, true, webFg, text.AlignCenter, false)
+		drawItemIcon(dst, id, x+19, y+19, 27)
 		drawText(dst, strconv.Itoa(lv), x+36, y+24, 10, true, white, text.AlignEnd, true)
 		x += 42
 	}
@@ -345,7 +345,7 @@ func (g *Game) lvCards() []*lvCard {
 			}
 		} else {
 			it := sim.ItemByID[o.ID]
-			c.abbr = itemAbbr(o.ID)
+			c.abbr = o.ID // item id: drawn as its icon
 			c.title = it.Name
 			lv := o.Level
 			c.badge = "NEW"
@@ -552,7 +552,7 @@ func (g *Game) drawWebLevelUp(dst *ebiten.Image) {
 		} else {
 			disc(dst, hx+9, y+10, 9.5, webAcc)
 			disc(dst, hx+9, y+10, 8, hexC("#0a0d14"))
-			drawText(dst, c.abbr, hx+9, y+4, 8, true, webFg, text.AlignCenter, false)
+			drawItemIcon(dst, c.abbr, hx+9, y+10, 14)
 			hx += 22
 		}
 		drawText(dst, fitText(c.title, 15, true, x+iw-bw-6-hx), hx, y+1, 15, true, c.titleCol, text.AlignStart, false)
