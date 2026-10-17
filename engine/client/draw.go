@@ -35,10 +35,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		k := math.Min(1, w.Shake) * 7 * g.opt("shake")
 		shx, shy = (hash01(int(w.T*60), 1, 3)-.5)*k, (hash01(int(w.T*60), 2, 5)-.5)*k
 	}
-	ccx, ccy := w.Centroid()
-	if !g.coop {
-		ccx, ccy = w.P.X, w.P.Y
-	}
+	ccx, ccy := g.camCenter()
 	camX, camY := math.Round(ccx-sw/2+shx), math.Round(ccy-sh/2+shy)
 	sx := func(x float64) float64 { return x - camX }
 	sy := func(y float64) float64 { return y - camY }
@@ -180,9 +177,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 			col = c(255, 120, 120, 255)
 		}
 		if b.Web {
-			ring(dst, x, y, b.R, 1.5, c(235, 235, 225, 230))
-			line(dst, x-b.R, y, x+b.R, y, 1, c(235, 235, 225, 200))
-			line(dst, x, y-b.R, x, y+b.R, 1, c(235, 235, 225, 200))
+			g.drawWebShot(dst, b, x, y)
 			continue
 		}
 		soft(dst, x, y, b.R*2.6, b.R*2.6, alpha(c(255, 40, 40, 255), .35))
@@ -407,6 +402,17 @@ func (g *Game) drawEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) {
 		return
 	}
 	soft(dst, x, y+e.R*.85, e.R*1.35, e.R*.5, c(0, 0, 0, 110))
+	if e.Swift { // speed streaks behind quick runners
+		d := 1.0
+		if e.FaceL {
+			d = -1
+		}
+		for i := 0; i < 3; i++ {
+			yy := y - e.R*.5 + float64(i)*e.R*.5
+			l := 8 + 5*math.Sin(w.T*18+float64(i)*2+e.Seed*9)
+			line(dst, x-d*(e.R+3), yy, x-d*(e.R+3+l), yy, 1.6, c(255, 255, 255, 110))
+		}
+	}
 	if e.Elite {
 		gc := c(255, 208, 74, 255)
 		if e.Mini {
@@ -678,4 +684,58 @@ func drawPickup(dst *ebiten.Image, k string, x, y, t float64) {
 		poly(dst, [][2]float64{{x + 7, y}, {x + 13, y - 5}, {x + 13, y + 5}}, c(200, 170, 255, 255))
 		disc(dst, x-2, y-2, 2, c(255, 255, 255, 220))
 	}
+}
+
+// drawWebShot: a spinning, sagging sticky web with a silk strand trailing behind it.
+func (g *Game) drawWebShot(dst *ebiten.Image, b *sim.EBullet, x, y float64) {
+	T := g.W.T
+	r := b.R * 1.5
+	silk := c(240, 240, 232, 255)
+	if sp := math.Hypot(b.VX, b.VY); sp > 0 { // trailing strand
+		ux, uy := b.VX/sp, b.VY/sp
+		for i := 0; i < 5; i++ {
+			t0, t1 := float64(i)/5, float64(i+1)/5
+			wob := func(t float64) float64 { return math.Sin(t*9+T*12) * 3 * t }
+			line(dst, x-ux*r*4*t0-uy*wob(t0), y-uy*r*4*t0+ux*wob(t0), x-ux*r*4*t1-uy*wob(t1), y-uy*r*4*t1+ux*wob(t1), 1.2, alpha(silk, .5*(1-t0)))
+		}
+	}
+	soft(dst, x, y, r*1.6, r*1.6, c(220, 225, 235, 60))
+	disc(dst, x, y, r, c(235, 238, 240, 45))
+	rot := T * 3
+	const n = 8
+	var spokes [n][2]float64
+	for i := 0; i < n; i++ {
+		a := rot + float64(i)*2*math.Pi/n
+		spokes[i] = [2]float64{math.Cos(a), math.Sin(a)}
+		line(dst, x, y, x+spokes[i][0]*r, y+spokes[i][1]*r, 1.1, alpha(silk, .9))
+	}
+	for _, k := range []float64{.38, .68, .95} { // sagging rings between the spokes
+		for i := 0; i < n; i++ {
+			a, b2 := spokes[i], spokes[(i+1)%n]
+			mx, my := (a[0]+b2[0])/2*k*.86, (a[1]+b2[1])/2*k*.86
+			line(dst, x+a[0]*k*r, y+a[1]*k*r, x+mx*r, y+my*r, 1, alpha(silk, .85))
+			line(dst, x+mx*r, y+my*r, x+b2[0]*k*r, y+b2[1]*k*r, 1, alpha(silk, .85))
+		}
+	}
+	for i := 0; i < 4; i++ { // dew drops
+		a := rot*.5 + float64(i)*1.7
+		disc(dst, x+math.Cos(a)*r*.6, y+math.Sin(a)*r*.6, 1.4, c(200, 230, 255, 220))
+	}
+	disc(dst, x, y, 2, silk)
+}
+
+// camCenter: what the camera follows. Solo: the player. Local co-op (one shared screen): the
+// middle of the team. Online: your own Pokémon, so players can split up.
+func (g *Game) camCenter() (float64, float64) {
+	w := g.W
+	if !g.coop {
+		return w.P.X, w.P.Y
+	}
+	if g.online() {
+		if me := g.on.room.Me; me >= 0 && me < len(w.PL) && !w.PL[me].Gone {
+			p := w.PL[me].P
+			return p.X, p.Y
+		}
+	}
+	return w.Centroid()
 }

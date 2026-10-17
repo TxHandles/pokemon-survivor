@@ -163,6 +163,7 @@ type Enemy struct {
 	pmk                bool
 	Sh, ShMax          float64 // shield
 	Mini, Arm, Vamp    bool
+	Swift              bool // a fast, fragile runner
 	Expl, Split, Sumn  bool
 	Af                 []string
 	sut                float64
@@ -257,6 +258,9 @@ type Option struct {
 	Swap  string // held item it replaces
 	Level int    // current level (0 = new)
 	Bonus string // move level-up: the rolled bonus (bonus.go)
+	// SwapAsk: taking this held item when every slot is full; choosing it asks which held
+	// item to give up (the next options are one per held item, with Swap set)
+	SwapAsk bool
 }
 
 // World is one run.
@@ -297,6 +301,7 @@ type World struct {
 	obs, obsRaw                      map[[2]int][]Obstacle
 	LMSP                             []Obstacle // landmarks placed around the start of the location
 	curSrc                           *DmgSrc    // the enemy whose attacks are being created
+	SwapPick                         bool       // the level-up options are "which item to swap out"
 	probeHits                        *int       // ProbeMove: counts hits
 	relocT                           float64
 	Msg                              string

@@ -40,10 +40,7 @@ func (g *Game) drawCenterArrow(dst *ebiten.Image) {
 		return
 	}
 	sw, sh := float64(g.sw), float64(g.sh)
-	cx, cy := w.Centroid()
-	if !g.coop {
-		cx, cy = w.P.X, w.P.Y
-	}
+	cx, cy := g.camCenter()
 	dx, dy := pc.X-cx, pc.Y-cy
 	if math.Abs(dx) < sw/2-20 && math.Abs(dy) < sh/2-20 {
 		return // on screen

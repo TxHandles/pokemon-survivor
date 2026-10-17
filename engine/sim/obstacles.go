@@ -76,8 +76,6 @@ func (w *World) chunkRaw(cx, cy int) []Obstacle {
 	return c
 }
 
-var noTreePools = map[string]bool{"lava": true, "ice": true, "deep": true}
-
 const lmClear = 150 // nothing else grows this close to a landmark
 
 // Chunk returns the obstacles in chunk (cx, cy) for the current location (web chunk): trees are
@@ -105,9 +103,9 @@ func (w *World) Chunk(cx, cy int) []Obstacle {
 		}
 		return false
 	}
-	nt := noTreePools[BiomeHazard[w.Biome]]
-	for _, b := range raw {
-		if nt && b.Tree && near(func(h Pool) bool { m := h.R + b.R*1.6; return sq(b.X-h.X)+sq(b.Y-h.Y) < m*m }) {
+	pools := BiomeHazard[w.Biome] != ""
+	for _, b := range raw { // nothing grows inside a hazard pool (quicksand, lava, water, webs…)
+		if pools && b.Lm == 0 && near(func(h Pool) bool { m := h.R + b.R*1.6; return sq(b.X-h.X)+sq(b.Y-h.Y) < m*m }) {
 			continue
 		}
 		c = append(c, b)
@@ -194,6 +192,9 @@ func (w *World) shape(o *Obstacle) {
 		L, s, ox, oy = lmShapes[w.LandmarkKind(*o)], o.Sc, 80, 150
 	case o.Tree:
 		t, _ := w.Scenery()
+		if l, ok := locTrees[w.Biome]; ok && w.LI >= 0 && w.LI < 3 { // each spot's own kind of tree
+			t = l[w.LI][int(math.Abs(math.Floor(o.X*7.3+o.Y*3.1)))%3]
+		}
 		full := shpTree[t]
 		if full == nil { // blossom shares the oak's shape
 			full = shpTree["oak"]

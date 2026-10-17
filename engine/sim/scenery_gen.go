@@ -24,8 +24,31 @@ var locScenery = map[string][3][2]string{
 	"water":    {{"palm", "boulder"}, {"spire", "boulder"}, {"pine", "boulder"}},
 }
 
+// locTrees[biome][location][variant]: the tree drawn (and collided with) for each of the three variants
+var locTrees = map[string][3][3]string{
+	"bug":      {{"bush", "oak", "shroom"}, {"oak", "oak", "shroom"}, {"pine", "oak", "shroom"}},
+	"dark":     {{"pine", "pine", "shroom"}, {"dead", "pine", "shroom"}, {"spire", "pine", "shroom"}},
+	"dragon":   {{"crystal", "spire", "pine"}, {"crystal", "spire", "pine"}, {"cloud", "spire", "pine"}},
+	"electric": {{"stack", "stack", "spire"}, {"oak", "stack", "spire"}, {"palm", "stack", "spire"}},
+	"fairy":    {{"spire", "blossom", "shroom"}, {"shroom", "blossom", "shroom"}, {"flower", "blossom", "shroom"}},
+	"fighting": {{"bamboo", "oak", "blossom"}, {"spire", "oak", "blossom"}, {"bamboo", "oak", "blossom"}},
+	"fire":     {{"dead", "spire", "bush"}, {"dead", "spire", "bush"}, {"spire", "spire", "bush"}},
+	"flying":   {{"blossom", "oak", "pine"}, {"cloud", "oak", "pine"}, {"oak", "oak", "pine"}},
+	"ghost":    {{"spire", "shroom", "spire"}, {"dead", "shroom", "spire"}, {"dead", "shroom", "spire"}},
+	"grass":    {{"oak", "bush", "flower"}, {"palm", "bush", "flower"}, {"pine", "bush", "flower"}},
+	"ground":   {{"cactus", "barrel", "pear"}, {"cactus", "barrel", "pear"}, {"spire", "barrel", "pear"}},
+	"ice":      {{"pine", "crystal", "dead"}, {"crystal", "crystal", "dead"}, {"pine", "crystal", "dead"}},
+	"normal":   {{"oak", "bush", "pine"}, {"oak", "bush", "pine"}, {"bush", "bush", "pine"}},
+	"poison":   {{"bush", "dead", "bush"}, {"oak", "dead", "bush"}, {"dead", "dead", "bush"}},
+	"psychic":  {{"blossom", "crystal", "oak"}, {"crystal", "crystal", "oak"}, {"spire", "crystal", "oak"}},
+	"rock":     {{"crystal", "dead", "crystal"}, {"spire", "dead", "crystal"}, {"spire", "dead", "crystal"}},
+	"steel":    {{"stack", "spire", "crystal"}, {"spire", "spire", "crystal"}, {"stack", "spire", "crystal"}},
+	"water":    {{"palm", "bush", "oak"}, {"spire", "bush", "oak"}, {"pine", "bush", "oak"}},
+}
+
 var shpTree = map[string][][3]float64{
 	"bamboo":  {{50, 100, 9}, {76, 100, 9}, {52, 80, 9}, {74, 80, 9}, {58, 62, 9}, {70, 62, 9}, {64, 44, 8}},
+	"barrel":  {{64, 98, 22}, {64, 80, 18}},
 	"blossom": {{64, 100, 8}, {64, 76, 6}, {64, 44, 30}, {44, 56, 20}, {84, 56, 20}, {54, 32, 18}, {76, 34, 18}},
 	"bush":    {{46, 94, 18}, {82, 94, 18}, {64, 84, 22}},
 	"cactus":  {{64, 100, 10}, {64, 80, 10}, {64, 60, 10}, {64, 42, 10}, {84, 70, 7}, {46, 64, 7}},
@@ -35,6 +58,7 @@ var shpTree = map[string][][3]float64{
 	"flower":  {{64, 100, 6}, {62, 80, 5}, {64, 44, 22}},
 	"oak":     {{64, 100, 8}, {64, 76, 6}, {64, 44, 30}, {44, 56, 20}, {84, 56, 20}, {54, 32, 18}, {76, 34, 18}},
 	"palm":    {{64, 100, 7}, {62, 82, 6}, {65, 62, 6}, {72, 44, 8}, {52, 38, 13}, {94, 40, 13}, {73, 30, 11}},
+	"pear":    {{64, 100, 14}, {64, 84, 14}, {48, 66, 11}, {80, 64, 11}},
 	"pine":    {{64, 100, 7}, {64, 82, 21}, {64, 62, 15}, {64, 44, 10}, {64, 30, 5}},
 	"shroom":  {{64, 100, 8}, {64, 80, 7}, {64, 50, 24}, {36, 60, 14}, {92, 60, 14}},
 	"spire":   {{64, 98, 22}, {62, 76, 16}, {64, 54, 10}, {66, 36, 6}},

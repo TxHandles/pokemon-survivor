@@ -17,7 +17,10 @@ type RouteOpt struct {
 	LI   int // location index (0-2) into world.json locations
 }
 
-// MapChest is a chest, shrine or cursed chest you open by standing next to it for 5 seconds.
+// ChestOpenT: seconds standing next to a chest or shrine to open it.
+const ChestOpenT = 2.0
+
+// MapChest is a chest, shrine or cursed chest you open by standing next to it for ChestOpenT seconds.
 type MapChest struct {
 	X, Y, P, T     float64
 	Shrine, Cursed bool
@@ -230,7 +233,7 @@ func (w *World) stepRun(dt float64) {
 		} else {
 			c.P = math.Max(0, c.P-dt*.5)
 		}
-		if c.P >= 5 && w.State == StatePlay {
+		if c.P >= ChestOpenT && w.State == StatePlay {
 			w.openChest(c)
 			continue
 		}

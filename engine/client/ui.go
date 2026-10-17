@@ -42,6 +42,7 @@ type uiState struct {
 	edit       string // key of the text field being typed into
 	typing     bool   // a text field has the keyboard this frame (no key navigation)
 	swallow    bool   // ignore confirm this frame (the key that ended typing)
+	sbDrag     bool   // dragging the scrollbar thumb
 }
 
 func (u *uiState) reset() { u.ws = u.ws[:0] }
@@ -125,6 +126,24 @@ func (u *uiState) update() {
 	// wheel scroll
 	if _, wy := ebiten.Wheel(); wy != 0 && inR(u.area, fx, fy) {
 		u.scroll -= wy * 60
+	}
+	// scrollbar: click or drag anywhere in the bar on the right edge of the scrolling area
+	if u.scrollMax > 0 {
+		a := u.area
+		bar := [4]float64{a[0] + a[2] - 16, a[1], 16, a[3]}
+		if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && inR(bar, fx, fy) {
+			u.sbDrag = true
+		}
+		if u.sbDrag {
+			if !ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft) {
+				u.sbDrag = false
+			} else {
+				h := a[3] * a[3] / (a[3] + u.scrollMax)
+				u.scroll = (fy - a[1] - h/2) / math.Max(1, a[3]-h) * u.scrollMax
+				u.scroll = math.Max(0, math.Min(u.scrollMax, u.scroll))
+				return // the drag doesn't click anything
+			}
+		}
 	}
 	u.scroll = math.Max(0, math.Min(u.scrollMax, u.scroll))
 	var clickable []*widget
@@ -235,8 +254,8 @@ func (u *uiState) draw(dst *ebiten.Image) {
 		a := u.area
 		h := a[3] * a[3] / (a[3] + u.scrollMax)
 		y := a[1] + (a[3]-h)*u.scroll/u.scrollMax
-		roundRect(dst, a[0]+a[2]-6, a[1], 4, a[3], 2, c(40, 46, 60, 200))
-		roundRect(dst, a[0]+a[2]-6, y, 4, h, 2, c(140, 150, 175, 230))
+		roundRect(dst, a[0]+a[2]-9, a[1], 6, a[3], 3, c(40, 46, 60, 200))
+		roundRect(dst, a[0]+a[2]-9, y, 6, h, 3, b2c(u.sbDrag, c(200, 210, 230, 255), c(140, 150, 175, 230)))
 	}
 }
 

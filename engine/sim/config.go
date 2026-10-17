@@ -187,7 +187,7 @@ func (w *World) specAI(e *Enemy, dt float64) float64 {
 
 // Reroll redraws the level-up cards (uses one reroll).
 func (w *World) Reroll() bool {
-	if w.State != StateLevelUp || w.Rerolls <= 0 {
+	if w.State != StateLevelUp || w.Rerolls <= 0 || w.SwapPick {
 		return false
 	}
 	w.Rerolls--
@@ -200,6 +200,9 @@ func (w *World) Reroll() bool {
 
 // Banish removes card i from this run's offers for good and redraws (uses one banish).
 func (w *World) Banish(i int) bool {
+	if w.SwapPick {
+		return false
+	}
 	if w.State != StateLevelUp || w.Banishes <= 0 || i < 0 || i >= len(w.Opts) {
 		return false
 	}

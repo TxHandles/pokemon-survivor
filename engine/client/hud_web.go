@@ -280,6 +280,21 @@ func (g *Game) lvCards() []*lvCard {
 	held := func(id string) bool { return w.Held[id] > 0 }
 	for i, o := range w.Opts {
 		c := &lvCard{num: i + 1, titleCol: webFg, tagCol: webFg}
+		if w.SwapPick && o.Swap != "" { // choosing the held item to give up
+			old := sim.ItemByID[o.Swap]
+			c.abbr = o.Swap
+			c.title = "Give up " + old.Name
+			c.badge = fmt.Sprintf("Lv %d", w.Held[o.Swap])
+			c.tag, c.tagCol = "SWAP", hexC("#7fd8ff")
+			c.note("Take "+sim.ItemByID[o.ID].Name+" (Lv 1) in its place", hexC("#7fd8ff"))
+			for _, s := range w.Slots {
+				if s.Move.HeldItem == o.Swap {
+					c.note("Needed by "+s.Move.Name+" to evolve", webAcc)
+				}
+			}
+			out = append(out, c)
+			continue
+		}
 		if o.Move {
 			m := g.db.Moves[o.ID]
 			c.icon = m.Type
@@ -367,7 +382,10 @@ func (g *Game) lvCards() []*lvCard {
 			if lv >= 5 {
 				c.note("Levels 6–10 give half effect", alpha(webFg, .75))
 			}
-			if o.Swap != "" {
+			if o.SwapAsk {
+				c.badge = "SWAP"
+				c.note("Your item slots are full: pick which held item to give up", hexC("#7fd8ff"))
+			} else if o.Swap != "" {
 				c.badge = "SWAP"
 				c.note(fmt.Sprintf("Replaces %s (Lv %d)", sim.ItemByID[o.Swap].Name, w.Held[o.Swap]), hexC("#7fd8ff"))
 			}
@@ -515,6 +533,9 @@ func (g *Game) drawWebLevelUp(dst *ebiten.Image) {
 	title := "Level up!"
 	if g.banMode {
 		title = "Pick a choice to banish"
+	}
+	if w.SwapPick {
+		title = "Which item do you give up?"
 	}
 	if g.coop {
 		title = w.ChooserName() + " — " + title

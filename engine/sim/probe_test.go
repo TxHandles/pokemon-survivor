@@ -117,3 +117,21 @@ func TestCoopDrawReadsLeaveWorldAlone(t *testing.T) {
 		t.Fatalf("end: hashes differ")
 	}
 }
+
+// Picking a swap card asks which held item to give up; that choice replaces the chosen item.
+func TestSwapPick(t *testing.T) {
+	db := loadDB(t)
+	w, _ := New(db, "fire", "fire", 3)
+	w.Held = map[string]int{"band": 2, "lens": 1}
+	w.HeldOrder = []string{"band", "lens"}
+	w.State, w.Chooser = StateLevelUp, 0
+	w.Opts = []Option{{ID: "metal", New: true, Swap: "band", SwapAsk: true}}
+	w.Choose(0)
+	if !w.SwapPick || len(w.Opts) != 2 || w.State != StateLevelUp {
+		t.Fatalf("expected a swap pick, got %+v", w.Opts)
+	}
+	w.Choose(1) // give up lens
+	if w.Held["lens"] != 0 || w.Held["metal"] != 1 || w.Held["band"] != 2 || w.SwapPick {
+		t.Fatalf("held after swap: %v", w.Held)
+	}
+}

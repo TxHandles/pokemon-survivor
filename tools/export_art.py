@@ -30,8 +30,11 @@ JS = r"""
   loc[bi] = [];
   for (let li = 0; li < 3; li++) {
    const d = ((SCV[bi] || [])[li]) || SCB[bi] || SCB.normal, keys = {t: [], r: []};
+   const trees = [];
    for (const kind of ['t', 'r']) for (let v = 0; v < 3; v++) {
-    const seed = v*977 + bi.length*31 + (kind === 't' ? 7 : 3), style = kind === 't' ? d[0] : d[2], pal = kind === 't' ? d[1] : d[3];
+    const alt = kind === 't' && v > 0 && SCALT[bi] && SCALT[bi][v-1];
+    const seed = v*977 + bi.length*31 + (kind === 't' ? 7 : 3), style = kind === 't' ? (alt ? alt[0] : d[0]) : d[2], pal = kind === 't' ? (alt ? alt[1] : d[1]) : d[3];
+    if (kind === 't') trees.push(style);
     const id = kind + ':' + style + ':' + JSON.stringify(pal) + ':' + seed;
     if (!seen[id]) {
      const c = scnC(128, 128), x = c.getContext('2d'), R = srng(seed);
@@ -40,7 +43,7 @@ JS = r"""
     }
     keys[kind].push(seen[id]);
    }
-   loc[bi].push({tree: d[0], rock: d[2], t: keys.t, r: keys.r});
+   loc[bi].push({tree: d[0], rock: d[2], t: keys.t, r: keys.r, trees});
   }
  }
  out.meta.loc = loc;
@@ -119,6 +122,11 @@ def write_sim(m):
     o.append('var locScenery = map[string][3][2]string{')
     for bi in sorted(m['loc']):
         o.append('\t%s: {%s},' % (json.dumps(bi), ', '.join('{%s, %s}' % (json.dumps(l['tree']), json.dumps(l['rock'])) for l in m['loc'][bi])))
+    o.append('}\n')
+    o.append('// locTrees[biome][location][variant]: the tree drawn (and collided with) for each of the three variants')
+    o.append('var locTrees = map[string][3][3]string{')
+    for bi in sorted(m['loc']):
+        o.append('\t%s: {%s},' % (json.dumps(bi), ', '.join('{%s}' % ', '.join(json.dumps(t) for t in l['trees']) for l in m['loc'][bi])))
     o.append('}\n')
     for kind, name in (('t', 'shpTree'), ('r', 'shpRock')):
         o.append('var %s = map[string][][3]float64{' % name)

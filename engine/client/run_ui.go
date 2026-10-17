@@ -7,6 +7,8 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
+
+	"github.com/TxHandles/pokemon-survivor/engine/sim"
 )
 
 // card draws one choice card; returns nothing. sel highlights it.
@@ -80,7 +82,7 @@ func (g *Game) drawChests(dst *ebiten.Image, sx, sy func(float64) float64) {
 			rect(dst, x-3, y-9, 6, 8, col)
 		}
 		if m.P > 0 {
-			sector(dst, x, y-36, 9, -math.Pi/2+math.Pi*m.P/5, math.Pi*m.P/5, alpha(col, .95))
+			sector(dst, x, y-36, 9, -math.Pi/2+math.Pi*m.P/sim.ChestOpenT, math.Pi*m.P/sim.ChestOpenT, alpha(col, .95))
 			ring(dst, x, y-36, 9, 1.5, c(255, 255, 255, 160))
 		}
 	}

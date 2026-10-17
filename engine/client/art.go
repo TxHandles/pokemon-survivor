@@ -346,7 +346,7 @@ func (g *Game) drawPoolArt(dst *ebiten.Image, p sim.Pool, x, y, T float64) {
 	ph := math.Sin(T*3+p.X)*.5 + .5
 	switch p.K {
 	case "sand":
-		stamp(dst, im, x, y, 256*s, T*.6, 1)
+		g.drawQuicksand(dst, p, x, y, T)
 		return
 	case "web":
 		stamp(dst, im, x, y, 256*s, math.Sin(T*.8+p.X)*.03, .85)
@@ -451,5 +451,89 @@ func (g *Game) drawBioHz(dst *ebiten.Image, h *sim.Hazard, x, y float64) {
 			d := h.R * (1.1 - a*.6)
 			disc(dst, x+math.Cos(an)*d, y+math.Sin(an)*d*.7, 3+float64(i%3), alpha(hexC("#8a7a5a"), a))
 		}
+	}
+}
+
+// ---- quicksand: a turning sand vortex ----
+
+var sandTex [2]*ebiten.Image
+
+// sandTextures paints the quicksand bed (rim to sunken centre, with ripples) and a separate layer
+// of spiral arms that turns faster on top.
+func sandTextures() [2]*ebiten.Image {
+	if sandTex[0] != nil {
+		return sandTex
+	}
+	const n = 256
+	C := float64(n) / 2
+	bed := image.NewRGBA(image.Rect(0, 0, n, n))
+	x := newCnv(bed)
+	x.st.fill = x.radial(C, C, 0, C-2, gstop{0, cssC("#3a2410")}, gstop{.18, cssC("#6a4620")}, gstop{.55, cssC("#b08a50")}, gstop{.86, cssC("#d8b878")}, gstop{1, cssC("#c8a468")})
+	x.beginPath()
+	x.arc(C, C, C-3, 0, 2*math.Pi)
+	x.fill()
+	r := jsRngC(1234)
+	for i := 0; i < 7; i++ { // concentric ripples
+		rr := C * (.25 + .1*float64(i))
+		x.beginPath()
+		x.arc(C, C, rr, r()*6, r()*6+4.5)
+		x.setStroke(rgbaF(70, 46, 20, .35))
+		x.lineWidth(2)
+		x.stroke()
+	}
+	for i := 0; i < 220; i++ { // grains
+		a, d := r()*6.283, math.Sqrt(r())*(C-8)
+		x.beginPath()
+		x.arc(C+math.Cos(a)*d, C+math.Sin(a)*d, .8+r()*1.2, 0, 2*math.Pi)
+		if i%3 == 0 {
+			x.setFill(rgbaF(255, 236, 190, .5))
+		} else {
+			x.setFill(rgbaF(90, 60, 28, .45))
+		}
+		x.fill()
+	}
+	x.beginPath()
+	x.arc(C, C, C-3, 0, 2*math.Pi)
+	x.setStroke(rgbaF(120, 86, 44, .9))
+	x.lineWidth(5)
+	x.stroke()
+	arms := image.NewRGBA(image.Rect(0, 0, n, n))
+	y := newCnv(arms)
+	for k := 0; k < 4; k++ { // logarithmic spiral arms
+		a0 := float64(k) * math.Pi / 2
+		y.beginPath()
+		for t := 0.0; t <= 1; t += .02 {
+			rr := C * .08 * math.Exp(t*2.45)
+			a := a0 + t*5.2
+			if t == 0 {
+				y.moveTo(C+math.Cos(a)*rr, C+math.Sin(a)*rr)
+			} else {
+				y.lineTo(C+math.Cos(a)*rr, C+math.Sin(a)*rr)
+			}
+		}
+		y.setStroke(rgbaF(70, 44, 18, .55))
+		y.lineWidth(7)
+		y.stroke()
+		y.setStroke(rgbaF(255, 232, 180, .35))
+		y.lineWidth(2)
+		y.stroke()
+	}
+	sandTex = [2]*ebiten.Image{ebiten.NewImageFromImage(bed), ebiten.NewImageFromImage(arms)}
+	return sandTex
+}
+
+func (g *Game) drawQuicksand(dst *ebiten.Image, p sim.Pool, x, y, T float64) {
+	tx := sandTextures()
+	d := p.R * 2.05
+	stamp(dst, tx[0], x, y, d, T*.5+p.X, 1)
+	stamp(dst, tx[1], x, y, d*.96, T*1.6+p.Y, 1)
+	stamp(dst, tx[1], x, y, d*.55, T*2.6+p.X*.3, .7)
+	soft(dst, x, y, p.R*.3, p.R*.3, c(30, 18, 8, 170)) // the sinking middle
+	// grains drawn in along the spiral
+	for i := 0; i < 10; i++ {
+		ph := fmod1(T*.35 + float64(i)/10 + p.X*.01)
+		a := float64(i)*2.4 + T*1.6 + (1-ph)*3
+		rr := p.R * .92 * (1 - ph)
+		disc(dst, x+math.Cos(a)*rr, y+math.Sin(a)*rr, 1.6+1.2*(1-ph), c(250, 228, 178, uint8(200*math.Min(1, ph*4))))
 	}
 }

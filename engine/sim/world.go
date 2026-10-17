@@ -141,8 +141,11 @@ func (w *World) spawn(a float64, t string) {
 	q := w.PL[w.rndAlive()].P
 	e := &Enemy{X: q.X + math.Cos(a)*d, Y: q.Y + math.Sin(a)*d, Type: t, Big: big, R: 10, Seed: w.rng.Float64()}
 	hp, sp, dm := 14.0, w.rnd(50, 85), 6.0
-	if big {
-		e.R, hp, sp, dm = 16, 45, sp*.7, 12
+	if big { // slow, tanky bruisers
+		e.R, hp, sp, dm = 16, 55, sp*.62, 12
+	} else if w.rng.Float64() < .14 { // quick, fragile runners
+		e.Swift = true
+		e.R, hp, sp, dm = 8, 6, sp*1.6, 4
 	}
 	e.HP, e.MHP = hp*sc*w.Run.HM, hp*sc*w.Run.HM
 	if w.P.Pgr > 0 {
@@ -1123,7 +1126,7 @@ func (w *World) options() []Option {
 			}
 			if cand != "" {
 				done[sy] = true
-				o = append(o, Option{ID: sy, New: true, Swap: cand})
+				o = append(o, Option{ID: sy, New: true, Swap: cand, SwapAsk: true})
 			}
 		}
 	}
@@ -1172,6 +1175,19 @@ func (w *World) Choose(i int) {
 		return
 	}
 	w.useP(w.Chooser)
+	if o := w.Opts[i]; o.SwapAsk { // ask which held item to give up
+		var l []Option
+		for _, h := range w.HeldOrder {
+			if w.Held[h] > 0 {
+				l = append(l, Option{ID: o.ID, New: true, Swap: h})
+			}
+		}
+		if len(l) > 0 {
+			w.Opts, w.SwapPick = l, true
+			return
+		}
+	}
+	w.SwapPick = false
 	w.applyOpt(w.Opts[i])
 	c := w.PL[w.Chooser]
 	if len(c.Queue) > 0 {
