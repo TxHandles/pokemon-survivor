@@ -3,5 +3,5 @@ package data
 
 import "embed"
 
-//go:embed *.json sprites/*.json sprites/*.png sprites/*.gif
+//go:embed *.json sprites/*.json sprites/*.png sprites/*.gif types/*.png ui/*
 var FS embed.FS

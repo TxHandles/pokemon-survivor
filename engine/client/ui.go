@@ -38,6 +38,9 @@ type uiState struct {
 	dragY      float64
 	dragStart  float64
 	touchScrl  float64
+	edit       string // key of the text field being typed into
+	typing     bool   // a text field has the keyboard this frame (no key navigation)
+	swallow    bool   // ignore confirm this frame (the key that ended typing)
 }
 
 func (u *uiState) reset() { u.ws = u.ws[:0] }
@@ -146,6 +149,10 @@ func (u *uiState) update() {
 	if cur == nil {
 		cur = clickable[0]
 		u.focus = cur.key
+	}
+	if u.typing || u.swallow {
+		u.swallow = false
+		return
 	}
 	dx, dy := nav()
 	if dx != 0 || dy != 0 {

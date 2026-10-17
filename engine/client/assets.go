@@ -52,8 +52,34 @@ type Sheet struct {
 	V      *content.SpriteView
 	Img    *ebiten.Image
 	frames []*ebiten.Image
+	boxes  []image.Rectangle
 	tot    int
 	atot   int
+}
+
+// Box is frame i's visible-pixel bounds, in sheet coordinates.
+func (s *Sheet) Box(i int) image.Rectangle {
+	if i < 0 || i >= len(s.boxes) {
+		return image.Rect(0, 0, s.V.CW, s.V.CH)
+	}
+	return s.boxes[i]
+}
+
+// alphaBox is the bounding box of the visible pixels of im within r (CPU, at load time).
+func alphaBox(im image.Image, r image.Rectangle) image.Rectangle {
+	out := image.Rectangle{Min: r.Max, Max: r.Min}
+	for y := r.Min.Y; y < r.Max.Y; y++ {
+		for x := r.Min.X; x < r.Max.X; x++ {
+			if _, _, _, a := im.At(x, y).RGBA(); a > 16*257 {
+				out.Min.X, out.Min.Y = min(out.Min.X, x), min(out.Min.Y, y)
+				out.Max.X, out.Max.Y = max(out.Max.X, x+1), max(out.Max.Y, y+1)
+			}
+		}
+	}
+	if out.Empty() {
+		return r
+	}
+	return out
 }
 
 func (s *Sheet) Frame(i int) *ebiten.Image {
@@ -114,6 +140,7 @@ func (a *Assets) loadSheet(v *content.SpriteView) *Sheet {
 	n := img.Bounds().Dx() / v.CW
 	for i := 0; i < n; i++ {
 		s.frames = append(s.frames, img.SubImage(image.Rect(i*v.CW, 0, (i+1)*v.CW, v.CH)).(*ebiten.Image))
+		s.boxes = append(s.boxes, alphaBox(im, image.Rect(i*v.CW, 0, (i+1)*v.CW, v.CH)))
 	}
 	for _, d := range v.Idur {
 		s.tot += d

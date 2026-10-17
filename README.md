@@ -28,7 +28,7 @@ A native rebuild in Go with [Ebitengine](https://ebitengine.org), reading the sa
 | `engine/lockstep` | Deterministic lockstep for online co-op: input frames, menu picks as commands, state-hash desync checks, dropped players |
 | `engine/net` | Online rooms: host / join by code, lobby protocol, host relays inputs; WebRTC (browser API / pion on desktop) signalled through Firestore |
 | `cmd/netpeer` | Headless online player over the desktop transport, for testing native ↔ browser play |
-| `engine/client` | Rendering, input (keyboard, gamepad, mouse, touch), audio, HUD and menus |
+| `engine/client` | Rendering, input (keyboard, gamepad, mouse, touch), audio, HUD and menus (laid out like the web version's screens) |
 | `cmd/game` | The playable game (Windows / browser) |
 | `cmd/simhash` | Prints a state-hash trace of a fixed run; `tools/crosscheck.sh` compares native vs wasm to prove the sim is bit-identical across builds |
 | `cmd/sim` | Headless bot runner for balance checks: `go run ./cmd/sim -runs 20 -mins 5` |
@@ -48,6 +48,11 @@ Online: the browser build signs in with Google against the same Firebase project
 account, cloud save and leaderboards with it (Daily run → Leaderboards). The Windows build has no sign-in; it moves
 progress with save codes. Both builds have the Pokédex, run history and the daily run (same biome / modifiers / world
 as the web game for that day; daily records sync when signed in).
+
+The menus and in-run screens follow the web version's layouts (character cards per evolution line, Pokédex with the
+evolution tree, Collection, Lifetime stats, shop, run setup with type icons, level-up cards with stat changes, route
+map). Type icons, the logo and the Poké Ball / Pokédex icons come from `data/types` and `data/ui`. The game font has no
+emoji, so the web version's emoji are drawn as small vector icons, and held items show two-letter labels.
 
 Local co-op (main menu → Local co-op): up to 4 players on one screen — keyboard (WASD / arrows), gamepads, and bot
 teammates. In the lobby: Enter / A joins, B (or the + key) adds a bot, left / right picks a Pokémon, E / Y toggles the

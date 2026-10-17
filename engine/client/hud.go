@@ -2,9 +2,9 @@ package client
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 	"math"
-	"sort"
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -29,13 +29,24 @@ func cap1(s string) string {
 }
 
 func roundRect(dst *ebiten.Image, x, y, w, h, r float64, col color.NRGBA) {
+	if w <= 0 || h <= 0 {
+		return
+	}
+	r = math.Max(0, math.Min(r, math.Min(w, h)/2))
+	if r < .5 {
+		rect(dst, x, y, w, h, col)
+		return
+	}
 	rect(dst, x+r, y, w-2*r, h, col)
 	rect(dst, x, y+r, r, h-2*r, col)
 	rect(dst, x+w-r, y+r, r, h-2*r, col)
-	disc(dst, x+r, y+r, r, col)
-	disc(dst, x+w-r, y+r, r, col)
-	disc(dst, x+r, y+h-r, r, col)
-	disc(dst, x+w-r, y+h-r, r, col)
+	t := discFor(r)
+	n := t.Bounds().Dx()
+	m := n / 2
+	texQuad(dst, t, image.Rect(0, 0, m, m), x, y, r, r, col)
+	texQuad(dst, t, image.Rect(m, 0, n, m), x+w-r, y, r, r, col)
+	texQuad(dst, t, image.Rect(0, m, m, n), x, y+h-r, r, r, col)
+	texQuad(dst, t, image.Rect(m, m, n, n), x+w-r, y+h-r, r, r, col)
 }
 
 func bar(dst *ebiten.Image, x, y, w, h, f float64, fg, bg color.NRGBA) {
@@ -55,36 +66,8 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 		g.drawHUDCommon(dst)
 		return
 	}
-	// XP bar across the top
-	bar(dst, 0, 0, sw, 8, w.XPS.XP/w.XPS.NX, c(90, 190, 255, 255), c(20, 26, 40, 230))
-	// HP
-	roundRect(dst, 12, 16, 290, 58, 10, panel)
-	if s := g.assets.Sprite(P.ID); s != nil {
-		fr := s.Front.Frame(s.Front.IdleFrame(0))
-		op := &ebiten.DrawImageOptions{}
-		k := 44 / math.Max(float64(s.Front.V.CW), float64(s.Front.V.CH))
-		op.GeoM.Scale(k, k)
-		op.GeoM.Translate(18, 23)
-		op.Filter = ebiten.FilterLinear
-		dst.DrawImage(fr, op)
-	}
-	drawText(dst, fmt.Sprintf("%s  Lv %d", P.Name, P.Lv), 70, 21, 15, true, white, text.AlignStart, false)
-	hpf := P.HP / P.MHP
-	hc := c(80, 220, 110, 255)
-	if hpf < .5 {
-		hc = c(255, 200, 70, 255)
-	}
-	if hpf < .25 {
-		hc = c(255, 80, 80, 255)
-	}
-	bar(dst, 70, 44, 220, 12, hpf, hc, c(40, 46, 60, 255))
-	drawText(dst, fmt.Sprintf("%.0f / %.0f", P.HP, P.MHP), 180, 58, 11, true, dim, text.AlignCenter, false)
-	drawText(dst, fmt.Sprintf("%d coins", int(w.Coins)), 22, 82, 13, true, gold, text.AlignStart, true)
-	drawText(dst, "Ability: "+w.PS.A.Name, 22, 100, 12, false, dim, text.AlignStart, true)
-	if bt := buffText(w); bt != "" {
-		drawText(dst, bt, 22, 118, 12, true, c(127, 224, 255, 255), text.AlignStart, true)
-	}
-	g.drawHUDCommon(dst)
+	g.drawWebHUD(dst)
+	_, _ = P, sw
 }
 
 // drawHUDCommon: timer, location, boss bar, moves, items, messages.
@@ -116,6 +99,10 @@ func (g *Game) drawHUDCommon(dst *ebiten.Image) {
 		drawText(dst, fmt.Sprintf("%s  ·  Phase %d", name, max(1, e.Ph)), sw/2, 90, 13, true, tc(e.Type), text.AlignCenter, false)
 		bar(dst, bx, 110, bw, 10, e.HP/e.MHP, c(255, 80, 80, 255), c(40, 46, 60, 255))
 		break
+	}
+	if g.opt("eq") == 0 { // Settings → Equipped bar: Hide
+		g.drawHUDTail(dst)
+		return
 	}
 	// moves (bottom-left): in co-op, every player's row
 	x := 12.0
@@ -177,13 +164,19 @@ func (g *Game) drawHUDCommon(dst *ebiten.Image) {
 		drawText(dst, label, x+8, float64(g.sh)-33, 12, true, c(230, 230, 240, 255), text.AlignStart, false)
 		x -= 6
 	}
-	// message
+	g.drawHUDTail(dst)
+}
+
+// drawHUDTail: the centre message and demo label.
+func (g *Game) drawHUDTail(dst *ebiten.Image) {
+	w := g.W
+	sw := float64(g.sw)
 	if w.MsgT > 0 && !w.Waiting() {
 		a := math.Min(1, w.MsgT/.6)
 		drawText(dst, w.Msg, sw/2, float64(g.sh)*.24, 20, true, alpha(gold, a), text.AlignCenter, true)
 	}
 	if g.auto {
-		drawText(dst, "DEMO · bot playing", sw-12, 16, 12, true, alpha(dim, .8), text.AlignEnd, true)
+		drawText(dst, "DEMO · bot playing", sw-12, 72, 12, true, alpha(dim, .8), text.AlignEnd, true)
 	}
 }
 
@@ -197,6 +190,17 @@ func b2c(b bool, t, f color.NRGBA) color.NRGBA {
 // ---- level up ----
 
 func (g *Game) cardRects() [][4]float64 {
+	if g.W != nil && g.W.State == sim.StateLevelUp {
+		_, rs := g.lvLayout()
+		return rs
+	}
+	if g.W != nil && g.W.State == sim.StateRoute {
+		return g.routeRects()
+	}
+	if g.W != nil && g.W.State == sim.StateShrine {
+		_, rs := g.shrineLayout()
+		return rs
+	}
 	n := g.choiceCount()
 	cw, ch := 300.0, 260.0
 	if n > 3 {
@@ -246,77 +250,7 @@ func wrap(s string, f *text.GoTextFace, width float64) []string {
 }
 
 func (g *Game) drawLevelUp(dst *ebiten.Image) {
-	w := g.W
-	rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, 170))
-	title := "LEVEL UP!"
-	if g.coop {
-		title = w.ChooserName() + " — LEVEL UP!"
-	}
-	drawText(dst, title, float64(g.sw)/2, float64(g.sh)/2-190, 34, true, gold, text.AlignCenter, true)
-	sub := "Choose one  ·  number keys, arrows + Enter, click, or gamepad"
-	if g.banMode {
-		sub = "BANISH MODE: pick a card to remove it for the rest of this run (X / Y to cancel)"
-	}
-	drawText(dst, sub, float64(g.sw)/2, float64(g.sh)/2-148, 13, g.banMode, b2c(g.banMode, c(255, 140, 140, 255), dim), text.AlignCenter, true)
-	drawText(dst, fmt.Sprintf("R / X button: Reroll (%d left)     X key / Y button: Banish (%d left)", w.Rerolls, w.Banishes), float64(g.sw)/2, float64(g.sh)/2+170, 13, true, b2c(w.Rerolls+w.Banishes > 0, c(159, 232, 255, 255), c(110, 116, 130, 255)), text.AlignCenter, true)
-	mx, my := ebiten.CursorPosition()
-	hov := g.cardHit(mx, my)
-	for i, r := range g.cardRects() {
-		o := w.Opts[i]
-		x, y, cw, ch := r[0], r[1], r[2], r[3]
-		sel := i == g.lvSel || i == hov
-		col := white
-		title, sub, tag, desc := "", "", "", ""
-		if o.Move {
-			m := g.db.Moves[o.ID]
-			col = tc(m.Type)
-			title = m.Name
-			sub = cap1(m.Type) + " · " + cap1(m.Shape) + " · " + cap1(m.Tier)
-			desc = m.Desc
-			switch {
-			case o.Evo:
-				tag = "EVOLVE"
-				desc = "Held " + sim.ItemByID[m.HeldItem].Name + " evolves this move: stronger, plus a new effect. Unlocks Lv 11–20."
-			case o.New:
-				tag = "NEW MOVE"
-			default:
-				tag = fmt.Sprintf("Lv %d → %d", o.Level, o.Level+1)
-			}
-			if !o.Evo && sim.ItemByID[m.HeldItem] != nil && o.New {
-				desc += "  (Evolves at Lv 10 with " + sim.ItemByID[m.HeldItem].Name + ")"
-			}
-		} else {
-			it := sim.ItemByID[o.ID]
-			col = c(230, 230, 240, 255)
-			title = it.Name
-			sub = "Held item"
-			desc = it.Desc
-			tag = "NEW"
-			if o.Level > 0 {
-				tag = fmt.Sprintf("Lv %d → %d", o.Level, o.Level+1)
-			}
-			if o.Swap != "" {
-				tag = "SWAP"
-				desc += "  (replaces " + sim.ItemByID[o.Swap].Name + ")"
-			}
-		}
-		bg := c(22, 28, 42, 245)
-		if sel {
-			bg = c(34, 42, 62, 250)
-			roundRect(dst, x-3, y-3, cw+6, ch+6, 16, alpha(col, .9))
-		}
-		roundRect(dst, x, y, cw, ch, 14, bg)
-		roundRect(dst, x, y, cw, 8, 4, col)
-		drawText(dst, fmt.Sprintf("%d", i+1), x+16, y+18, 14, true, dim, text.AlignStart, false)
-		drawText(dst, tag, x+cw-16, y+18, 13, true, b2c(o.Evo || o.New, gold, dim), text.AlignEnd, false)
-		drawText(dst, title, x+cw/2, y+48, 22, true, col, text.AlignCenter, false)
-		drawText(dst, sub, x+cw/2, y+80, 12, false, dim, text.AlignCenter, false)
-		yy := y + 112
-		for _, ln := range wrap(desc, font(14, false), cw-36) {
-			drawText(dst, ln, x+cw/2, yy, 14, false, c(225, 228, 238, 255), text.AlignCenter, false)
-			yy += 20
-		}
-	}
+	g.drawWebLevelUp(dst)
 }
 
 // ---- title ----
@@ -431,49 +365,22 @@ func (g *Game) pauseHit(x, y float64) int {
 }
 
 func (g *Game) drawPause(dst *ebiten.Image) {
-	rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, 170))
-	drawText(dst, "PAUSED", float64(g.sw)/2, float64(g.sh)/2-80, 40, true, white, text.AlignCenter, true)
-	drawText(dst, "Esc / Enter / Start: resume  ·  S / Y: settings  ·  Q / B: abandon run (no rewards)", float64(g.sw)/2, float64(g.sh)/2-26, 13, false, dim, text.AlignCenter, true)
-	labels := [3]string{"Resume", "Settings", "Abandon run"}
-	cols := [3]color.NRGBA{gold, c(159, 232, 255, 255), c(255, 140, 140, 255)}
-	for i, r := range g.pauseRects() {
-		btnDraw(labels[i], "", cols[i], false)(dst, r, false)
-	}
+	g.drawWebPause(dst)
 }
 
 func (g *Game) drawOver(dst *ebiten.Image) {
 	w := g.W
-	rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, uint8(math.Min(1, g.overT*2)*190)))
+	rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(0, 0, 0, uint8(math.Min(1, g.overT*2)*185)))
 	cx := float64(g.sw) / 2
-	y := float64(g.sh)/2 - 150
-	drawText(dst, "FAINTED", cx, y, 44, true, c(255, 110, 110, 255), text.AlignCenter, true)
-	drawText(dst, fmt.Sprintf("Survived %s  ·  Lv %d  ·  %d KOs  ·  %d bosses", fmtT(w.T), w.P.Lv, w.Kills, w.Bosses), cx, y+64, 18, true, white, text.AlignCenter, true)
-	type kv struct {
-		k string
-		v float64
+	y := float64(g.sh)/2 - 60
+	title := "Knocked out"
+	if w.Won {
+		title = "Victory!"
 	}
-	var l []kv
-	tot := 0.0
-	for k, v := range w.DMG {
-		l = append(l, kv{k, v})
-		tot += v
-	}
-	sort.Slice(l, func(i, j int) bool { return l[i].v > l[j].v })
-	yy := y + 110
-	for i, e := range l {
-		if i >= 6 {
-			break
-		}
-		name, col := "Burn / poison", dim
-		if m := g.db.Moves[e.k]; m != nil {
-			name, col = m.Name, tc(m.Type)
-		}
-		bar(dst, cx-160, yy+4, 320, 14, e.v/math.Max(tot, 1), alpha(col, .8), c(40, 46, 60, 255))
-		drawText(dst, fmt.Sprintf("%s  %.0f (%.0f%%)", name, e.v, e.v/math.Max(tot, 1)*100), cx, yy+3, 12, true, white, text.AlignCenter, true)
-		yy += 24
-	}
-	if g.overT > .8 {
-		drawText(dst, "Enter / A / click to return to the title", cx, yy+24, 14, false, dim, text.AlignCenter, true)
+	drawText(dst, title, cx, y, 32, true, webFg, text.AlignCenter, true)
+	drawText(dst, fmt.Sprintf("Time %s · Level %d · %d defeated", fmtT(w.T), w.P.Lv, w.Kills), cx, y+50, 15, false, alpha(webFg, .9), text.AlignCenter, true)
+	if g.auto && g.overT > .8 {
+		drawText(dst, "Enter / A / click to return to the menu", cx, y+80, 13, false, dim, text.AlignCenter, true)
 	}
 }
 

@@ -105,8 +105,53 @@ func soft(dst *ebiten.Image, x, y, rx, ry float64, col color.NRGBA) {
 	dst.DrawImage(softImg, op)
 }
 
+// Discs and rounded-rect corners are drawn from pre-rendered smooth disc textures rather than
+// anti-aliased vector shapes: every AA vector draw makes Ebitengine resolve a full-screen 2×
+// offscreen buffer, so a screen with hundreds of them (menus, chips, HUD) gets slow; texture draws
+// batch with everything else.
+var discTex = []*ebiten.Image{makeDisc(32), makeDisc(128), makeDisc(512)}
+
+func makeDisc(n int) *ebiten.Image {
+	img := image.NewNRGBA(image.Rect(0, 0, n, n))
+	c := float64(n) / 2
+	for y := 0; y < n; y++ {
+		for x := 0; x < n; x++ {
+			d := math.Hypot(float64(x)+.5-c, float64(y)+.5-c)
+			a := math.Max(0, math.Min(1, c-d+.5))
+			img.SetNRGBA(x, y, color.NRGBA{255, 255, 255, uint8(a * 255)})
+		}
+	}
+	return ebiten.NewImageFromImage(img)
+}
+
+func discFor(r float64) *ebiten.Image {
+	for _, t := range discTex {
+		if float64(t.Bounds().Dx()) >= 2*r*1.2 {
+			return t
+		}
+	}
+	return discTex[len(discTex)-1]
+}
+
+// texQuad draws part sr of texture t into the rectangle (x, y, w, h).
+func texQuad(dst, t *ebiten.Image, sr image.Rectangle, x, y, w, h float64, col color.NRGBA) {
+	if w <= 0 || h <= 0 {
+		return
+	}
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(w/float64(sr.Dx()), h/float64(sr.Dy()))
+	op.GeoM.Translate(x, y)
+	op.ColorScale.ScaleWithColor(col)
+	op.Filter = ebiten.FilterLinear
+	dst.DrawImage(t.SubImage(sr).(*ebiten.Image), op)
+}
+
 func disc(dst *ebiten.Image, x, y, r float64, col color.NRGBA) {
-	vector.DrawFilledCircle(dst, float32(x), float32(y), float32(r), col, true)
+	if r <= 0 {
+		return
+	}
+	t := discFor(r)
+	texQuad(dst, t, t.Bounds(), x-r, y-r, 2*r, 2*r, col)
 }
 
 func ring(dst *ebiten.Image, x, y, r, w float64, col color.NRGBA) {

@@ -7,8 +7,6 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
-
-	"github.com/TxHandles/pokemon-survivor/engine/sim"
 )
 
 // card draws one choice card; returns nothing. sel highlights it.
@@ -46,61 +44,10 @@ func (g *Game) choiceHeader(dst *ebiten.Image, title, sub string, col color.NRGB
 }
 
 func (g *Game) drawRoute(dst *ebiten.Image) {
-	w := g.W
-	sub := fmt.Sprintf("Boss %d of %d defeated · you are in %s", w.Bosses, w.Run.Bosses, w.LocName(w.Biome, w.LI))
-	if w.Endless {
-		sub = fmt.Sprintf("Endless mode · %d bosses defeated", w.Bosses)
-	}
-	g.choiceHeader(dst, "ROUTE MAP · choose your next destination", sub, c(159, 232, 255, 255))
-	mx, my := ebiten.CursorPosition()
-	hov := g.cardHit(mx, my)
-	for i, r := range g.cardRects() {
-		o := w.Route[i]
-		col := tc(o.Type)
-		desc := "A calm biome with no hazards."
-		warn := ""
-		if hz := sim.BiomeHazard[o.Type]; hz != "" {
-			desc = sim.HazardText[hz]
-			k := sim.TypeMul(o.Type, w.P.Types)
-			switch {
-			case has(w.P.Types, o.Type):
-				desc += " Your type is immune."
-			case k > 1:
-				warn = "Your type is weak to this hazard!"
-			case k < 1:
-				desc += " Your type resists it."
-			}
-		}
-		if bd := sim.Bosses[o.Type]; bd != nil {
-			desc += " Boss: " + bd.Name + "."
-		}
-		g.card(dst, r, i, i == g.lvSel || i == hov, col, cap1(o.Type), w.LocName(o.Type, o.LI), biomeName(o.Type), desc, warn)
-		// type badge
-		disc(dst, r[0]+r[2]/2, r[1]+r[3]-30, 14, col)
-		ring(dst, r[0]+r[2]/2, r[1]+r[3]-30, 14, 2, c(255, 255, 255, 180))
-	}
+	g.drawWebRoute(dst)
 }
 
-func (g *Game) drawShrine(dst *ebiten.Image) {
-	w := g.W
-	g.choiceHeader(dst, "ANCIENT SHRINE · choose a boon", "A blessing, or a stronger pact with a curse", c(127, 224, 255, 255))
-	mx, my := ebiten.CursorPosition()
-	hov := g.cardHit(mx, my)
-	for i, r := range g.cardRects() {
-		sel := i == g.lvSel || i == hov
-		if i == len(w.Boons) {
-			g.card(dst, r, i, sel, c(170, 175, 190, 255), "", "Leave it", "", "Walk away.", "")
-			continue
-		}
-		b := w.Boons[i]
-		col, tag := c(127, 224, 255, 255), "BLESSING"
-		warn := ""
-		if b.Curse != "" {
-			col, tag, warn = c(211, 138, 255, 255), "PACT", "Curse: "+b.Curse
-		}
-		g.card(dst, r, i, sel, col, tag, b.Name, "", b.Desc, warn)
-	}
-}
+func (g *Game) drawShrine(dst *ebiten.Image) { g.drawWebShrine(dst) }
 
 // drawChests: map chests / shrines (with open progress) and reward chests.
 func (g *Game) drawChests(dst *ebiten.Image, sx, sy func(float64) float64) {

@@ -353,5 +353,8 @@ func (w *World) BotDecide() {
 	}
 }
 
+// OpenRouteNow opens the route map immediately (debug / screenshots).
+func (w *World) OpenRouteNow() { w.openRoute() }
+
 // OpenShrineNow opens a shrine immediately (debug / screenshots).
 func (w *World) OpenShrineNow() { w.openChest(&MapChest{Shrine: true}) }

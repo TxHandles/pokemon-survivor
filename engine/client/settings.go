@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -14,7 +15,7 @@ import (
 const scSettings screen = 120
 
 // Settings live in the save under "opt" (same keys and values as the web game).
-var optDefaults = map[string]float64{"vol": .6, "sfxv": .7, "musv": .6, "shake": 1, "dnum": 1, "flash": 1, "touch": 2}
+var optDefaults = map[string]float64{"vol": .6, "sfxv": .7, "musv": .6, "shake": 1, "dnum": 1, "flash": 1, "touch": 2, "eq": 1, "autop": 1}
 
 func (g *Game) opt(k string) float64 {
 	if g.prof != nil {
@@ -52,47 +53,105 @@ var optRows = []optRow{
 	{"musv", "Music", "Location tracks where they exist, a placeholder loop elsewhere", []optChoice{{"Off", 0}, {"Low", .3}, {"Med", .6}, {"High", 1}}},
 	{"shake", "Screen shake", "Camera shake on hits, bosses and explosions", []optChoice{{"Off", 0}, {"Reduced", .4}, {"Full", 1}}},
 	{"dnum", "Damage numbers", "Floating numbers when you hit enemies", []optChoice{{"Off", 0}, {"On", 1}}},
-	{"flash", "Flashing", "Screen flashes and enemy hit flashes", []optChoice{{"Reduced", 0}, {"Normal", 1}}},
+	{"flash", "Flashing", "Screen flashes, enemy hit flashes and the low-health pulse", []optChoice{{"Reduced", 0}, {"Normal", 1}}},
+	{"eq", "Equipped bar", "Show your attacks and items on screen during a run", []optChoice{{"Hide", 0}, {"Show", 1}}},
+	{"autop", "Auto-pause", "Pause automatically when you switch to another window or tab", []optChoice{{"Off", 0}, {"On", 1}}},
 	{"touch", "Touch controls", "On-screen stick and dash button", []optChoice{{"Off", 0}, {"On", 1}, {"Auto", 2}}},
 }
 
 func (g *Game) menuSettings() {
-	sw := float64(g.sw)
+	sw, sh := float64(g.sw), float64(g.sh)
 	u := &g.ui
-	g.header("SETTINGS", "Saved with your progress")
-	g.backButton(g.settingsFrom)
-	y := 104.0
+	g.webHeaderParts("Settings", "", g.settingsFrom, nil)
+	u.area = [4]float64{0, 60, sw, sh - 60}
+	rw := math.Min(560, sw*.94)
+	x0 := sw/2 - rw/2
+	y := 0.0
 	for _, r := range optRows {
 		r := r
-		u.label([4]float64{60, y, 420, 40}, false, func(dst *ebiten.Image, rr [4]float64) {
-			drawText(dst, r.name, rr[0], rr[1]+2, 16, true, white, text.AlignStart, false)
-			drawText(dst, r.desc, rr[0], rr[1]+24, 12, false, dim, text.AlignStart, false)
-		})
 		cur := g.opt(r.key)
-		bw := math.Min(130, (sw-540)/float64(len(r.choices))-8)
+		// choices right-aligned, title and description on the left (web .sopt)
+		var cws []float64
+		tot := 0.0
+		for _, ch := range r.choices {
+			w := textW(ch.label, 13, false) + 24
+			cws = append(cws, w)
+			tot += w + 6
+		}
+		dl := wrap(r.desc, font(12, false), rw-28-tot-10)
+		h := math.Max(54, 30+float64(len(dl))*15+8)
+		u.label([4]float64{x0, y, rw, h}, true, func(dst *ebiten.Image, rr [4]float64) {
+			webBox(dst, rr[0], rr[1], rr[2], rr[3], 10, webBorder, webPanel)
+			drawText(dst, r.name, rr[0]+14, rr[1]+9, 16, true, webFg, text.AlignStart, false)
+			for i, l := range dl {
+				drawText(dst, l, rr[0]+14, rr[1]+30+float64(i)*15, 12, false, alpha(webFg, .75), text.AlignStart, false)
+			}
+		})
+		bx := x0 + rw - 14 - tot + 6
 		for i, ch := range r.choices {
 			ch := ch
 			on := cur == ch.v
-			u.button(fmt.Sprintf("%s:%d", r.key, i), [4]float64{500 + float64(i)*(bw+8), y, bw, 44}, false, false, func(dst *ebiten.Image, rr [4]float64, hot bool) {
-				if on {
-					roundRect(dst, rr[0]-2, rr[1]-2, rr[2]+4, rr[3]+4, 10, alpha(gold, .9))
-					roundRect(dst, rr[0], rr[1], rr[2], rr[3], 8, mix(c(28, 34, 50, 240), gold, .25))
-					drawText(dst, ch.label, rr[0]+rr[2]/2, rr[1]+rr[3]/2-9, 15, true, white, text.AlignCenter, false)
-					if hot {
-						roundRect(dst, rr[0], rr[1]+rr[3]-4, rr[2], 4, 2, white)
-					}
-					return
-				}
-				btnDraw(ch.label, "", dim, false)(dst, rr, hot)
+			u.button(fmt.Sprintf("%s:%d", r.key, i), [4]float64{bx, y + h/2 - 15, cws[i], 30}, true, false, func(dst *ebiten.Image, rr [4]float64, hot bool) {
+				chipBtn(dst, rr, on, hot, func(x, yy float64) {
+					drawText(dst, ch.label, rr[0]+rr[2]/2, yy-8, 13, false, webFg, text.AlignCenter, false)
+				})
 			}, func() {
 				g.setOpt(r.key, ch.v)
 				if r.key == "sfxv" || r.key == "vol" {
 					g.audio.Play("click")
 				}
 			})
+			bx += cws[i] + 6
 		}
-		y += 62
+		y += h + 8
 	}
+	// leaderboard name (text field)
+	if g.lbNameEdit == "" && g.ui.edit != "lbname" {
+		g.lbNameEdit = g.optStr("name")
+	}
+	u.label([4]float64{x0, y, rw, 54}, true, func(dst *ebiten.Image, rr [4]float64) {
+		webBox(dst, rr[0], rr[1], rr[2], rr[3], 10, webBorder, webPanel)
+		drawText(dst, "Leaderboard name", rr[0]+14, rr[1]+9, 16, true, webFg, text.AlignStart, false)
+		drawText(dst, "Shown next to your runs (max 16 characters)", rr[0]+14, rr[1]+30, 12, false, alpha(webFg, .75), text.AlignStart, false)
+	})
+	was := g.ui.edit == "lbname"
+	ar := u.area
+	u.area = [4]float64{0, 0, 0, 0}
+	fy := ar[1] - u.scroll + y + 11
+	if fy > ar[1]-40 && fy < ar[1]+ar[3] {
+		g.textField("lbname", [4]float64{x0 + rw - 14 - 190, fy, 190, 32}, &g.lbNameEdit, "Player", false)
+	}
+	u.area = ar
+	if len(g.lbNameEdit) > 16 {
+		g.lbNameEdit = g.lbNameEdit[:16]
+	}
+	if was && g.ui.edit != "lbname" {
+		g.setOptStr("name", strings.TrimSpace(g.lbNameEdit))
+	}
+	y += 62 + 10
+	u.scrollMax = math.Max(0, y-u.area[3])
+}
+
+func (g *Game) optStr(k string) string {
+	if o, ok := g.prof.S.M["opt"].(map[string]any); ok {
+		if s, ok := o[k].(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+func (g *Game) setOptStr(k, v string) {
+	o, ok := g.prof.S.M["opt"].(map[string]any)
+	if !ok {
+		o = map[string]any{}
+		g.prof.S.M["opt"] = o
+	}
+	o[k] = v
+	if l, ok := g.prof.S.M["lbl"].(map[string]any); ok {
+		l["name"] = v
+	}
+	g.save()
 }
 
 // ---- audio per frame ----

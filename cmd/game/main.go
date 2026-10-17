@@ -42,8 +42,14 @@ func main() {
 	if c := opts["join"]; c != "" { // join an online room right away (testing; &auto=1 readies up by itself)
 		g.AutoJoin(c, opts["auto"] == "1")
 	}
+	if sel := opts["sel"]; sel != "" { // testing: pre-select a Pokémon in the Pokédex
+		g.DexSelect(sel)
+	}
 	if sc := opts["screen"]; sc != "" { // open a menu screen directly (screenshots / testing)
 		g.OpenScreen(sc)
+		if sy, _ := strconv.ParseFloat(opts["scroll"], 64); sy > 0 {
+			g.ScrollTo(sy)
+		}
 	}
 	if cp := opts["coop"]; cp != "" { // bot co-op demo: ?coop=fire,water,grass&t=120
 		g.DemoCoop(strings.Split(cp, ","), opts["biome"], 0)
@@ -75,11 +81,22 @@ func main() {
 				g.FastForward(t)
 			}
 		}
+		switch opts["then"] { // testing: open a screen after fast-forwarding
+		case "pause":
+			g.TestPause()
+		case "results":
+			g.TestResults()
+		case "levelup":
+			g.TestLevelUp()
+		case "route":
+			g.TestRoute()
+		}
 	}
 	ebiten.SetWindowTitle("Pokémon Survivor")
 	ebiten.SetWindowSize(1280, 720)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 	ebiten.SetTPS(60)
+	ebiten.SetRunnableOnUnfocused(true) // online co-op keeps running; Auto-pause pauses solo runs
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}

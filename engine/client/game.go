@@ -59,6 +59,30 @@ type Game struct {
 	ui           uiState
 	csel         string // selected Pokémon
 	lineFam      string
+	lineFrom     screen
+	charQ, charF string
+	cshow        map[string]string
+	cardH        map[string]float64
+	cardT        int
+	dexQ         string
+	dexSt, dexSo string
+	dexTy        string
+	dexForm      map[string]string
+	dexTyOpen    bool
+	bsel         string // run setup: type whose locations are shown
+	menuBall     int    // main menu: which Poké Ball icon
+	prevScr      screen
+	collSel      string
+	lifeSel      string
+	chalOpen     bool
+	lbNameEdit   string
+	boardsFrom   screen
+	pauseSel     int
+	pauseQuit    bool
+	retired      bool
+	saveGen      int // bumped on every save: cached menu images depend on the save
+	icache       map[string]*ebiten.Image
+	icacheUsed   map[string]int
 	toasts       []toastMsg
 	clipIn       chan string
 	xferMsg      string
@@ -88,8 +112,10 @@ type Game struct {
 }
 
 func New(dataFS fs.FS, db *content.DB) *Game {
+	uiFS = dataFS
 	g := &Game{db: db, assets: NewAssets(dataFS, db), biome: -1, sw: 1280, sh: 720, clipIn: make(chan string, 1)}
 	g.prof = meta.NewProfile(meta.LoadStored(), db)
+	g.saveGen++
 	g.csel = g.prof.S.Sel()
 	if g.db.ByID[g.csel] == nil || !g.prof.Unl(g.csel) {
 		g.csel = "fire"
@@ -303,6 +329,12 @@ func (g *Game) playInput() sim.Input {
 
 func (g *Game) Update() error {
 	g.tick++
+	if g.scr != g.prevScr {
+		if g.scr == scMenu { // a different Poké Ball on the menu each visit, like the web version
+			g.menuBall = rand.Intn(26)
+		}
+		g.prevScr = g.scr
+	}
 	defer g.audioTick()
 	g.cloud.Poll(g.adoptCloud)
 	if p, ok := g.cloud.(interface{ NeedPush() bool }); ok && p.NeedPush() {
@@ -313,13 +345,18 @@ func (g *Game) Update() error {
 		g.scr = scMenu
 	case scLobby:
 		g.updateLobby()
-	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings, scDex, scHist, scDaily, scBoards, scOnline:
+	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings, scDex, scHist, scDaily, scBoards, scOnline, scColl, scLife:
 		g.buildMenu()
 		g.ui.update()
 		if g.ui.clicked {
 			g.audio.Play("click")
 		}
 	case scPlay:
+		// Settings → Auto-pause: pause when the window or tab loses focus (not online: the others keep playing)
+		if g.opt("autop") != 0 && !ebiten.IsFocused() && !g.online() && !g.auto && !g.W.Waiting() {
+			g.scr = scPause
+			return nil
+		}
 		g.updatePlay()
 	case scPause:
 		if g.online() {
@@ -331,32 +368,7 @@ func (g *Game) Update() error {
 				return nil
 			}
 		}
-		g.touchInput()
-		if keyJust(ebiten.KeyEscape, ebiten.KeyP) || padBtn(ebiten.StandardGamepadButtonCenterRight) || confirm() || g.touch.pauseTapped {
-			g.scr = scPlay
-		}
-		if keyJust(ebiten.KeyS) || padBtn(ebiten.StandardGamepadButtonRightTop) {
-			g.settingsFrom = scPause
-			g.scr = scSettings
-			g.ui.focus = ""
-		}
-		if keyJust(ebiten.KeyQ) || padBtn(ebiten.StandardGamepadButtonRightRight) {
-			g.leaveRoom()
-			g.scr = scMenu // abandon: no rewards (same as the web game)
-			g.ui.focus = ""
-		}
-		if x, y, ok := g.touchTap(); ok {
-			switch g.pauseHit(x, y) {
-			case 1:
-				g.scr = scPlay
-			case 2:
-				g.settingsFrom = scPause
-				g.scr = scSettings
-			case 3:
-				g.leaveRoom()
-				g.scr = scMenu
-			}
-		}
+		g.updatePause()
 	case scOver:
 		g.overT += 1.0 / 60
 		if g.auto {
@@ -419,6 +431,12 @@ func (g *Game) startSel() {
 
 func (g *Game) updatePlay() {
 	w := g.W
+	// the HUD's pause button (mouse)
+	if mx, my := ebiten.CursorPosition(); inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !w.Waiting() && !g.coop && inR(g.pauseBtnRect(), float64(mx), float64(my)) {
+		g.scr = scPause
+		g.pauseSel, g.pauseQuit = 0, false
+		return
+	}
 	if g.online() {
 		g.updateOnlinePlay()
 		return
