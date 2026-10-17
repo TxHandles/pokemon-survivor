@@ -916,8 +916,8 @@ func (w *World) stepOrbits1(dt float64) {
 		q := s.Q
 		sl := 1 + float64(s.Lv-1)*.45
 		ev := s.Evo
-		n := int(q.F("n0", 1)) + int(math.Round(sl)) + w.gv() + b2i(ev) + b2i(ev && s.Lv >= 20)
-		sz := (1 + .2*w.pe("wide")) * b2f(ev, 1.3, 1) * (1 + .05*float64(s.Lv-1))
+		n := int(q.F("n0", 1)) + int(math.Round(sl)) + w.gvBase() + b2i(ev) + b2i(ev && s.Lv >= 20) + s.BonusCount()
+		sz := (1 + .2*w.pe("wide")) * b2f(ev, 1.3, 1) * (1 + .05*float64(s.Lv-1)) * s.BonusSizeMul()
 		dir := 1.0
 		if oi%2 == 1 {
 			dir = -1
@@ -925,9 +925,12 @@ func (w *World) stepOrbits1(dt float64) {
 		if s.orbA == 0 {
 			s.orbA = float64(oi) * 1.1
 		}
-		s.orbA += dt * (2.4 + .2*sl) * (1 + .12*w.pe("metro")) * dir
-		rr := (q.F("rr", 55)+q.F("rrp", 5)*sl)*w.rgm() + float64(oi)*26
-		dmg := (q.F("d", 7) + q.F("dp", 3)*sl) * b2f(ev, 1.35*(1+.08*w.pe(s.Move.HeldItem)), 1)
+		s.orbA += dt * (2.4 + .2*sl) * (1 + .12*w.pe("metro")) * dir * s.BonusSpdMul()
+		prevS := w.curSlot
+		w.curSlot = nil // rgm() without another move's range bonus
+		rr := (q.F("rr", 55)+q.F("rrp", 5)*sl)*w.rgm()*s.BonusAreaMul() + float64(oi)*26
+		w.curSlot = prevS
+		dmg := (q.F("d", 7) + q.F("dp", 3)*dsl(s.Lv)) * b2f(ev, 1.35*(1+.08*w.pe(s.Move.HeldItem)), 1) * s.BonusDamageMul()
 		prev := w.curSlot
 		w.curSlot = s
 		for i := 0; i < n; i++ {
@@ -1155,6 +1158,11 @@ func (w *World) genOpts() []Option {
 	if len(o) > w.Choices {
 		o = o[:w.Choices]
 	}
+	for i := range o { // move level-ups roll their bonus now, so the card can show it
+		if o[i].Move && !o[i].New && !o[i].Evo {
+			o[i].Bonus = w.rollBonus(w.DB.Moves[o[i].ID].Shape)
+		}
+	}
 	return o
 }
 
@@ -1184,6 +1192,14 @@ func (w *World) applyOpt(o Option) {
 	case o.Move:
 		if s := w.slot(o.ID); s != nil {
 			s.Lv++
+			b := o.Bonus
+			if b == "" { // free levels (boss chest) roll here
+				b = w.rollBonus(s.Kind)
+			}
+			if s.Bon == nil {
+				s.Bon = map[string]int{}
+			}
+			s.Bon[b]++
 			if s.Lv >= 20 {
 				w.Capstone[o.ID] = true
 			}

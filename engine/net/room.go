@@ -17,7 +17,7 @@ import (
 )
 
 // Protocol is bumped when the wire format or the simulation changes incompatibly.
-const Protocol = 2 // 2: online worlds keep a fixed view size
+const Protocol = 3 // 3: level-up bonuses
 
 const MaxPlayers = 4
 

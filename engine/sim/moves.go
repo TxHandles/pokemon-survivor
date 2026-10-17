@@ -88,9 +88,9 @@ func (w *World) cdOf(s *Slot) float64 {
 		if s.Evo {
 			c *= .85
 		}
-		return math.Max(.22, c)
+		return math.Max(.22, c*s.BonusCDMul())
 	}
-	return s.Q.F("cd", 1)
+	return s.Q.F("cd", 1) * s.BonusCDMul()
 }
 
 // ---- targeting ----
@@ -211,6 +211,7 @@ func b2i(b bool) int {
 type mc struct {
 	lv      int
 	sl, em  float64
+	sld     float64 // damage level scale (bonus.go)
 	t       string
 	ev, cap bool
 	q       *Q
@@ -223,8 +224,8 @@ func (w *World) cn3(c mc) int {
 
 // pj adds a projectile (web pj()).
 func (w *World) pj(c mc, o *Proj) {
-	o.R *= 1 + .05*float64(c.lv-1)
-	sp := 1 + .12*w.pe("metro")
+	o.R *= (1 + .05*float64(c.lv-1)) * c.s.BonusSizeMul()
+	sp := (1 + .12*w.pe("metro")) * c.s.BonusSpdMul()
 	o.VX *= sp
 	o.VY *= sp
 	o.R *= 1 + .2*w.pe("wide")
@@ -254,7 +255,8 @@ func (w *World) fire(s *Slot) {
 	if ev {
 		em = 1.35 * (1 + .08*w.pe(s.Move.HeldItem))
 	}
-	c := mc{lv: s.Lv, sl: 1 + float64(s.Lv-1)*.45, em: em, t: s.Type, ev: ev, cap: ev && s.Lv >= 20, q: q, s: s}
+	em *= s.BonusDamageMul()
+	c := mc{lv: s.Lv, sl: 1 + float64(s.Lv-1)*.45, sld: dsl(s.Lv), em: em, t: s.Type, ev: ev, cap: ev && s.Lv >= 20, q: q, s: s}
 	if v := q.F("hpc", 0); v > 0 && w.P.HP > w.P.MHP*.3 {
 		w.P.HP -= w.P.MHP * v
 	}
@@ -298,7 +300,7 @@ func init() {
 					w.at(c, .12*float64(i), func() { w.swing(c, a0, q.F("hm", 1)) })
 				}
 				if q.F("pj", 0) > 0 || (c.ev && q.F("nw", 0) == 0) {
-					d := (10 + 4*c.sl) * c.em * b2f(q.F("pj", 0) > 0, .9, .8)
+					d := (10 + 4*c.sld) * c.em * b2f(q.F("pj", 0) > 0, .9, .8)
 					w.pj(c, &Proj{X: w.P.X, Y: w.P.Y, VX: math.Cos(a0) * 320, VY: math.Sin(a0) * 320, Type: c.t, D: d, P: 3, L: .7, R: b2f(q.F("pj", 0) > 0, 11, 14)})
 				}
 				if c.cap {
@@ -316,7 +318,7 @@ func init() {
 		"beam": func(w *World, c mc) {
 			q := c.q
 			n := 1 + b2i(c.ev) + b2i(c.cap) + w.gv()
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			for i, e := range w.tgt(n, 620) {
 				a := math.Atan2(e.Y-w.P.Y, e.X-w.P.X)
 				wd := (q.F("w", 0) + q.F("wp", 0)*c.sl) * b2f(c.ev, 1.3, 1) * b2f(c.cap, 1.2, 1) * (1 + .2*w.pe("wide"))
@@ -340,7 +342,7 @@ func init() {
 			}
 			L := q.F("L", 230) * w.rgm() * b2f(c.ev, 1.3, 1)
 			wd := (q.F("w", 0) + q.F("wp", 0)*c.sl) * b2f(c.ev, 1.3, 1) * (1 + .2*w.pe("wide"))
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			const sp = 1150
 			du := L / sp
 			w.sfx("dash")
@@ -352,7 +354,7 @@ func init() {
 			q := c.q
 			n := w.cn3(c)
 			r := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * b2f(c.ev, 1.2, 1)
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			for i, e := range w.tgt(n, 560) {
 				x, y := e.X, e.Y
 				go_ := func() {
@@ -395,11 +397,11 @@ func init() {
 			n := w.cn3(c)
 			r := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * (1 + .1*w.pe("wide")) * b2f(c.ev, 1.25, 1)
 			boomF := func(x, y, mu float64) {
-				f := w.ring(c, x, y, r*b2f(mu > .9, 1, .8), 0, (q.F("d", 0)+q.F("dp", 0)*c.sl)*.8*c.em*mu, .3, true, 1)
+				f := w.ring(c, x, y, r*b2f(mu > .9, 1, .8), 0, (q.F("d", 0)+q.F("dp", 0)*c.sld)*.8*c.em*mu, .3, true, 1)
 				f.R = 6
 				w.Shake = math.Max(w.Shake, q.F("shake", .12))
 				if c.ev && mu > .9 {
-					w.ZN = append(w.ZN, &Zone{X: x, Y: y, R: r * .75, L: 3, Life0: 3, Type: c.t, D: (4 + 2*c.sl) * c.em, Slot: c.s})
+					w.ZN = append(w.ZN, &Zone{X: x, Y: y, R: r * .75, L: 3, Life0: 3, Type: c.t, D: (4 + 2*c.sld) * c.em, Slot: c.s})
 				}
 			}
 			tl := q.F("tele", .4)
@@ -431,7 +433,7 @@ func init() {
 				if c.ev {
 					ex = b2f(c.cap, 1.5, 1)
 				}
-				w.pj(c, &Proj{Tg: te, X: w.P.X, Y: w.P.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em,
+				w.pj(c, &Proj{Tg: te, X: w.P.X, Y: w.P.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em,
 					P: int(q.F("p", 2)) + b2i(c.lv >= 7) + b2i(c.ev), L: q.F("l", 4) * b2f(c.ev, 1.375, 1), R: q.F("r", 8) * b2f(c.ev, 1.25, 1), Sk: true, Tr: q.F("tr", 6), Ls: q.F("ls", 0), Ex: ex})
 			}
 		},
@@ -442,7 +444,7 @@ func init() {
 			for i := 0; i < n; i++ {
 				a := a0 + (float64(i)-float64(n-1)/2)*.42
 				sp := q.F("sp", 300)
-				w.pj(c, &Proj{X: w.P.X, Y: w.P.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em, P: 99, L: 3.4,
+				w.pj(c, &Proj{X: w.P.X, Y: w.P.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em, P: 99, L: 3.4,
 					R: q.F("r", 9) * b2f(c.ev, 1.3, 1), Bm: &boom{out: q.F("out", .5) * w.rgm(), sp: sp * (1 + .12*w.pe("metro"))}})
 			}
 		},
@@ -452,12 +454,12 @@ func init() {
 			for _, e := range w.tgt(n, 460) {
 				l := q.F("l", 3.5) * b2f(c.ev, 1.4, 1)
 				w.ZN = append(w.ZN, &Zone{X: e.X, Y: e.Y, R: (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * b2f(c.ev, 1.3, 1), L: l, Life0: l, Type: c.t,
-					D: (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em, Pull: q.F("pull", 100) * b2f(c.ev, 1.4, 1), Pr: q.F("pr", 1.9), Slot: c.s})
+					D: (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em, Pull: q.F("pull", 100) * b2f(c.ev, 1.4, 1), Pr: q.F("pr", 1.9), Slot: c.s})
 			}
 		},
 		"aura": func(w *World, c mc) {
 			R := w.auraR(c.s)
-			d := (c.q.F("d", 0) + c.q.F("dp", 0)*c.sl) * c.em * b2f(c.cap, 1.3, 1)
+			d := (c.q.F("d", 0) + c.q.F("dp", 0)*c.sld) * c.em * b2f(c.cap, 1.3, 1)
 			for _, e := range w.E {
 				if !e.Dead && dist(w.P.X, w.P.Y, e.X, e.Y) < R+e.R {
 					w.hit(e, d, c.t, 0, 0, 0)
@@ -473,7 +475,7 @@ func init() {
 				f.Sk = sk
 				f.Du = (q.F("du", 0) + q.F("dup", 0)*c.sl) * b2f(c.ev, 1.4, 1) * b2f(mu < 1, .8, 1)
 				if c.ev || q.F("dmg", 0) > 0 {
-					f.Dm = (5 + 2*c.sl) * c.em * b2f(c.ev, 1, .7)
+					f.Dm = (5 + 2*c.sld) * c.em * b2f(c.ev, 1, .7)
 				}
 				f.Rt = c.ev && sk == "sl"
 			}
@@ -486,7 +488,7 @@ func init() {
 		"proj": func(w *World, c mc) {
 			q := c.q
 			n := int(q.F("n0", 2)) + b2i(c.lv >= 4) + b2i(c.lv >= 10) + w.gv() + b2i(c.ev) + b2i(c.cap)
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			ex := 0.0
 			if q.F("ex", 0) > 0 || c.ev {
 				ex = b2f(c.cap, 1.5, 1)
@@ -530,7 +532,7 @@ func init() {
 				kb = 2
 			}
 			mk := func(mu float64) {
-				f := w.ring(c, w.P.X, w.P.Y, (q.F("r0", 100)+q.F("rp", 0)*c.sl)*w.rgm()*b2f(c.ev, 1.15, 1), 12*(1+.2*w.pe("wide")), (q.F("d", 0)+q.F("dp", 0)*c.sl)*c.em*mu, b2f(fat, .4, .6), fat, kb)
+				f := w.ring(c, w.P.X, w.P.Y, (q.F("r0", 100)+q.F("rp", 0)*c.sl)*w.rgm()*b2f(c.ev, 1.15, 1), 12*(1+.2*w.pe("wide")), (q.F("d", 0)+q.F("dp", 0)*c.sld)*c.em*mu, b2f(fat, .4, .6), fat, kb)
 				f.R = 10
 				if fat {
 					w.Shake = math.Max(w.Shake, .2)
@@ -548,14 +550,14 @@ func init() {
 			q := c.q
 			if w.P.Moving {
 				l := (q.F("l", 0) + q.F("lp", 0)*c.sl) * w.rgm() * (1 + .2*w.pe("heat")) * b2f(c.ev, 1.5, 1)
-				w.ZN = append(w.ZN, &Zone{X: w.P.X, Y: w.P.Y, R: (q.F("r", 0) + q.F("rp", 0)*c.sl) * (1 + .2*w.pe("wide")) * b2f(c.ev, 1.3, 1), L: l, Life0: l, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em, Ev: c.ev, Cap: c.cap, Slot: c.s})
+				w.ZN = append(w.ZN, &Zone{X: w.P.X, Y: w.P.Y, R: (q.F("r", 0) + q.F("rp", 0)*c.sl) * (1 + .2*w.pe("wide")) * b2f(c.ev, 1.3, 1) * c.s.BonusAreaMul(), L: l, Life0: l, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em, Ev: c.ev, Cap: c.cap, Slot: c.s})
 			}
 		},
 		"cone": func(w *World, c mc) {
 			q := c.q
 			R := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * (1 + .1*w.pe("wide")) * b2f(c.ev, 1.2, 1)
 			hw := q.F("hw", .45) * b2f(c.ev, 1.25, 1)
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			du := q.F("du", 1) * b2f(c.ev, 1.4, 1)
 			tk := q.F("tk", .12)
 			n := int(math.Max(1, math.Round(du/tk)))
@@ -583,7 +585,7 @@ func init() {
 		},
 		"sweep": func(w *World, c mc) {
 			q := c.q
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			wd := q.F("w", 46) * b2f(c.ev, 1.35, 1) * (1 + .2*w.pe("wide"))
 			go_ := func(dir float64) {
 				a := dir + w.faceA()
@@ -630,7 +632,7 @@ func init() {
 			if c.ev {
 				dec = math.Min(.97, dec+.05)
 			}
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			cx, cy := w.P.X, w.P.Y
 			var ex []*Enemy
 			for i := 0; i < n; i++ {
@@ -653,7 +655,7 @@ func init() {
 		"spin": func(w *World, c mc) {
 			q := c.q
 			R := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * (1 + .1*w.pe("wide")) * b2f(c.ev, 1.25, 1)
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			du := q.F("du", 1.4) * b2f(c.ev, 1.3, 1)
 			tk := q.F("tk", .2)
 			n := int(math.Max(1, math.Round(du/tk)))
@@ -690,7 +692,7 @@ func init() {
 		"mine": func(w *World, c mc) {
 			q := c.q
 			n := int(q.F("n0", 1)) + b2i(c.lv >= 5) + b2i(c.lv >= 10) + b2i(c.ev) + b2i(c.cap)
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			br := (q.F("br", 58) + q.F("brp", 4)*c.sl) * w.rgm() * (1 + .1*w.pe("wide")) * b2f(c.ev, 1.25, 1)
 			var own []*Zone
 			for _, z := range w.ZN {
@@ -717,7 +719,7 @@ func init() {
 			q := c.q
 			n := int(q.F("n0", 5)) + b2i(c.lv >= 5) + b2i(c.lv >= 10) + 2*b2i(c.ev)
 			r := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * (1 + .1*w.pe("wide")) * b2f(c.ev, 1.2, 1)
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			gap := q.F("gap", 44) * w.rgm()
 			line := func(dir float64) {
 				a := dir + w.faceA()
@@ -747,7 +749,7 @@ func init() {
 			q := c.q
 			n := w.cn3(c)
 			R := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * b2f(c.ev, 1.25, 1)
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			for _, e := range w.near(w.P.X, w.P.Y, n, nil, R) {
 				e := e
 				w.addFX(&FX{Kind: "bolt", Type: c.t, AX: w.P.X, AY: w.P.Y, BX: e.X, BY: e.Y, Life: .1})
@@ -765,7 +767,7 @@ func init() {
 			q := c.q
 			n := int(q.F("n0", 5)) + int(math.Round(c.sl/2)) + w.gv() + 3*b2i(c.ev) + 3*b2i(c.cap)
 			a0 := w.aimA()
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			sp := q.F("sp", 480)
 			for i := 0; i < n; i++ {
 				w.at(c, float64(i)*q.F("gap", .055), func() {
@@ -781,7 +783,7 @@ func init() {
 			sp := q.F("sp", 420)
 			for i := 0; i < n; i++ {
 				off := (float64(i) - float64(n-1)/2) * 13
-				w.pj(c, &Proj{X: w.P.X + px*off, Y: w.P.Y + py*off, VX: math.Cos(a0) * sp, VY: math.Sin(a0) * sp, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em,
+				w.pj(c, &Proj{X: w.P.X + px*off, Y: w.P.Y + py*off, VX: math.Cos(a0) * sp, VY: math.Sin(a0) * sp, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em,
 					P: int(q.F("p", 2)) + b2i(c.ev), L: q.F("l", .9), R: q.F("r", 6) * b2f(c.ev, 1.25, 1)})
 			}
 		},
@@ -799,7 +801,7 @@ func init() {
 					a = a0 + w.rnd(-.45, .45)
 				}
 				sp := q.F("sp", 230) * w.rnd(.7, 1.1)
-				w.pj(c, &Proj{X: w.P.X, Y: w.P.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em,
+				w.pj(c, &Proj{X: w.P.X, Y: w.P.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, Type: c.t, D: (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em,
 					P: int(q.F("p", 1)) + b2i(c.ev), L: q.F("l", .55), R: q.F("r", 8) * b2f(c.ev, 1.3, 1), Ex: ex})
 			}
 		},
@@ -808,7 +810,7 @@ func init() {
 			a0 := w.aimWithin(q.F("off", 52) + q.F("r", 58)*2.2 + 40)
 			R := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * (1 + .1*w.pe("wide")) * b2f(c.ev, 1.25, 1)
 			off := q.F("off", 52) * b2f(c.ev, 1.15, 1) * w.rgm()
-			d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em
+			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em
 			co, si := math.Cos(a0), math.Sin(a0)
 			bm := func(mu float64) {
 				x, y := w.P.X+co*off, w.P.Y+si*off
@@ -855,7 +857,7 @@ func (w *World) swing(c mc, a0, mu float64) {
 	} else {
 		hw = math.Min(math.Pi, hw)
 	}
-	d := (q.F("d", 0) + q.F("dp", 0)*c.sl) * c.em * mu
+	d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em * mu
 	ks := (q.F("ks", 0) + q.F("kp", 0)*c.sl) * b2f(c.ev, 1.3, 1)
 	ox, oy := w.P.X, w.P.Y
 	co, si := math.Cos(a0), math.Sin(a0)

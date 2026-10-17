@@ -90,7 +90,8 @@ type Slot struct {
 	metroN     int
 	metroT     float64
 	orbA       float64
-	Owner      int // player index
+	Owner      int            // player index
+	Bon        map[string]int // rolled level-up bonuses (bonus.go)
 }
 
 type DashState struct {
@@ -255,6 +256,7 @@ type Option struct {
 	Evo   bool
 	Swap  string // held item it replaces
 	Level int    // current level (0 = new)
+	Bonus string // move level-up: the rolled bonus (bonus.go)
 }
 
 // World is one run.

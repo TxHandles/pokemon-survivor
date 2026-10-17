@@ -326,11 +326,14 @@ func (g *Game) lvCards() []*lvCard {
 				if ev && lv+1 == 20 {
 					c.tag, c.tagCol = "CAPSTONE PERK", webAcc
 				}
-				a, ca := w.MovePreview(o.ID, lv, ev)
-				b, cb := w.MovePreview(o.ID, lv+1, ev)
+				if o.Bonus != "" && !(ev && lv+1 == 20) {
+					c.tag, c.tagCol = "BONUS · "+strings.ToUpper(sim.BonusText(o.Bonus)), hexC("#7fd8ff")
+				}
+				a, ca := w.MovePreviewB(o.ID, lv, ev, "")
+				b, cb := w.MovePreviewB(o.ID, lv+1, ev, o.Bonus)
 				c.rows = append(c.rows, dmgRow(a, b))
-				pa := w.ProbeMove(o.ID, lv, ev)
-				c.rows = append(c.rows, probeRows(&pa, w.ProbeMove(o.ID, lv+1, ev))...)
+				pa := w.ProbeMoveB(o.ID, lv, ev, "")
+				c.rows = append(c.rows, probeRows(&pa, w.ProbeMoveB(o.ID, lv+1, ev, o.Bonus))...)
 				if math.Abs(ca-cb) > .005 {
 					c.rows = append(c.rows, lvRow{label: "Cooldown", a: fmt.Sprintf("%.2fs", ca), b: fmt.Sprintf("%.2fs", cb), delta: fmt.Sprintf("%d%%", int(math.Round((cb-ca)/ca*100))), good: cb < ca})
 				}

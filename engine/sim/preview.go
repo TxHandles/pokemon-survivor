@@ -23,12 +23,30 @@ func (w *World) CoolFrac(s *Slot) float64 {
 // MovePreview is move id's damage per hit and cooldown at level lv (evolved or not), with the
 // current player's items and upgrades. cd is 0 for moves without a cooldown (orbits).
 func (w *World) MovePreview(id string, lv int, ev bool) (dmg, cd float64) {
+	return w.MovePreviewB(id, lv, ev, "")
+}
+
+// bonusesWith: the current slot's rolled bonuses plus one more (extra may be "").
+func (w *World) bonusesWith(id, extra string) map[string]int {
+	b := map[string]int{}
+	if s := w.slot(id); s != nil {
+		for k, v := range s.Bon {
+			b[k] = v
+		}
+	}
+	if extra != "" {
+		b[extra]++
+	}
+	return b
+}
+
+// MovePreviewB is MovePreview with the move's rolled bonuses (plus extra, a bonus about to be taken).
+func (w *World) MovePreviewB(id string, lv int, ev bool, extra string) (dmg, cd float64) {
 	m := w.DB.Moves[id]
 	if m == nil {
 		return 0, 0
 	}
 	q := BuildQ(m)
-	sl := 1 + float64(lv-1)*.45
 	evm := 1.0
 	if ev {
 		evm = 1.35 * (1 + .08*w.pe(m.HeldItem))
@@ -41,12 +59,13 @@ func (w *World) MovePreview(id string, lv int, ev bool) (dmg, cd float64) {
 	if v, ok := tbl[id]; ok {
 		bal = v
 	}
-	dmg = (q.F("d", 7) + q.F("dp", 3)*sl) * evm * bal * w.dmgM()
+	bs := &Slot{Bon: w.bonusesWith(id, extra)}
+	dmg = (q.F("d", 7) + q.F("dp", 3)*dsl(lv)) * evm * bal * w.dmgM() * bs.BonusDamageMul()
 	if has(w.P.Types, m.Type) {
 		dmg *= 1.5
 	}
 	if m.Shape != "orbit" {
-		s := &Slot{ID: id, Move: m, Kind: m.Shape, Type: m.Type, Lv: lv, Evo: ev, Q: q}
+		s := &Slot{ID: id, Move: m, Kind: m.Shape, Type: m.Type, Lv: lv, Evo: ev, Q: q, Bon: bs.Bon}
 		if c := w.cdOf(s) * w.cdM(); c > 0 && c < 1e8 {
 			cd = c
 		}
@@ -81,6 +100,11 @@ type Probe struct {
 // it. It does not touch the real world: the copy has its own effect lists, enemies, player copy and
 // random generator, so lockstep worlds stay identical.
 func (w *World) ProbeMove(id string, lv int, ev bool) (r Probe) {
+	return w.ProbeMoveB(id, lv, ev, "")
+}
+
+// ProbeMoveB is ProbeMove with the move's rolled bonuses (plus extra, a bonus about to be taken).
+func (w *World) ProbeMoveB(id string, lv int, ev bool, extra string) (r Probe) {
 	m := w.DB.Moves[id]
 	if m == nil || w.P == nil {
 		return
@@ -88,16 +112,17 @@ func (w *World) ProbeMove(id string, lv int, ev bool) (r Probe) {
 	q := BuildQ(m)
 	sl := 1 + float64(lv-1)*.45
 	cap_ := ev && lv >= 20
+	bs := &Slot{Bon: w.bonusesWith(id, extra)}
 	switch m.Shape {
 	case "orbit":
-		r.N = q.F("n0", 1) + math.Round(sl) + float64(w.gv()+b2i(ev)+b2i(cap_))
+		r.N = q.F("n0", 1) + math.Round(sl) + float64(w.gvBase()+b2i(ev)+b2i(cap_)+bs.BonusCount())
 		r.NL = "Orbs"
-		r.Area = (q.F("rr", 55) + q.F("rrp", 5)*sl) * w.rgm()
+		r.Area = (q.F("rr", 55) + q.F("rrp", 5)*sl) * (1 + .15*w.pe("focus")) * (1 + w.PS.F("rng")) * bs.BonusAreaMul()
 		r.AL = "Orbit radius"
-		r.OSz = 18 * (1 + .2*w.pe("wide")) * b2f(ev, 1.3, 1) * (1 + .05*float64(lv-1))
+		r.OSz = 18 * (1 + .2*w.pe("wide")) * b2f(ev, 1.3, 1) * (1 + .05*float64(lv-1)) * bs.BonusSizeMul()
 		return
 	case "screen":
-		r.N = 1 + math.Round(sl) + float64(w.gv()+b2i(ev)+b2i(cap_))
+		r.N = 1 + math.Round(sl) + float64(w.gvBase()+b2i(ev)+b2i(cap_)+bs.BonusCount())
 		r.NL = "Shield charges"
 		return
 	}
@@ -118,7 +143,8 @@ func (w *World) ProbeMove(id string, lv int, ev bool) (r Probe) {
 		d := 22 + float64(i%5)*40
 		cp.E = append(cp.E, &Enemy{X: pc.X + math.Cos(a)*d, Y: pc.Y + math.Sin(a)*d, R: 10, HP: 1e9, MHP: 1e9, Type: "normal"})
 	}
-	s := &Slot{ID: id, Move: m, Kind: m.Shape, Type: m.Type, Lv: lv, Evo: ev, Q: q, Owner: w.CUR}
+	s := &Slot{ID: id, Move: m, Kind: m.Shape, Type: m.Type, Lv: lv, Evo: ev, Q: q, Owner: w.CUR, Bon: bs.Bon}
+	cp.curSlot = nil
 	cp.fire(s)
 	for i := 0; i < 240 && cp.P.Dash != nil; i++ { // dash moves hit along the dash
 		cp.dashStep(1.0 / 60)
