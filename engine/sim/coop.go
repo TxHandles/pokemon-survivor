@@ -48,6 +48,8 @@ type PlayerCtx struct {
 	In                         Input
 	Queue                      []*Prompt
 	Opts                       []Option // this player's level-up cards while choosing
+	Rare                       map[string]bool
+	RareOrder                  []string
 	Boons                      []Boon
 	SwapPick                   bool
 	Deaths, Revives, Kills     int
@@ -92,6 +94,7 @@ func (w *World) saveCtx() {
 	c.Ban, c.Rerolls, c.Banishes = w.Ban, w.Rerolls, w.Banishes
 	c.Learned, c.Evolved, c.Capstone, c.Orbs = w.Learned, w.Evolved, w.Capstone, w.Orbs
 	c.Opts, c.Boons, c.SwapPick = w.Opts, w.Boons, w.SwapPick
+	c.Rare, c.RareOrder = w.Rare, w.RareOrder
 }
 
 // useP makes player i the current one.
@@ -106,6 +109,7 @@ func (w *World) useP(i int) {
 	w.Ban, w.Rerolls, w.Banishes = c.Ban, c.Rerolls, c.Banishes
 	w.Learned, w.Evolved, w.Capstone, w.Orbs = c.Learned, c.Evolved, c.Capstone, c.Orbs
 	w.Opts, w.Boons, w.SwapPick = c.Opts, c.Boons, c.SwapPick
+	w.Rare, w.RareOrder = c.Rare, c.RareOrder
 	w.Cfg.Up, w.Cfg.Training, w.Ability = c.Up, c.Training, c.Ability
 	// each player's own shop upgrades decide their attack and held-item slots
 	w.MoveSlots = 2 + int(w.up("m3")) + int(w.up("m4"))
@@ -186,7 +190,7 @@ func (w *World) addPlayer(db *content.DB, spec PlayerSpec) (*PlayerCtx, error) {
 	}
 	st := db.Stats[spec.ID]
 	c := &PlayerCtx{Idx: len(w.PL), Name: spec.Name, Kind: spec.Kind, Held: map[string]int{}, DMG: map[string]float64{}, Ban: map[string]bool{},
-		Learned: map[string]bool{}, Evolved: map[string]bool{}, Capstone: map[string]bool{}, Up: spec.Up, Training: spec.Training, Ability: spec.Ability & 1}
+		Learned: map[string]bool{}, Evolved: map[string]bool{}, Capstone: map[string]bool{}, Rare: map[string]bool{}, Up: spec.Up, Training: spec.Training, Ability: spec.Ability & 1}
 	if c.Up == nil {
 		c.Up = map[string]int{}
 	}
@@ -373,6 +377,9 @@ func (w *World) prompt() {
 					}
 				case "shrine":
 					w.applyBoon(pr.Boons[0])
+				case "shop":
+					c.Queue = append([]*Prompt{pr}, c.Queue...)
+					w.botShop(i)
 				}
 			})
 		}
@@ -401,7 +408,7 @@ func (w *World) prompt() {
 				w.Chooser = i
 			}
 			lv = lv || pr.Kind == "lv"
-			sh = sh || pr.Kind == "shrine"
+			sh = sh || pr.Kind == "shrine" || pr.Kind == "shop"
 			break
 		}
 	}

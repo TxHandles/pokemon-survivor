@@ -33,6 +33,7 @@ const (
 	CmdBanish
 	CmdBoon
 	CmdRoute
+	CmdShop
 )
 
 // Frame is one player's input for one tick. Movement is quantised so every peer feeds the sim the
@@ -272,6 +273,8 @@ func apply(w *sim.World, p int, c Cmd) {
 		w.BanishFor(p, int(c.Arg))
 	case CmdBoon:
 		w.ChooseBoonFor(p, int(c.Arg))
+	case CmdShop:
+		w.ShopFor(p, int(c.Arg))
 	}
 }
 

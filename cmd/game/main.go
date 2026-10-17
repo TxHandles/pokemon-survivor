@@ -108,6 +108,9 @@ func main() {
 			g.W.TestMud()
 			g.Freeze = true
 		}
+		if v := opts["trader"]; v != "" { // testing: a trader next to you (&trader=shop opens the shop too)
+			g.TestTrader(v == "shop")
+		}
 		if v := opts["maxitems"]; v != "" {
 			g.W.TestMaxItems(v == "fused")
 		}

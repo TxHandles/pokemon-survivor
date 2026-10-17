@@ -29,7 +29,9 @@ func (g *Game) drawWebHUD(dst *ebiten.Image) {
 	g.drawBossWarn(dst)
 	if g.opt("eq") != 0 {
 		g.drawEquipped(dst, 8, 72)
+		g.rareRow(dst, g.W.RareOrder, 8, 72+84)
 	}
+	g.drawTraderArrow(dst)
 	g.drawHUDTail(dst)
 }
 

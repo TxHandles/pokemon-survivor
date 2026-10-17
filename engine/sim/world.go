@@ -34,7 +34,7 @@ func NewCoop(db *content.DB, players []PlayerSpec, biome string, seed int64, cfg
 	}
 	w := &World{DB: db, Biome: biome, Seed: seed, rng: rand.New(rand.NewSource(seed)),
 		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[ckey][]Obstacle{}, obsRaw: map[ckey][]Obstacle{},
-		pools: map[ckey][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6, Cfg: cfg, Run: makeRun(cfg), Chooser: -1}
+		pools: map[ckey][]Pool{}, trT: TraderEvery, elT: 100, mbT: 150, candyT: 20, bioT: 6, Cfg: cfg, Run: makeRun(cfg), Chooser: -1}
 	n := len(players)
 	w.Run.HM *= coC.hp[n]
 	w.Run.XM *= coC.xp[n]
@@ -348,7 +348,7 @@ func (w *World) stepPlayer(dt float64, in Input) {
 			*t -= dt
 		}
 	}
-	spm := P.Sp * (1 + .08*w.pe("boots") + b2f(w.fz("hover"), .08, 0) + w.abSpd() + b2f(P.SpdT > w.T, .2, 0)) * b2f(w.ab.kbst > 0, 1+w.PS.F("kspd"), 1) * b2f(P.Phs > 0, 1.25, 1) * tm * b2f(P.Fly != nil, 1.45, 1)
+	spm := P.Sp * (1 + .08*w.pe("boots") + b2f(w.fz("hover"), .08, 0) + b2f(w.rare("powder"), .1, 0) + w.abSpd() + b2f(P.SpdT > w.T, .2, 0)) * b2f(w.ab.kbst > 0, 1+w.PS.F("kspd"), 1) * b2f(P.Phs > 0, 1.25, 1) * tm * b2f(P.Fly != nil, 1.45, 1)
 	if hk == "ice" {
 		q := math.Min(1, dt*(1.6+(1-math.Min(1, w.hzK()))*14))
 		P.VX += (x*spm - P.VX) * q
@@ -1070,9 +1070,9 @@ func (w *World) stepGems(dt float64) {
 			default:
 				w.sfx("xp")
 			}
-			w.XPS.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp") + b2f(w.fz("study"), .15, 0))
+			w.XPS.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp") + b2f(w.fz("study"), .15, 0) + b2f(w.rare("luckyegg"), .3, 0))
 			P.XP = w.XPS.XP
-			w.Coins += g.C * coinK * (1 + w.PS.F("coin"))
+			w.Coins += g.C * coinK * (1 + w.PS.F("coin")) * b2f(w.rare("amulet"), 1.5, 1)
 			if g.Tk {
 				w.Tickets++
 				if g.Ed {

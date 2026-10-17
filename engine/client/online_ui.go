@@ -777,6 +777,8 @@ func (g *Game) updateOnlinePlay() {
 					g.onlineCmd(lockstep.CmdChoose, w.BotPick())
 				case "shrine":
 					g.onlineCmd(lockstep.CmdBoon, 0)
+				case "shop":
+					g.onlineCmd(lockstep.CmdShop, -1)
 				case "route":
 					g.onlineCmd(lockstep.CmdRoute, 0)
 				}

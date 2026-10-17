@@ -604,6 +604,11 @@ func (g *Game) choiceCount() int {
 		return len(g.W.Route)
 	case "shrine":
 		return len(g.W.Boons) + 1
+	case "shop":
+		if g.W.Trader == nil {
+			return 1
+		}
+		return len(g.W.Trader.Stock) + 1
 	case "lv":
 		return len(g.W.Opts)
 	}
@@ -644,6 +649,9 @@ func (g *Game) pick(i int) {
 			g.onlineCmd(lockstep.CmdRoute, i)
 		case "shrine":
 			g.onlineCmd(lockstep.CmdBoon, i)
+		case "shop":
+			g.onlineCmd(lockstep.CmdShop, i)
+			return
 		default:
 			if g.banMode {
 				g.onlineCmd(lockstep.CmdBanish, i)
@@ -661,6 +669,9 @@ func (g *Game) pick(i int) {
 		g.W.ChooseRoute(i)
 	case "shrine":
 		g.W.ChooseBoon(i)
+	case "shop":
+		g.W.ShopFor(g.viewIdx(), i)
+		return
 	default:
 		if g.banMode {
 			g.W.Banish(i)
@@ -694,6 +705,8 @@ func (g *Game) Draw(dst *ebiten.Image) {
 			g.drawRoute(dst)
 		case "shrine":
 			g.drawShrine(dst)
+		case "shop":
+			g.drawShop(dst)
 		}
 		g.drawOnlineOverlay(dst)
 		if g.scr == scPlay && !g.W.Waiting() {

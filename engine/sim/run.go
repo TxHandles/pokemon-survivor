@@ -332,6 +332,7 @@ func (w *World) stepRun(dt float64) {
 		ck = append(ck, c)
 	}
 	w.Chests = ck
+	w.stepTrader(dt)
 }
 
 func (w *World) openChest(c *MapChest) {
@@ -434,6 +435,10 @@ func (w *World) BotDecide() {
 		}
 		w.ChooseRoute(w.rng.Intn(len(w.Route)))
 	case StateShrine:
+		if w.PendingKind(w.Chooser) == "shop" {
+			w.botShop(w.Chooser)
+			return
+		}
 		w.ChooseBoon(0)
 	}
 }

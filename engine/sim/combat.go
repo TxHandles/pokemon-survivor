@@ -208,6 +208,9 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 	if w.pe("heat") > 0 && (e.Burn > 0 || e.Psn > 0) {
 		heat = (1 + .04*w.pe("heat")) * b2f(w.fz("inferno"), 1.15, 1)
 	}
+	if w.rare("zoomlens") && (e.Boss || e.Elite) {
+		base *= 1.25
+	}
 	d := math.Round(base * m * w.dmgM() * mv * crit * heat * w.abHitMul(e, t, em))
 	if v := q.F("pct", 0); v > 0 && !e.Boss && !e.Elite {
 		d = math.Max(d, math.Round(e.HP*v))
@@ -231,6 +234,12 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 		if v := q.F("lsx", 0); v > 0 {
 			w.healCapped(d * v)
 		}
+	}
+	if w.rare("shellbell") {
+		w.healCapped(d * .02)
+	}
+	if w.rare("kingsrock") && !e.Boss && e.HP > d && w.rng.Float64() < .1 {
+		e.Stun = math.Max(e.Stun, .5)
 	}
 	if t == "fighting" && kb == 0 { // every fighting hit shoves
 		kb = 1
@@ -369,7 +378,10 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 	if P.Still > 1 {
 		red += w.PS.F("redStill")
 	}
-	P.HP -= d * ppow(.96, w.up("arm")) * ppow(.93, w.pe("metal")) * b2f(w.fz("barbs"), .9, 1) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
+	P.HP -= d * ppow(.96, w.up("arm")) * ppow(.93, w.pe("metal")) * b2f(w.fz("barbs"), .9, 1) * b2f(w.rare("vest"), .8, 1) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
+	if w.rare("policy") {
+		P.polT = w.T + 5
+	}
 	src := s.src
 	if src == nil {
 		src = srcUnknown

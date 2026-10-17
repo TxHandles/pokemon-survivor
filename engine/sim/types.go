@@ -129,6 +129,7 @@ type Player struct {
 	Hazard            string  // hazard under the player this frame
 	Pm, Pbl, Phs, Pgr float64 // shrine boons / pacts (seconds left)
 	DQ2               float64 // second action button request time (-1 = none)
+	polT              float64 // Weakness Policy: boosted until
 	Fly               *FlyState
 	Roll              *RollState
 	Prot              float64 // Protect / Detect: seconds of shield left
@@ -353,6 +354,10 @@ type World struct {
 	BiomeN                           int // biomes visited (the client reloads the floor when it changes)
 	routeT                           float64
 	chestT, shT                      float64
+	trT                              float64 // next trader roll
+	Trader                           *Trader
+	Rare                             map[string]bool // the current player's trader items
+	RareOrder                        []string
 	MC                               []*MapChest
 	Chests                           []Chest
 	Boons                            []Boon

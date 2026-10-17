@@ -194,6 +194,9 @@ func (g *Game) cardRects() [][4]float64 {
 	if g.choiceKind() == "route" {
 		return g.routeRects()
 	}
+	if g.choiceKind() == "shop" {
+		return g.shopLayout()
+	}
 	if g.choiceKind() == "shrine" {
 		_, rs := g.shrineLayout()
 		return rs

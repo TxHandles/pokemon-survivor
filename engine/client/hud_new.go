@@ -30,6 +30,7 @@ func (g *Game) drawNewHUD(dst *ebiten.Image) {
 	}
 	g.drawCenterArrow(dst)
 	g.drawPlayerArrows(dst)
+	g.drawTraderArrow(dst)
 	g.drawHUDTail(dst)
 }
 
@@ -145,7 +146,8 @@ func (g *Game) drawEquipCards(dst *ebiten.Image) {
 		g.hoverTip([4]float64{x, y, cw, ch}, func() *tipData { return g.moveTip(s.ID, s) })
 		x += cw + 6
 	}
-	g.itemRow(dst, w.Held, w.HeldOrder, 12, y-8-34)
+	ix := g.itemRow(dst, w.Held, w.HeldOrder, 12, y-8-34)
+	g.rareRow(dst, w.RareOrder, ix+6, y-8-32)
 }
 
 func (g *Game) moveCard(dst *ebiten.Image, w *sim.World, s *sim.Slot, x, y, cw, ch float64) {

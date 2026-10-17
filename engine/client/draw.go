@@ -124,6 +124,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		drawPickup(dst, it.K, sx(it.X), sy(it.Y)+math.Sin(w.T*3+it.X)*2, it.T)
 	}
 	g.drawChests(dst, sx, sy)
+	g.drawTrader(dst, sx, sy)
 	// gems
 	for _, gm := range w.Gems {
 		x, y := sx(gm.X), sy(gm.Y)
