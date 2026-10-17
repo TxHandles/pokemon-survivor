@@ -280,27 +280,11 @@ func (g *Game) visFX(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64)
 		}
 		return true
 	case "rect":
-		al := math.Max(0, math.Min(1, f.Life*4))
-		const n0 = 8
-		for i := 0; i < n0; i++ {
-			t0 := float64(i) / n0
-			c := mix(alpha(v.c1, .27), v.c2, t0+.5/n0)
-			c.A = uint8(float64(.27*255) + (255-.27*255)*(t0+.5/n0))
-			orect(dst, x+math.Cos(f.A)*f.Ln*t0, y+math.Sin(f.A)*f.Ln*t0, f.A, f.Ln/n0+.5, f.Wd, alpha(c, al*float64(c.A)/255))
+		if f.Ln > 600 {
+			g.visSweep(dst, v, f, x, y)
+		} else {
+			g.visLash(dst, v, f, x, y)
 		}
-		co, si := math.Cos(f.A), math.Sin(f.A)
-		px, py := -si*f.Wd, co*f.Wd
-		pts := [][2]float64{{x + px, y + py}, {x + co*f.Ln + px, y + si*f.Ln + py}, {x + co*f.Ln - px, y + si*f.Ln - py}, {x - px, y - py}}
-		for i := range pts {
-			q := pts[(i+1)%4]
-			line(dst, pts[i][0], pts[i][1], q[0], q[1], 2, alpha(v.c0, al))
-		}
-		n := int(math.Max(2, math.Round(f.Ln/40)))
-		for i := 0; i < n; i++ {
-			d := (float64(i) + .5) / float64(n) * f.Ln
-			v.G(dst, "b", x+co*d, y+si*d, math.Min(30, f.Wd*1.6), f.A, al)
-		}
-		v.G(dst, "p", x+co*f.Ln*.9, y+si*f.Ln*.9, 34, f.A, al)
 		return true
 	case "beam":
 		al := math.Min(1, f.Life*5)
@@ -619,5 +603,115 @@ func firePunch(dst *ebiten.Image, f *sim.FX, x, y, T float64, ic *ebiten.Image) 
 	// the web version draws a fist emoji here; the fighting-type icon stands in
 	if ic != nil {
 		stamp(dst, ic, x+math.Cos(f.A)*f.R*.7, y+math.Sin(f.A)*f.R*.7, 26, 0, al)
+	}
+}
+
+// visLash: whip attacks (Fire Lash, Vine Whip…): a tapered whip uncoils along the swing, cracks
+// at the tip, and sheds the type's particles along its length.
+func (g *Game) visLash(dst *ebiten.Image, v *mvis, f *sim.FX, x, y float64) {
+	T := g.W.T
+	p := 1 - f.Life/math.Max(f.Life0, 1e-6) // 0 → 1
+	ext := math.Min(1, p*3)                 // the whip reaches full length in the first third
+	al := math.Min(1, f.Life/math.Max(f.Life0, 1e-6)*2.5)
+	ca, sa := math.Cos(f.A), math.Sin(f.A)
+	nx, ny := -sa, ca
+	side := 1.0
+	if v.h%2 == 1 {
+		side = -1
+	}
+	const N = 18
+	pts := make([][2]float64, N+1)
+	wid := make([]float64, N+1)
+	for i := 0; i <= N; i++ {
+		t := float64(i) / N
+		along := t * f.Ln * ext
+		// a travelling S-curve that straightens as the crack lands
+		lat := side * (math.Sin(t*math.Pi)*f.Wd*1.8*(1-p) + math.Sin(t*9-p*22)*f.Wd*.35*(1-t))
+		pts[i] = [2]float64{x + ca*along + nx*lat, y + sa*along + ny*lat}
+		wid[i] = math.Max(1.2, f.Wd*.6*(1-t*.85))
+	}
+	strip := func(k float64, col color.NRGBA) {
+		var l, r [][2]float64
+		for i := range pts {
+			j := min(i+1, N)
+			i0 := max(i-1, 0)
+			dx, dy := pts[j][0]-pts[i0][0], pts[j][1]-pts[i0][1]
+			d := math.Hypot(dx, dy)
+			if d == 0 {
+				d = 1
+			}
+			ox, oy := -dy/d*wid[i]*k, dx/d*wid[i]*k
+			l = append(l, [2]float64{pts[i][0] + ox, pts[i][1] + oy})
+			r = append([][2]float64{{pts[i][0] - ox, pts[i][1] - oy}}, r...)
+		}
+		poly(dst, append(l, r...), col)
+	}
+	glow(dst, pts[N/2][0], pts[N/2][1], f.Ln*.35, v.c1, .12*al)
+	strip(1.35, alpha(v.c0, al))
+	strip(1, alpha(v.c1, al))
+	strip(.45, alpha(v.c2, al))
+	// crack at the tip
+	tip := pts[N]
+	if p > .25 {
+		k := math.Min(1, (p-.25)*3)
+		glow(dst, tip[0], tip[1], 26*k+8, v.c2, .5*al)
+		for i := 0; i < 5; i++ {
+			a := f.A + (float64(i)-2)*.55 + math.Sin(T*20+float64(i))*.1
+			d := 10 + 16*k
+			v.G(dst, "b", tip[0]+math.Cos(a)*d, tip[1]+math.Sin(a)*d, 16+6*k, a, al*(1-k*.4))
+		}
+	}
+	// particles shed along the whip
+	for i := 3; i < N; i += 4 {
+		q := pts[i]
+		v.G(dst, "b", q[0]+math.Sin(T*14+float64(i))*3, q[1]+math.Cos(T*12+float64(i))*3, 14, f.A+T*6, al*.85)
+	}
+	if v.t == "fire" {
+		for i := 2; i < N; i += 3 {
+			q := pts[i]
+			dropA(dst, q[0], q[1]-2, 3+2*hsh(float64(i)), -math.Pi/2, hexC("#ff4a1a"), hexC("#ffd24a"), float64(i), 3, T, al)
+		}
+	}
+}
+
+// visSweep: the big sweeping walls (Surf, Muddy Water, Sacred Fire…): a rolling crest with the
+// type's art riding along it instead of a flat bar.
+func (g *Game) visSweep(dst *ebiten.Image, v *mvis, f *sim.FX, x, y float64) {
+	T := g.W.T
+	al := math.Max(0, math.Min(1, f.Life/math.Max(f.Life0, 1e-6)*1.6))
+	ca, sa := math.Cos(f.A), math.Sin(f.A)
+	nx, ny := -sa, ca // the wall's facing (direction of travel is ±n)
+	sw, sh := float64(g.sw), float64(g.sh)
+	// only the on-screen part of the 1500px wall
+	t0, t1 := 0.0, f.Ln
+	step := 28.0
+	var crest [][2]float64
+	for t := t0; t <= t1; t += step {
+		px, py := x+ca*t, y+sa*t
+		if px < -80 || py < -80 || px > sw+80 || py > sh+80 {
+			if len(crest) > 1 {
+				break
+			}
+			continue
+		}
+		wob := math.Sin(t*.025+T*6) * f.Wd * .35
+		crest = append(crest, [2]float64{px + nx*wob, py + ny*wob})
+	}
+	if len(crest) < 2 {
+		return
+	}
+	// body: a soft band behind the crest
+	for _, q := range crest {
+		glow(dst, q[0], q[1], f.Wd*1.1, v.c1, .16*al)
+	}
+	polyline(dst, crest, f.Wd*.9, alpha(v.c1, .55*al))
+	polyline(dst, crest, math.Max(3, f.Wd*.35), alpha(v.c2, .85*al))
+	for i, q := range crest {
+		if i%3 == 0 {
+			v.G(dst, "b", q[0], q[1], 18+6*hsh(float64(i)), f.A+T*3+float64(i), al)
+		}
+		if i%5 == 2 {
+			v.G(dst, "d", q[0], q[1], 34, T*2+float64(i), al*.6)
+		}
 	}
 }

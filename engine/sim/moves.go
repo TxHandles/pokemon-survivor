@@ -564,7 +564,7 @@ func init() {
 				if e := w.near1(w.P.X, w.P.Y, R*1.4); e != nil {
 					a0 = math.Atan2(e.Y-w.P.Y, e.X-w.P.X)
 				}
-				w.addFX(&FX{Kind: "arc", X: w.P.X, Y: w.P.Y, A: a0, Wd: hw, R: R, Life: tk * 1.3, Type: c.t})
+				w.addFX(&FX{Kind: "arc", X: w.P.X, Y: w.P.Y, A: a0, Wd: hw, R: R, Life: tk * 1.3, Type: c.t, Slot: c.s})
 				w.sectorHit(w.P.X, w.P.Y, a0, hw, R, func(e *Enemy, dx, dy, dd float64) {
 					w.hit(e, d, c.t, 0, 0, 0)
 					if q.F("kbx", 0) > 0 && !e.Boss {
@@ -599,7 +599,7 @@ func init() {
 					u := -d0 + float64(i)/float64(steps)*2*d0
 					w.at(c, float64(i)*.05, func() {
 						wx, wy := cx+co*u, cy+si*u
-						w.addFX(&FX{Kind: "rect", X: wx + si*span/2, Y: wy - co*span/2, A: a + math.Pi/2, Ln: span, Wd: wd, Life: .09, Type: c.t})
+						w.addFX(&FX{Kind: "rect", X: wx + si*span/2, Y: wy - co*span/2, A: a + math.Pi/2, Ln: span, Wd: wd, Life: .09, Type: c.t, Slot: c.s})
 						for _, e := range w.E {
 							if e.Dead || hs[e] {
 								continue
@@ -659,7 +659,7 @@ func init() {
 			n := int(math.Max(1, math.Round(du/tk)))
 			for i := 0; i < n; i++ {
 				w.at(c, float64(i)*tk, func() {
-					w.addFX(&FX{Kind: "arc", X: w.P.X, Y: w.P.Y, A: w.T * 14, Wd: 2.4, R: R, Life: tk * 1.15, Type: c.t})
+					w.addFX(&FX{Kind: "arc", X: w.P.X, Y: w.P.Y, A: w.T * 14, Wd: 2.4, R: R, Life: tk * 1.15, Type: c.t, Slot: c.s})
 					for _, e := range w.E {
 						if e.Dead {
 							continue
@@ -860,9 +860,9 @@ func (w *World) swing(c mc, a0, mu float64) {
 	ox, oy := w.P.X, w.P.Y
 	co, si := math.Cos(a0), math.Sin(a0)
 	if sh == "rect" {
-		w.addFX(&FX{Kind: "rect", X: ox, Y: oy, A: a0, Ln: R, Wd: hw, Life: .22, Type: c.t})
+		w.addFX(&FX{Kind: "rect", X: ox, Y: oy, A: a0, Ln: R, Wd: hw, Life: .22, Type: c.t, Slot: c.s})
 	} else {
-		w.addFX(&FX{Kind: "arc", X: ox, Y: oy, A: a0, Wd: hw, R: R, Life: .22, Type: c.t})
+		w.addFX(&FX{Kind: "arc", X: ox, Y: oy, A: a0, Wd: hw, R: R, Life: .22, Type: c.t, Slot: c.s})
 	}
 	ls := q.F("ls", 0)
 	for _, e := range w.E {

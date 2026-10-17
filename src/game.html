@@ -1310,7 +1310,7 @@ function bossUnlock(bi,et,fin,sg,cid,bv){const msg=[];try{SV.fl=SV.fl||{};urBoss
  const b0=new Set(Object.keys(SV.unl||{}));try{chkUnl()}catch(_){}for(const k of Object.keys(SV.unl||{}))if(!b0.has(k)&&CHR[k]&&CHR[k].leg)msg.push('🌟 '+CHR[k].n+' unlocked!');
  try{SV.locb=SV.locb||{};SV.locb[bi]=(SV.locb[bi]||0)|(1<<(LI||0));SV.st=SV.st||{};SV.st.rt=Math.max(SV.st.rt||0,(bv&&bv.size)||0)}catch(e){}colStats();return msg}
 let LOCBAN=null;   /* a message only this device sees (co-op guests: their own unlocks) */
-function bossDown(e){if(nc)return;const ev={bi:BI,et:e.type,fin:e.bn===RUN.bosses&&!endless,sg:RUN.sg};
+function bossDown(e){if(nc)return;IT.push({x:e.x-22,y:e.y,t:0,k:'magnet'},{x:e.x+22,y:e.y,t:0,k:'berry'});const ev={bi:BI,et:e.type,fin:e.bn===RUN.bosses&&!endless,sg:RUN.sg};
  const me=COOP?PL[LOCAL].P:P,msg=bossUnlock(ev.bi,ev.et,ev.fin,ev.sg,me.cid,me.bv);if(COOP){for(const c of PL)if(c.P!==me)c.P.bv.add(BI);if(window.COBOSS)try{COBOSS(ev)}catch(_){}}
  msg.forEach((m,i)=>FX.push({k:'txt',x:me.x,y:me.y-120-i*22,s:m,c:m.startsWith('🌟')?'#ffe08a':'#9fe8ff',l:4}));
 colStats();save();bossClear(e);if(!RUN.lock){SPH=1e9;RTPEND=1.3}else SPH=3}
@@ -1993,7 +1993,7 @@ const SCB={
  fairy:['flower',{c1:'#ff8ad4',c2:'#ffc4ec',o:'#a02a70'},'crystal',{c1:'#ffb0dc',c2:'#fff2fb',o:'#a02a70'}]};
 function scnSpr(bi,kind,v){const cur=bi===BI,k=bi+(cur?LI:'')+kind+v;if(SCN[k])return SCN[k];const c=scnC(128,128),x=c.getContext('2d'),d=cur?curSCB():(SCB[bi]||SCB.normal),R=srng(v*977+bi.length*31+(kind==='t'?7:3));
  try{if(kind==='t')(TREE[d[0]]||TREE.oak)(x,R,d[1]);else(ROCK[d[2]]||ROCK.boulder)(x,R,d[3])}catch(e){}return SCN[k]=c}
-function drawObst(b){if(b.lm){drawLM(b);return}const v=(Math.abs(Math.floor(b.x*7.3+b.y*3.1))%3);if(b.tree){const s=b.r/14.5;ctx.drawImage(scnSpr(BI,'t',v),b.x-64*s,b.y-104*s,128*s,128*s)}else{const s=b.r/34*(({tomb:1.45,pillar:1.4})[curSCB()[2]]||1);ctx.drawImage(scnSpr(BI,'r',v),b.x-64*s,b.y-92*s,128*s,128*s)}}
+function drawObst(b){if(b.lm){drawLM(b);return}const v=(Math.abs(Math.floor(b.x*7.3+b.y*3.1))%3);if(b.tree){const s=b.r/14.5,bh=Math.abs(P.x-b.x)<46*s&&P.y-b.y<-6&&P.y-b.y>-96*s;if(bh)ctx.globalAlpha=.5;ctx.drawImage(scnSpr(BI,'t',v),b.x-64*s,b.y-104*s,128*s,128*s);ctx.globalAlpha=1}else{const s=b.r/34*(({tomb:1.45,pillar:1.4})[curSCB()[2]]||1);ctx.drawImage(scnSpr(BI,'r',v),b.x-64*s,b.y-92*s,128*s,128*s)}}
 /* ---- hazard pools: textured irregular blobs (256px canvases) ---- */
 function poolSpr(k,v){const key='pool'+k+v;if(SCN[key])return SCN[key];const c=scnC(256,256),x=c.getContext('2d'),R=srng(v*131+k.length*17),C=128,r=120;
  const blob=(rr,amp)=>blobPath(x,C,C,rr,srng(v*131+k.length*17),16,amp);
@@ -2046,7 +2046,7 @@ r:{boulder:[[64,90,26],[44,94,18],[84,94,18],[64,72,16]],ice:[[64,84,26],[42,88,
 SHP.t.blossom=SHP.t.oak;
 const RSCM={tomb:1.45,pillar:1.4};
 function obsShape(b){if(b.cB===BI+LI)return b.cs;if(b.lm){const cs=lmShape(b);let mx=b.x,my=b.y,br=0;if(cs.length){mx=0;my=0;for(const c of cs){mx+=c[0];my+=c[1]}mx/=cs.length;my/=cs.length;for(const c of cs)br=Math.max(br,Math.hypot(c[0]-mx,c[1]-my)+c[2])}b.cs=cs;b.cB=BI+LI;b.bx=mx;b.by=my;b.br=br;return cs}const d=curSCB();let L,s,ox,oy;
- if(b.tree){L=SHP.t[d[0]]||SHP.t.oak;s=b.r/14.5;ox=64;oy=104}else{L=SHP.r[d[2]]||SHP.r.boulder;s=b.r/34*(RSCM[d[2]]||1);ox=64;oy=92}
+ if(b.tree){const F=SHP.t[d[0]]||SHP.t.oak;L=F.filter(c=>c[1]>=94);if(!L.length)L=F.slice(0,1);s=b.r/14.5;ox=64;oy=104}else{L=SHP.r[d[2]]||SHP.r.boulder;s=b.r/34*(RSCM[d[2]]||1);ox=64;oy=92}
  const cs=L.map(([x,y,r])=>[b.x+(x-ox)*s,b.y+(y-oy)*s,r*s]);let mx=0,my=0;for(const c of cs){mx+=c[0];my+=c[1]}mx/=cs.length;my/=cs.length;let br=0;for(const c of cs)br=Math.max(br,Math.hypot(c[0]-mx,c[1]-my)+c[2]);
  b.cs=cs;b.cB=BI+LI;b.bx=mx;b.by=my;b.br=br;return cs}
 const VC={},VG={};const visOf=id=>{if(!id||!MV[id]||!opt('fx'))return null;if(texURL(id))return VG[id]||(VG[id]=genVis(id));return VC[id]||(VC[id]=Object.assign(genVis(id),VIS[id]||{}))};
@@ -2184,7 +2184,7 @@ function ptStart(){const c=$('ptc').value,bi=$('ptb').value;SV.rs=Object.assign(
 function ptMove(mode){if(!P||state==='menu'){ptStat();return}if(mode===-1){ml={};mt={};evo={};SH={}}else{const id=$('ptm').value;if(mode===0){delete ml[id];delete mt[id];delete evo[id];delete SH[id]}else{ml[id]=Math.max(1,Math.min(20,+$('ptml').value||1));mt[id]=0;if($('ptme').checked)evo[id]=1;else delete evo[id]}}eqSig='';ptStat()}
 function ptItem(){if(!P||state==='menu')return;pl[$('pti').value]=Math.max(0,Math.min(10,+$('ptil').value||0));eqSig='';ptStat()}
 function ptDo(k){if(!P||state==='menu')return;if(k==='lvl')P.xp+=P.nx;else if(k==='god')P.god=!P.god;else if(k==='heal')P.hp=P.mhp;else if(k==='min')T+=60;else if(k==='boss')spawnBoss();else if(k==='elite')spawnElite(false);else if(k==='mini')spawnElite(true);else if(k==='shrine')spawnMap('s');else if(k==='wipe')bomb();ptStat()}
-const OPT_D={res:2,shake:1,dnum:1,fx:1,flash:1,eq:1,autop:1,name:'',vol:.6,sfxv:.7,musv:.6};
+const OPT_D={res:2,shake:1,dnum:1,fx:1,flash:1,eq:1,autop:1,name:'',vol:.3,sfxv:.7,musv:.6};
 const opt=k=>{const o=SV&&SV.opt;return o&&o[k]!==undefined?o[k]:OPT_D[k]};
 function setOpt(k,v){SV.opt=SV.opt||{};SV.opt[k]=v;let fi=-1,fr=-1;try{if(typeof GP!=='undefined'&&GP.f){const rows=[...document.querySelectorAll('#setl .sopt')];fr=rows.findIndex(r=>r.contains(GP.f));if(fr>=0)fi=[...rows[fr].querySelectorAll('button')].indexOf(GP.f)}}catch(e){}settingsUI();applyOpt();try{if(fr>=0&&fi>=0){const b=document.querySelectorAll('#setl .sopt')[fr].querySelectorAll('button')[fi];if(b)gpFocus(b)}}catch(e){}try{save()}catch(e){}}
 function applyOpt(){auVol();try{if(getDPR()!==DPR)rs()}catch(e){}document.body.classList.toggle('nof',!opt('flash'));const el=document.getElementById('eq');if(el)el.style.display=opt('eq')?'':'none'}

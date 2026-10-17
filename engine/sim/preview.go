@@ -218,3 +218,26 @@ func (w *World) ProbeMove(id string, lv int, ev bool) (r Probe) {
 	}
 	return
 }
+
+// TestFire (screenshots): the current player uses move id once, then the world runs for `after`
+// seconds so its effect is mid-animation.
+func (w *World) TestFire(id string, lv int, after float64) {
+	m := w.DB.Moves[id]
+	if m == nil {
+		return
+	}
+	s := &Slot{ID: id, Move: m, Kind: m.Shape, Type: m.Type, Lv: lv, Q: BuildQ(m), Owner: w.CUR}
+	w.fire(s)
+	for t := 0.0; t < after; t += 1.0 / 60 {
+		w.stepFX(1.0 / 60)
+		for i := 0; i < len(w.DL); i++ {
+			if d := w.DL[i]; d.t-1.0/60 <= 0 {
+				w.DL = append(w.DL[:i], w.DL[i+1:]...)
+				d.fn()
+				i--
+			} else {
+				d.t -= 1.0 / 60
+			}
+		}
+	}
+}

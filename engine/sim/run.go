@@ -134,6 +134,8 @@ func (w *World) afterBoss(e *Enemy) {
 	w.Coins += 25
 	w.freeLevel() // boss chest: free level up
 	w.bossClear(e)
+	// boss loot on the ground: a magnet (pulls in every gem) and a berry
+	w.Items = append(w.Items, &Pickup{X: e.X - 22, Y: e.Y, K: "magnet"}, &Pickup{X: e.X + 22, Y: e.Y, K: "berry"})
 	w.Visited = appendU(w.Visited, w.Biome)
 	w.Tickets++ // boss chest ticket
 	if w.Cfg.OnBoss != nil {

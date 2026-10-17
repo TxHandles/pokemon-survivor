@@ -84,6 +84,11 @@ func main() {
 				g.FastForward(t)
 			}
 		}
+		if id := opts["fire"]; id != "" { // testing: freeze a move's effect mid-animation (&fireT=0.1)
+			ft, _ := strconv.ParseFloat(opts["fireT"], 64)
+			g.W.TestFire(id, 5, ft)
+			g.Freeze = true
+		}
 		switch opts["then"] { // testing: open a screen after fast-forwarding
 		case "pause":
 			g.TestPause()

@@ -215,8 +215,15 @@ func (g *Game) drawObst(dst *ebiten.Image, o sim.Obstacle, x, y float64) {
 	v := int(math.Abs(math.Floor(o.X*7.3+o.Y*3.1))) % 3
 	if o.Tree {
 		s := o.R / 14.5
+		a := 1.0
+		for _, pc := range w.PL { // someone behind the leaves: let them show through
+			dx, dy := pc.P.X-o.X, pc.P.Y-o.Y
+			if !pc.P.Dead && math.Abs(dx) < 46*s && dy < -6 && dy > -96*s {
+				a = .5
+			}
+		}
 		if v < len(la.T) {
-			drawAt(dst, artImg("scen", la.T[v]), x-64*s, y-104*s, s, 1)
+			drawAt(dst, artImg("scen", la.T[v]), x-64*s, y-104*s, s, a)
 		}
 		return
 	}

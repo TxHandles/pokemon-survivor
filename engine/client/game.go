@@ -51,6 +51,7 @@ type Game struct {
 	ability int // 0 starting, 1 hidden
 	// Hold keeps demo choice screens open (for screenshots)
 	Hold   bool
+	Freeze bool // testing: the world stops (screenshots of effects mid-animation)
 	floorN int
 	// level-up
 	lvSel   int
@@ -447,6 +448,9 @@ func (g *Game) startSel() {
 }
 
 func (g *Game) updatePlay() {
+	if g.Freeze { // testing: keep the frame still for a screenshot
+		return
+	}
 	w := g.W
 	// the HUD's pause button (mouse)
 	if mx, my := ebiten.CursorPosition(); inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) && !w.Waiting() && !g.coop && inR(g.pauseBtnRect(), float64(mx), float64(my)) {

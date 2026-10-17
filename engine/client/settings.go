@@ -15,7 +15,7 @@ import (
 const scSettings screen = 120
 
 // Settings live in the save under "opt" (same keys and values as the web game).
-var optDefaults = map[string]float64{"vol": .6, "sfxv": .7, "musv": .6, "shake": 1, "dnum": 1, "flash": 1, "touch": 2, "eq": 1, "autop": 1, "hud": 0, "fx": 1}
+var optDefaults = map[string]float64{"vol": .3, "sfxv": .7, "musv": .6, "shake": 1, "dnum": 1, "flash": 1, "touch": 2, "eq": 1, "autop": 1, "hud": 0, "fx": 1}
 
 func (g *Game) opt(k string) float64 {
 	if g.prof != nil {

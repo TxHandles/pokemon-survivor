@@ -194,9 +194,18 @@ func (w *World) shape(o *Obstacle) {
 		L, s, ox, oy = lmShapes[w.LandmarkKind(*o)], o.Sc, 80, 150
 	case o.Tree:
 		t, _ := w.Scenery()
-		L = shpTree[t]
-		if L == nil { // blossom shares the oak's shape
-			L = shpTree["oak"]
+		full := shpTree[t]
+		if full == nil { // blossom shares the oak's shape
+			full = shpTree["oak"]
+		}
+		// only the trunk (the circles at the base) blocks: you can walk behind the leaves
+		for _, c := range full {
+			if c[1] >= 94 {
+				L = append(L, c)
+			}
+		}
+		if len(L) == 0 {
+			L = full[:1]
 		}
 		s, ox, oy = o.R/14.5, 64, 104
 	default:

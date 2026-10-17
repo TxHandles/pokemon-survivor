@@ -28,7 +28,49 @@ func (g *Game) drawNewHUD(dst *ebiten.Image) {
 			g.drawEquipCards(dst)
 		}
 	}
+	g.drawCenterArrow(dst)
 	g.drawHUDTail(dst)
+}
+
+// drawCenterArrow: when the Pokémon Center is off screen, an arrow at the screen edge points to it.
+func (g *Game) drawCenterArrow(dst *ebiten.Image) {
+	w := g.W
+	pc := w.PCN
+	if pc == nil {
+		return
+	}
+	sw, sh := float64(g.sw), float64(g.sh)
+	cx, cy := w.Centroid()
+	if !g.coop {
+		cx, cy = w.P.X, w.P.Y
+	}
+	dx, dy := pc.X-cx, pc.Y-cy
+	if math.Abs(dx) < sw/2-20 && math.Abs(dy) < sh/2-20 {
+		return // on screen
+	}
+	// clamp the direction to a box inside the screen edges (clear of the HUD bars)
+	mx, my := sw/2-70, sh/2-80
+	k := math.Min(mx/math.Max(1e-6, math.Abs(dx)), my/math.Max(1e-6, math.Abs(dy)))
+	x, y := sw/2+dx*k, sh/2+10+dy*k
+	a := math.Atan2(dy, dx)
+	col := c(255, 110, 150, 255)
+	pulse := .75 + .25*math.Sin(w.T*5)
+	disc(dst, x, y, 24, c(16, 20, 30, 220))
+	ring(dst, x, y, 24, 2, alpha(col, pulse))
+	// the little centre roof + cross
+	rect(dst, x-9, y-3, 18, 11, c(235, 235, 245, 255))
+	poly(dst, [][2]float64{{x - 11, y - 3}, {x, y - 12}, {x + 11, y - 3}}, col)
+	rect(dst, x-1.5, y-1, 3, 8, col)
+	rect(dst, x-4, y+1.5, 8, 3, col)
+	ax, ay := x+math.Cos(a)*32, y+math.Sin(a)*32
+	poly(dst, [][2]float64{{ax + math.Cos(a)*9, ay + math.Sin(a)*9}, {ax + math.Cos(a+2.2)*8, ay + math.Sin(a+2.2)*8}, {ax + math.Cos(a-2.2)*8, ay + math.Sin(a-2.2)*8}}, alpha(col, pulse))
+	d := math.Hypot(dx, dy)
+	lbl := fmt.Sprintf("Pokémon Center · %dm", int(d/10))
+	ly := y + 30
+	if y > sh/2 {
+		ly = y - 46
+	}
+	drawText(dst, lbl, x, ly, 11, true, white, text.AlignCenter, true)
 }
 
 // hpCol: the web HP bar colours (top highlight, main) for a health fraction.
