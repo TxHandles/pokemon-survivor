@@ -11,6 +11,11 @@ A Vampire-Survivors-style roguelite. Play at https://txhandles.github.io/pokemon
 
 ## Go version (in progress)
 
+**Play it:** browser → https://txhandles.github.io/pokemon-survivor/go/ · Windows →
+https://github.com/TxHandles/pokemon-survivor/releases/latest/download/PokemonSurvivor.exe (Windows may warn about an
+unknown publisher the first time: More info → Run anyway). The browser build at `/go/` shares the website's save with
+the web game (same browser storage), so progress carries over between the two.
+
 A native rebuild in Go with [Ebitengine](https://ebitengine.org), reading the same `data/` folder — content added to
 `data/` shows up in both versions. Builds a Windows `.exe` and a browser (WebAssembly) version from one codebase.
 
@@ -68,4 +73,5 @@ two `netpeer`s (`-host CODE` / `-join CODE`, with `-signal http://localhost:8773
 
 The browser build accepts `?demo=<id>&biome=<type>&seed=<n>&t=<seconds>` to watch the bot play, and
 `?coop=fire,water,grass` for a bot co-op demo.
-GitHub Actions builds both on every push (Actions → Go build → artifacts); pushing a `go-v*` tag makes a release.
+GitHub Actions builds both on every push and publishes the browser build to the site (`go/`, gzipped wasm);
+pushing a `go-v*` tag makes a GitHub release with the Windows exe (`git tag go-v0.2.0 && git push origin go-v0.2.0`).

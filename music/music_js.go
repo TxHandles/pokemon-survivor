@@ -29,5 +29,9 @@ func Load(name string, done func([]byte)) {
 		r.Call("arrayBuffer").Call("then", onBuf, onErr)
 		return nil
 	})
-	js.Global().Call("fetch", "music/"+name).Call("then", onResp, onErr)
+	base := "music/"
+	if b := js.Global().Get("MUSIC_BASE"); b.Type() == js.TypeString {
+		base = b.String()
+	}
+	js.Global().Call("fetch", base+name).Call("then", onResp, onErr)
 }
