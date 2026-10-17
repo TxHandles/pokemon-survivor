@@ -1,6 +1,7 @@
 package client
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/rand"
@@ -239,6 +240,26 @@ func (g *Game) menuHist() {
 		y += 44
 	}
 	y += 16
+	y += g.h3("Export", y)
+	cl := "Copy run data"
+	if g.histCopy != "" {
+		cl = g.histCopy
+	}
+	cw := smallBtnW(cl)
+	u.button("hcopy", [4]float64{sw/2 - cw/2, y, cw, 30}, true, false, func(dst *ebiten.Image, rr [4]float64, hot bool) {
+		smallBtn(dst, rr, cl, hot, false)
+	}, func() {
+		b, _ := json.Marshal(g.prof.S.M["hist"])
+		if len(b) == 0 || string(b) == "null" {
+			b = []byte("[]")
+		}
+		if clipWrite(string(b)) {
+			g.histCopy = "Copied!"
+		} else {
+			g.histCopy = "Couldn't reach the clipboard"
+		}
+	})
+	y += 46
 	u.scrollMax = math.Max(0, y-u.area[3])
 }
 

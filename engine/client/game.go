@@ -28,16 +28,18 @@ const (
 
 // Game implements ebiten.Game.
 type Game struct {
-	amb    ambState
-	vigImg *ebiten.Image
-	vigV   float64
-	db     *content.DB
-	assets *Assets
-	W      *sim.World
-	floor  *Floor
-	pa     playerAnim
-	scr    screen
-	sw, sh int
+	rstArm   bool // Reset progress pressed once
+	histCopy string
+	amb      ambState
+	vigImg   *ebiten.Image
+	vigV     float64
+	db       *content.DB
+	assets   *Assets
+	W        *sim.World
+	floor    *Floor
+	pa       playerAnim
+	scr      screen
+	sw, sh   int
 
 	// title
 	roster  []string
@@ -335,6 +337,7 @@ func (g *Game) playInput() sim.Input {
 func (g *Game) Update() error {
 	g.tick++
 	if g.scr != g.prevScr {
+		g.histCopy, g.rstArm = "", false
 		if g.scr == scMenu { // a different Poké Ball on the menu each visit, like the web version
 			g.menuBall = rand.Intn(26)
 		}

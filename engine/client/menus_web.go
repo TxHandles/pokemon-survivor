@@ -419,7 +419,22 @@ func (g *Game) menuMain() {
 		icon       any
 		act        func()
 	}
+	rl := "Reset progress"
+	if g.rstArm {
+		rl = "Click again to confirm"
+	}
 	sbs := []sb{
+		{"reset", rl, nil, func() {
+			if !g.rstArm {
+				g.rstArm = true
+				return
+			}
+			g.rstArm = false
+			g.prof = meta.NewProfile(meta.NewSave(), g.db)
+			g.csel = "fire"
+			g.save()
+			g.toast("Progress reset")
+		}},
 		{"xferc", "Copy save code", gUpload, func() { g.scr = scXfer; g.ui.focus = "" }},
 		{"xferl", "Load save code", gDownload, func() { g.scr = scXfer; g.ui.focus = "" }},
 	}
@@ -430,16 +445,22 @@ func (g *Game) menuMain() {
 			sbs = append(sbs, sb{"acct", "Sign in with Google", gGlobe, func() { g.cloud.SignIn() }})
 		}
 	}
+	parts := func(b sb) []any {
+		if b.icon == nil {
+			return nil
+		}
+		return []any{b.icon, " "}
+	}
 	tot := -8.0
 	for _, b := range sbs {
-		tot += smallBtnW(b.label, b.icon, " ") + 8
+		tot += smallBtnW(b.label, parts(b)...) + 8
 	}
 	x := sw/2 - tot/2
 	for _, b := range sbs {
 		b := b
-		w := smallBtnW(b.label, b.icon, " ")
+		w := smallBtnW(b.label, parts(b)...)
 		u.button(b.key, [4]float64{x, y, w, 30}, true, false, func(dst *ebiten.Image, rr [4]float64, hot bool) {
-			smallBtn(dst, rr, b.label, hot, false, b.icon, " ")
+			smallBtn(dst, rr, b.label, hot, false, parts(b)...)
 		}, b.act)
 		x += w + 8
 	}
