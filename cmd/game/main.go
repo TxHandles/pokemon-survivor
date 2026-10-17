@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"math/rand"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -23,11 +24,20 @@ func main() {
 		log.Fatal(err)
 	}
 	g := client.New(data.FS, db)
+	if code := opts["code"]; code != "" { // load a save code (testing)
+		g.LoadCode(code)
+	}
 	if opts["touch"] != "" { // force the touch overlay on (screenshots / testing)
 		g.ForceTouch()
 	}
 	if sc := opts["screen"]; sc != "" { // open a menu screen directly (screenshots / testing)
 		g.OpenScreen(sc)
+	}
+	if cp := opts["coop"]; cp != "" { // bot co-op demo: ?coop=fire,water,grass&t=120
+		g.DemoCoop(strings.Split(cp, ","), opts["biome"], 0)
+		if t, _ := strconv.ParseFloat(opts["t"], 64); t > 0 {
+			g.FastForward(t)
+		}
 	}
 	if opts["demo"] != "" { // the bot plays: ?demo=fire  (optionally &biome=water&seed=3&t=40 to fast-forward)
 		g.Demo(true)
@@ -70,6 +80,9 @@ func parseKV(s string) map[string]string {
 			continue
 		}
 		k, v, _ := strings.Cut(kv, "=")
+		if u, err := url.QueryUnescape(v); err == nil {
+			v = u
+		}
 		if v == "" {
 			v = "1"
 		}

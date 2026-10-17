@@ -20,44 +20,63 @@ func NewRun(db *content.DB, id, biome string, seed int64, ability int) (*World, 
 }
 
 func newWorld(db *content.DB, id, biome string, seed int64, cfg Config) (*World, error) {
-	ability := cfg.Ability
-	p := db.ByID[id]
-	if p == nil {
-		return nil, fmt.Errorf("unknown Pokémon %q", id)
+	return NewCoop(db, []PlayerSpec{{ID: id, Name: "You", Kind: "local", Ability: cfg.Ability, Up: cfg.Up, Training: cfg.Training}}, biome, seed, cfg)
+}
+
+// NewCoop starts a run for one to four players sharing the screen / simulation.
+func NewCoop(db *content.DB, players []PlayerSpec, biome string, seed int64, cfg Config) (*World, error) {
+	if len(players) == 0 || len(players) > 4 {
+		return nil, fmt.Errorf("need 1-4 players")
 	}
-	st := db.Stats[id]
-	w := &World{DB: db, Biome: biome, Seed: seed, rng: rand.New(rand.NewSource(seed)), Held: map[string]int{}, DMG: map[string]float64{},
+	if cfg.Up == nil {
+		cfg.Up = map[string]int{}
+	}
+	w := &World{DB: db, Biome: biome, Seed: seed, rng: rand.New(rand.NewSource(seed)),
 		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[[2]int][]Obstacle{},
-		pools: map[[2]int][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6, Cfg: cfg, Run: makeRun(cfg), Ban: map[string]bool{}}
-	ab := db.AbilityPair(id)[ability&1]
-	w.PS, w.Ability = newPS(ab), ability&1
-	if pl := w.PS.L("pulse"); len(pl) == 3 {
-		w.ab.pt = pl[0]
-	} else {
-		w.ab.pt = 0
+		pools: map[[2]int][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6, Cfg: cfg, Run: makeRun(cfg), Chooser: -1}
+	n := len(players)
+	w.Run.HM *= coC.hp[n]
+	w.Run.XM *= coC.xp[n]
+	w.Run.DM *= coC.dm[n]
+	w.XPS.NX, w.XPS.Lv = 5, 1
+	for i, sp := range players {
+		c, err := w.addPlayer(db, sp)
+		if err != nil {
+			return nil, err
+		}
+		a := float64(i) / float64(n) * 6.283
+		if n > 1 {
+			c.P.X, c.P.Y = math.Cos(a)*45, math.Sin(a)*45
+		}
 	}
-	mh := math.Round((80 + 14*w.up("hp")) * b2f(w.Run.Glass, .5, 1) * (1 + w.PS.F("hpM")) * st.HP)
-	w.P = &Player{ID: id, Name: p.Name, Types: p.Types, Stats: st, HP: mh, MHP: mh, Sp: 125 * st.Spd * (1 + .03*w.up("spd")), Lv: 1, NX: 5, FX: 1, DQ: -1, AtkT: -9}
-	w.addMove(db.StartMove(id))
-	w.Learned = map[string]bool{db.StartMove(id): true}
-	w.Evolved, w.Capstone = map[string]bool{}, map[string]bool{}
+	w.useP(0)
+	// global shop upgrades come from player 0's profile (local co-op shares one save)
 	w.RouteChoices = min(5, 2+int(w.up("rt")))
 	w.MoveSlots = 2 + int(w.up("m3")) + int(w.up("m4"))
 	w.HeldSlots = 2 + int(w.up("h3")) + int(w.up("h4"))
 	w.Choices = 3 + int(w.up("ch"))
-	w.Rerolls, w.Banishes = int(w.up("rr")), int(w.up("bn"))
 	w.chestT, w.shT = 30, 150
 	li := cfg.LI
 	if li < 0 || li > 2 {
 		li = w.rng.Intn(3)
 	}
 	w.enterBiome(biome, li, true)
+	if n > 1 {
+		names := ""
+		for _, c := range w.PL {
+			if names != "" {
+				names += " · "
+			}
+			names += c.Name
+		}
+		w.message("Co-op: " + names)
+	}
 	return w, nil
 }
 
 func (w *World) addMove(id string) *Slot {
 	m := w.DB.Moves[id]
-	s := &Slot{ID: id, Move: m, Kind: m.Shape, Type: m.Type, Lv: 1, Q: BuildQ(m)}
+	s := &Slot{ID: id, Move: m, Kind: m.Shape, Type: m.Type, Lv: 1, Q: BuildQ(m), Owner: w.CUR}
 	w.Slots = append(w.Slots, s)
 	return s
 }
@@ -119,7 +138,8 @@ func (w *World) spawn(a float64, t string) {
 	d := w.spawnDist()
 	big := w.rng.Float64() < .12
 	sc := w.tsc()
-	e := &Enemy{X: w.P.X + math.Cos(a)*d, Y: w.P.Y + math.Sin(a)*d, Type: t, Big: big, R: 10, Seed: w.rng.Float64()}
+	q := w.PL[w.rndAlive()].P
+	e := &Enemy{X: q.X + math.Cos(a)*d, Y: q.Y + math.Sin(a)*d, Type: t, Big: big, R: 10, Seed: w.rng.Float64()}
 	hp, sp, dm := 14.0, w.rnd(50, 85), 6.0
 	if big {
 		e.R, hp, sp, dm = 16, 45, sp*.7, 12
@@ -157,7 +177,8 @@ func (w *World) spawnBoss() {
 	if n == 1 {
 		dm *= .85
 	}
-	e := &Enemy{X: w.P.X + math.Cos(a)*500, Y: w.P.Y + math.Sin(a)*500, Type: t, R: bd.R, HP: bh, MHP: bh, Sp: 60 * bd.Sp * w.spS() * w.Run.SM, Dm: dm, Boss: true, BD: bd, Seed: w.rng.Float64()}
+	q := w.PL[w.rndAlive()].P
+	e := &Enemy{X: q.X + math.Cos(a)*500, Y: q.Y + math.Sin(a)*500, Type: t, R: bd.R, HP: bh, MHP: bh, Sp: 60 * bd.Sp * w.spS() * w.Run.SM, Dm: dm, Boss: true, BD: bd, Seed: w.rng.Float64()}
 	e.PokeID = w.enemySprite(t, "boss")
 	w.E = append(w.E, e)
 	name := e.PokeID
@@ -170,7 +191,7 @@ func (w *World) spawnBoss() {
 
 func (w *World) swarm() {
 	t := w.pickT(.7)
-	n := int(math.Max(0, math.Min(math.Round(22+math.Floor(w.T/15)), math.Min(90, float64(720-len(w.E))))))
+	n := int(math.Max(0, math.Min(math.Round((22+math.Floor(w.T/15))*coC.sw[min(4, w.n())]), math.Min(90, 720+w.coCap()-320-float64(len(w.E))))))
 	sp := 6.283
 	if w.T < 480 {
 		sp = 4.7
@@ -180,6 +201,7 @@ func (w *World) swarm() {
 		w.spawn(a0+float64(i)/float64(n)*sp, t)
 	}
 	w.message("A swarm of " + t + " Pokémon surrounds you!")
+	_ = w.P
 }
 
 // Step advances the run by dt seconds.
@@ -191,10 +213,25 @@ func (w *World) Step(dt float64, in Input) {
 	if w.MsgT > 0 {
 		w.MsgT -= dt
 	}
-	w.stepPlayer(dt, in)
-	if w.State != StatePlay {
-		return
+	if len(w.PL) > 0 {
+		w.PL[0].In = in
 	}
+	for i := range w.PL {
+		if !w.alive(i) {
+			continue
+		}
+		w.useP(i)
+		c := w.PL[i]
+		pin := c.In
+		if c.Kind == "bot" && c.Bot != nil {
+			pin = c.Bot.Input(dt)
+		}
+		w.stepPlayer(dt, pin)
+		if w.State != StatePlay {
+			return
+		}
+	}
+	w.pcTick(dt)
 	// delayed move effects
 	for _, d := range w.DL {
 		d.t -= dt
@@ -217,11 +254,11 @@ func (w *World) Step(dt float64, in Input) {
 		w.spawnHold -= dt
 	}
 	w.spawnT -= dt
-	cap := 320.0
+	cap := w.coCap()
 	if w.Endless {
 		cap += (w.T - w.ET) / 3
 	}
-	if w.spawnT <= 0 && w.spawnHold <= 0 && float64(len(w.E)) < math.Min(520, cap) {
+	if w.spawnT <= 0 && w.spawnHold <= 0 && float64(len(w.E)) < math.Min(520+w.coCap()-320, cap) {
 		ts := w.tS()
 		x := ts - 90
 		if ts < 300 {
@@ -231,7 +268,7 @@ func (w *World) Step(dt float64, in Input) {
 		for i := 0; i < n; i++ {
 			w.spawn(-1, "")
 		}
-		w.spawnT = math.Max(.1, .55-w.T/1700) / w.Run.RT
+		w.spawnT = math.Max(.1, .55-w.T/1700) / w.Run.RT / w.coRt()
 		if w.Endless {
 			w.spawnT /= 1 + (w.T-w.ET)/180
 		}
@@ -266,8 +303,8 @@ func (w *World) Step(dt float64, in Input) {
 	w.stepGems(dt)
 	w.stepPickups(dt)
 	w.Shake = math.Max(0, w.Shake-dt)
-	if w.P.XP >= w.P.NX && w.State == StatePlay {
-		w.levelUp()
+	if w.XPS.XP >= w.XPS.NX && w.State == StatePlay {
+		w.coopLevel()
 	}
 }
 
@@ -438,30 +475,26 @@ func (w *World) relocate(dt float64) {
 	w.relocT = .25
 	sd := w.spawnDist()
 	far := sd + w.LeashFar
-	var mvA *float64
-	if w.P.Moving {
-		a := w.faceA()
-		mvA = &a
-	}
 	n := 0
 	for _, e := range w.E {
-		if e.Dead || e.Charm > 0 {
+		if e.Dead || e.Charm > 0 || e.guard != nil || e.cwu > 0 || e.chd > 0 {
 			continue
 		}
+		Q := w.PL[w.nearP(e.X, e.Y)].P
 		lim := far
 		if e.Boss {
 			lim += 400
 		}
-		dx, dy := e.X-w.P.X, e.Y-w.P.Y
+		dx, dy := e.X-Q.X, e.Y-Q.Y
 		if dx*dx+dy*dy < lim*lim {
 			continue
 		}
 		a := w.rnd(0, 6.283)
-		if mvA != nil && w.rng.Float64() < w.LeashBias {
-			a = *mvA + w.rnd(-w.LeashSpread, w.LeashSpread)
+		if w.n() == 1 && Q.Moving && w.rng.Float64() < w.LeashBias {
+			a = math.Atan2(Q.FY, Q.FX) + w.rnd(-w.LeashSpread, w.LeashSpread)
 		}
 		r := sd + w.rnd(0, 70)
-		e.X, e.Y = w.P.X+math.Cos(a)*r, w.P.Y+math.Sin(a)*r
+		e.X, e.Y = Q.X+math.Cos(a)*r, Q.Y+math.Sin(a)*r
 		if n++; n >= 30 {
 			break
 		}
@@ -469,11 +502,12 @@ func (w *World) relocate(dt float64) {
 }
 
 func (w *World) stepEnemies(dt float64) {
-	P := w.P
 	for _, e := range w.E {
 		if e.Dead {
 			continue
 		}
+		w.useP(w.nearP(e.X, e.Y))
+		P := w.P
 		a := math.Atan2(P.Y-e.Y, P.X-e.X)
 		if e.Fear > 0 {
 			a += math.Pi
@@ -577,6 +611,13 @@ func (w *World) stepEnemies(dt float64) {
 		if !e.Boss && !e.Ug && !has([]string{"flying", "ghost"}, e.Type) {
 			w.push(&e.X, &e.Y, e.R)
 		}
+		if g := e.guard; g != nil { // Pokémon Center guard stays near its post
+			gx, gy := g.X-e.X, g.Y-e.Y
+			if gd := hyp(gx, gy); gd > 230 {
+				e.X += gx / gd * e.Sp * 1.3 * dt
+				e.Y += gy / gd * e.Sp * 1.3 * dt
+			}
+		}
 		// unstick from obstacles
 		if mv > 0 && e.KX == 0 && e.KY == 0 && dist(e.X, e.Y, P.X, P.Y) > e.R+40 {
 			if hyp(e.X-px, e.Y-py) < mv*.3 {
@@ -636,6 +677,9 @@ func (w *World) stepProjectiles(dt float64) {
 	for _, p := range w.PR {
 		if p.L <= 0 {
 			continue
+		}
+		if p.Slot != nil {
+			w.useP(p.Slot.Owner)
 		}
 		if p.Sk {
 			tg := p.Tg
@@ -730,6 +774,9 @@ func (w *World) stepFX(dt float64) {
 		f.Life -= dt
 		switch f.Kind {
 		case "ring":
+			if f.Slot != nil {
+				w.useP(f.Slot.Owner)
+			}
 			f.R += (f.MR - f.R) * math.Min(1, dt*8)
 			if !f.Fat {
 				f.X, f.Y = w.P.X, w.P.Y
@@ -787,6 +834,9 @@ var slowT = map[string]bool{"water": true, "ground": true, "bug": true, "ice": t
 
 func (w *World) stepZones(dt float64) {
 	for _, z := range w.ZN {
+		if z.Slot != nil {
+			w.useP(z.Slot.Owner)
+		}
 		z.L -= dt
 		z.Tk -= dt
 		prev := w.curSlot
@@ -842,6 +892,19 @@ func (w *World) stepZones(dt float64) {
 }
 
 func (w *World) stepOrbits(dt float64) {
+	c0 := w.CUR
+	for i := range w.PL {
+		w.useP(i)
+		if w.alive(i) {
+			w.stepOrbits1(dt)
+		} else {
+			w.Orbs = nil
+		}
+	}
+	w.useP(c0)
+}
+
+func (w *World) stepOrbits1(dt float64) {
 	w.Orbs = w.Orbs[:0]
 	oi := 0
 	for _, s := range w.Slots {
@@ -916,8 +979,6 @@ func (w *World) compact() {
 }
 
 func (w *World) stepGems(dt float64) {
-	P := w.P
-	mag := 90 * (1 + .12*w.up("mag") + .25*w.pe("magnet") + w.PS.F("mag"))
 	if w.magnetAll {
 		w.magnetAll = false
 		for _, g := range w.Gems {
@@ -926,6 +987,9 @@ func (w *World) stepGems(dt float64) {
 	}
 	g2 := w.Gems[:0]
 	for _, g := range w.Gems {
+		w.useP(w.nearP(g.X, g.Y))
+		P := w.P
+		mag := 90 * (1 + .12*w.up("mag") + .25*w.pe("magnet") + w.PS.F("mag"))
 		d := dist(g.X, g.Y, P.X, P.Y)
 		if g.Mag || d < mag {
 			sp := 260.0
@@ -952,7 +1016,8 @@ func (w *World) stepGems(dt float64) {
 			default:
 				w.sfx("xp")
 			}
-			P.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp"))
+			w.XPS.XP += g.V * w.Run.XM * (1 + .05*w.up("xpg") + .1*w.pe("exp") + w.PS.F("xp"))
+			P.XP = w.XPS.XP
 			w.Coins += g.C * (1 + w.PS.F("coin"))
 			if g.Tk {
 				w.Tickets++
@@ -967,7 +1032,7 @@ func (w *World) stepGems(dt float64) {
 	}
 	w.Gems = g2
 	// merge far-away gems when there are too many (keeps the count bounded)
-	if len(w.Gems) > 400 {
+	if P := w.P; len(w.Gems) > 400 {
 		sort.Slice(w.Gems, func(i, j int) bool {
 			return dist(w.Gems[i].X, w.Gems[i].Y, P.X, P.Y) < dist(w.Gems[j].X, w.Gems[j].Y, P.X, P.Y)
 		})
@@ -983,26 +1048,7 @@ func (w *World) stepGems(dt float64) {
 
 // ---- level-up ----
 
-func (w *World) levelUp() {
-	P := w.P
-	P.XP -= P.NX
-	P.Lv++
-	if !w.Run.NoHeal {
-		P.HP = math.Min(P.MHP, P.HP+P.MHP*b2f(P.Lv <= 20, .06, .015))
-	}
-	if P.Lv <= 13 {
-		P.NX = math.Round(P.NX*1.22 + 4)
-	} else {
-		P.NX = math.Round(P.NX*1.075 + 7)
-	}
-	w.Opts = w.genOpts()
-	if len(w.Opts) == 0 {
-		P.HP = P.MHP
-		return
-	}
-	w.State = StateLevelUp
-	w.sfx("levelup")
-}
+func (w *World) levelUp() { w.coopLevel() }
 
 func (w *World) heldCount() int {
 	n := 0
@@ -1110,12 +1156,23 @@ func (w *World) genOpts() []Option {
 	return o
 }
 
-// Choose applies level-up card i and resumes play.
+// Choose applies level-up card i for the player currently choosing, then serves the next prompt.
 func (w *World) Choose(i int) {
-	if w.State != StateLevelUp || i < 0 || i >= len(w.Opts) {
+	if w.State != StateLevelUp || i < 0 || i >= len(w.Opts) || w.Chooser < 0 {
 		return
 	}
-	o := w.Opts[i]
+	w.useP(w.Chooser)
+	w.applyOpt(w.Opts[i])
+	c := w.PL[w.Chooser]
+	if len(c.Queue) > 0 {
+		c.Queue = c.Queue[1:]
+	}
+	w.Opts = nil
+	w.State = StatePlay
+	w.prompt()
+}
+
+func (w *World) applyOpt(o Option) {
 	switch {
 	case o.Evo:
 		w.slot(o.ID).Evo = true
@@ -1141,15 +1198,12 @@ func (w *World) Choose(i int) {
 		}
 		w.Held[o.ID]++
 	}
-	w.Opts = nil
-	w.State = StatePlay
-	if w.P.XP >= w.P.NX {
-		w.levelUp()
-	}
 }
 
 // BotPick scores the current options like the web bot (botScore) and returns the best index.
-func (w *World) BotPick() int {
+func (w *World) BotPick() int { return w.botPickFrom(w.Opts) }
+
+func (w *World) botPickFrom(opts []Option) int {
 	need := map[string]bool{}
 	synWant := map[string]bool{}
 	for _, s := range w.Slots {
@@ -1217,7 +1271,7 @@ func (w *World) BotPick() int {
 		return p + b2f(w.Held[o.ID] > 0, 3, 0)
 	}
 	best, bs := 0, -1e9
-	for i, o := range w.Opts {
+	for i, o := range opts {
 		if s := score(o); s > bs {
 			best, bs = i, s
 		}

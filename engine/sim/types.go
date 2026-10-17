@@ -91,6 +91,7 @@ type Slot struct {
 	metroN     int
 	metroT     float64
 	orbA       float64
+	Owner      int // player index
 }
 
 type DashState struct {
@@ -177,6 +178,7 @@ type Enemy struct {
 	Cursed              bool    // cursed-chest guardian
 	Sp2                 string  // difficulty special: spit chg bomb shld wisp
 	st, cc              float64
+	guard               *Center
 }
 
 type Proj struct {
@@ -330,6 +332,16 @@ type World struct {
 	Capstone                         map[string]bool
 	Stats                            RunStats
 	Events                           []string // sound cues since the client last drained them
+	// co-op
+	PL  []*PlayerCtx
+	CUR int
+	cur *PlayerCtx
+	XPS struct {
+		XP, NX float64
+		Lv     int
+	}
+	PCN     *Center
+	Chooser int
 }
 
 func hyp(x, y float64) float64 { return math.Hypot(x, y) }

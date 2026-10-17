@@ -67,6 +67,19 @@ type Game struct {
 	audio        *Audio
 	touch        touchState
 	settingsFrom screen
+	cloud        Cloud
+	cloudPending *meta.Save
+	daily        *meta.Daily
+	dexSel       string
+	lbT, lbM     string
+	lbNote       string
+	lbRows       []meta.LBRow
+	// local co-op
+	seats     []*seat
+	devs      []device
+	coop      bool
+	pas       map[int]*playerAnim
+	stickPrev map[ebiten.GamepadID]int
 }
 
 func New(dataFS fs.FS, db *content.DB) *Game {
@@ -78,6 +91,7 @@ func New(dataFS fs.FS, db *content.DB) *Game {
 	}
 	g.scr = scMenu
 	g.audio = NewAudio(g.opt)
+	g.cloud = newCloud()
 	for _, p := range db.Pokemon { // first forms: the roster you pick from in this build
 		if p.EvolvesFrom == "" && p.RegionalOf == "" && !p.Legendary {
 			g.roster = append(g.roster, p.ID)
@@ -108,6 +122,8 @@ func (g *Game) startCfg(id, biome string, seed int64, cfg sim.Config) {
 	g.floor = NewFloor(biome, seed)
 	g.floorN = w.BiomeN
 	g.pa = playerAnim{}
+	g.pas = map[int]*playerAnim{}
+	g.coop = false
 	g.scr = scPlay
 	g.bot = sim.NewBot(w, seed+1)
 	if g.auto {
@@ -279,10 +295,16 @@ func (g *Game) playInput() sim.Input {
 func (g *Game) Update() error {
 	g.tick++
 	defer g.audioTick()
+	g.cloud.Poll(g.adoptCloud)
+	if p, ok := g.cloud.(interface{ NeedPush() bool }); ok && p.NeedPush() {
+		g.cloud.PushSave(g.prof.S)
+	}
 	switch g.scr {
 	case scTitle:
 		g.scr = scMenu
-	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings:
+	case scLobby:
+		g.updateLobby()
+	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings, scDex, scHist, scDaily, scBoards:
 		g.buildMenu()
 		g.ui.update()
 		if g.ui.clicked {
@@ -324,6 +346,11 @@ func (g *Game) Update() error {
 		} else if g.overT > 1.2 {
 			g.scr = scResult
 			g.ui.focus = ""
+			if g.cloudPending != nil {
+				s := g.cloudPending
+				g.cloudPending = nil
+				g.adoptCloud(s)
+			}
 		}
 	}
 	return nil
@@ -433,10 +460,29 @@ func (g *Game) updatePlay() {
 		return
 	}
 	g.lvDelay = 0
-	in := g.playInput()
-	if tactive && !g.auto {
-		in.MoveX, in.MoveY = tin.MoveX, tin.MoveY
-		in.Dash = in.Dash || tin.Dash
+	var in sim.Input
+	if g.coop {
+		for i, d := range g.devs {
+			if d.kind == "bot" {
+				continue
+			}
+			di := g.devInput(d)
+			if d.kind == "kb" && tactive {
+				di.MoveX, di.MoveY = tin.MoveX, tin.MoveY
+				di.Dash = di.Dash || tin.Dash
+			}
+			if i == 0 {
+				in = di
+			} else {
+				w.SetInput(i, di)
+			}
+		}
+	} else {
+		in = g.playInput()
+		if tactive && !g.auto {
+			in.MoveX, in.MoveY = tin.MoveX, tin.MoveY
+			in.Dash = in.Dash || tin.Dash
+		}
 	}
 	w.Step(1.0/60, in)
 	for _, n := range w.Notes {
@@ -498,6 +544,8 @@ func (g *Game) Draw(dst *ebiten.Image) {
 		if g.scr == scOver {
 			g.drawOver(dst)
 		}
+	case scLobby:
+		g.drawLobby(dst)
 	case scResult:
 		g.drawWorld(dst)
 		rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, 215))

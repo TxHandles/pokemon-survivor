@@ -112,6 +112,13 @@ func (b *Bot) steer() {
 			}
 		}
 	}
+	if pc := w.PCN; pc != nil && hpf > .4 && w.n() > 1 { // revive teammates
+		if d := dist(pc.X, pc.Y, P.X, P.Y); d < 1400 {
+			if v := 9 / (1 + d/300); v > gs {
+				gs, it, gt, hasChest, cx2, cy2 = v, nil, nil, true, pc.X, pc.Y
+			}
+		}
+	}
 	tx, ty, hasT := 0.0, 0.0, false
 	if hasChest && it == nil && gt == nil {
 		tx, ty, hasT = cx2, cy2, true

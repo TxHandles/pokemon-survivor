@@ -35,5 +35,16 @@ Saves: the Windows build keeps its save in `%APPDATA%\PokemonSurvivor\save.json`
 browser storage key as the web game. Main menu → Save transfer copies / loads the same save codes as the web game's
 "Copy save code" / "Load save code", so progress moves both ways.
 
-The browser build accepts `?demo=<id>&biome=<type>&seed=<n>&t=<seconds>` to watch the bot play.
+Online: the browser build signs in with Google against the same Firebase project as the web game, so it shares one
+account, cloud save and leaderboards with it (Daily run → Leaderboards). The Windows build has no sign-in; it moves
+progress with save codes. Both builds have the Pokédex, run history and the daily run (same biome / modifiers / world
+as the web game for that day; daily records sync when signed in).
+
+Local co-op (main menu → Local co-op): up to 4 players on one screen — keyboard (WASD / arrows), gamepads, and bot
+teammates. In the lobby: Enter / A joins, B (or the + key) adds a bot, left / right picks a Pokémon, E / Y toggles the
+ability, Enter / A readies up, Esc / B leaves. Level-ups come from a shared XP pool and each player picks their own
+moves; fainted players revive at the Pokémon Center that appears on the map. There is no online (network) co-op.
+
+The browser build accepts `?demo=<id>&biome=<type>&seed=<n>&t=<seconds>` to watch the bot play, and
+`?coop=fire,water,grass` for a bot co-op demo.
 GitHub Actions builds both on every push (Actions → Go build → artifacts); pushing a `go-v*` tag makes a release.

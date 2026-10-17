@@ -50,8 +50,13 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	w := g.W
 	P := w.P
 	sw := float64(g.sw)
+	if g.coop {
+		g.drawCoopHUD(dst)
+		g.drawHUDCommon(dst)
+		return
+	}
 	// XP bar across the top
-	bar(dst, 0, 0, sw, 8, P.XP/P.NX, c(90, 190, 255, 255), c(20, 26, 40, 230))
+	bar(dst, 0, 0, sw, 8, w.XPS.XP/w.XPS.NX, c(90, 190, 255, 255), c(20, 26, 40, 230))
 	// HP
 	roundRect(dst, 12, 16, 290, 58, 10, panel)
 	if s := g.assets.Sprite(P.ID); s != nil {
@@ -74,17 +79,24 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 	}
 	bar(dst, 70, 44, 220, 12, hpf, hc, c(40, 46, 60, 255))
 	drawText(dst, fmt.Sprintf("%.0f / %.0f", P.HP, P.MHP), 180, 58, 11, true, dim, text.AlignCenter, false)
+	drawText(dst, fmt.Sprintf("%d coins", int(w.Coins)), 22, 82, 13, true, gold, text.AlignStart, true)
+	drawText(dst, "Ability: "+w.PS.A.Name, 22, 100, 12, false, dim, text.AlignStart, true)
+	if bt := buffText(w); bt != "" {
+		drawText(dst, bt, 22, 118, 12, true, c(127, 224, 255, 255), text.AlignStart, true)
+	}
+	g.drawHUDCommon(dst)
+}
+
+// drawHUDCommon: timer, location, boss bar, moves, items, messages.
+func (g *Game) drawHUDCommon(dst *ebiten.Image) {
+	w := g.W
+	sw := float64(g.sw)
 	// timer / biome / kills
 	tm := fmtT(w.T) + " / " + fmtT(w.Run.Len)
 	if w.Endless {
 		tm = "ENDLESS  " + fmtT(w.T)
 	}
 	drawText(dst, tm, sw/2, 16, 26, true, b2c(w.Endless, c(255, 130, 130, 255), white), text.AlignCenter, true)
-	drawText(dst, fmt.Sprintf("%d coins", int(w.Coins)), 22, 82, 13, true, gold, text.AlignStart, true)
-	drawText(dst, "Ability: "+w.PS.A.Name, 22, 100, 12, false, dim, text.AlignStart, true)
-	if bt := buffText(w); bt != "" {
-		drawText(dst, bt, 22, 118, 12, true, c(127, 224, 255, 255), text.AlignStart, true)
-	}
 	drawText(dst, w.LocName(w.Biome, w.LI)+"  ·  "+fmt.Sprintf("%d KOs", w.Kills), sw/2, 48, 13, false, dim, text.AlignCenter, true)
 	if nb := 300 * math.Ceil((w.T+.01)/300); nb-w.T < 20 && w.Bosses < int(nb/300) {
 		drawText(dst, fmt.Sprintf("Boss in %.0fs", nb-w.T), sw/2, 68, 13, true, c(255, 120, 120, 255), text.AlignCenter, true)
@@ -105,9 +117,27 @@ func (g *Game) drawHUD(dst *ebiten.Image) {
 		bar(dst, bx, 110, bw, 10, e.HP/e.MHP, c(255, 80, 80, 255), c(40, 46, 60, 255))
 		break
 	}
-	// moves (bottom-left)
+	// moves (bottom-left): in co-op, every player's row
 	x := 12.0
 	y := float64(g.sh) - 64
+	if g.coop {
+		y = float64(g.sh) - 40 - 44*float64(len(w.PL))
+		for i, pc := range w.PL {
+			xx := 12.0
+			drawText(dst, fmt.Sprintf("P%d", i+1), xx, y+12, 12, true, playerCols[i%4], text.AlignStart, true)
+			xx += 28
+			for _, s := range pc.Slots {
+				col := tc(s.Type)
+				roundRect(dst, xx, y, 120, 36, 6, panel)
+				rect(dst, xx, y+6, 3, 24, col)
+				drawText(dst, s.Move.Name, xx+10, y+4, 11, true, white, text.AlignStart, false)
+				drawText(dst, fmt.Sprintf("Lv %d", s.Lv), xx+10, y+19, 10, false, dim, text.AlignStart, false)
+				xx += 126
+			}
+			y += 44
+		}
+		y = float64(g.sh) + 100 // skip the solo panel
+	}
 	for _, s := range w.Slots {
 		col := tc(s.Type)
 		roundRect(dst, x, y, 150, 52, 8, panel)
@@ -218,7 +248,11 @@ func wrap(s string, f *text.GoTextFace, width float64) []string {
 func (g *Game) drawLevelUp(dst *ebiten.Image) {
 	w := g.W
 	rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, 170))
-	drawText(dst, "LEVEL UP!", float64(g.sw)/2, float64(g.sh)/2-190, 34, true, gold, text.AlignCenter, true)
+	title := "LEVEL UP!"
+	if g.coop {
+		title = w.ChooserName() + " — LEVEL UP!"
+	}
+	drawText(dst, title, float64(g.sw)/2, float64(g.sh)/2-190, 34, true, gold, text.AlignCenter, true)
 	sub := "Choose one  ·  number keys, arrows + Enter, click, or gamepad"
 	if g.banMode {
 		sub = "BANISH MODE: pick a card to remove it for the rest of this run (X / Y to cancel)"

@@ -40,7 +40,7 @@ var safeBoons = []Boon{
 			w.P.HP = w.P.MHP
 		}
 	}},
-	{"Shrine of Plenty", "A free level up and bonus coins.", "", func(w *World) { w.P.XP += w.P.NX; w.Coins += 40 }},
+	{"Shrine of Plenty", "A free level up and bonus coins.", "", func(w *World) { w.freeLevel(); w.Coins += 40 }},
 }
 
 var pacts = []Boon{
@@ -131,7 +131,7 @@ func (w *World) enterBiome(t string, li int, first bool) {
 // afterBoss: boss chest, then the field clears and the route map opens (or victory → endless).
 func (w *World) afterBoss(e *Enemy) {
 	w.Coins += 25
-	w.P.XP += w.P.NX // boss chest: free level up
+	w.freeLevel() // boss chest: free level up
 	w.bossClear(e)
 	w.Visited = appendU(w.Visited, w.Biome)
 	w.Tickets++ // boss chest ticket
@@ -181,7 +181,8 @@ func (w *World) spawnMap(kind string) {
 }
 
 func (w *World) stepRun(dt float64) {
-	P := w.P
+	w.useP(w.rndAlive())
+	_ = w.P
 	if w.routeT > 0 {
 		w.routeT -= dt
 		if w.routeT <= 0 {
@@ -220,7 +221,8 @@ func (w *World) stepRun(dt float64) {
 	keep := w.MC[:0]
 	for _, c := range w.MC {
 		c.T += dt
-		if dist(c.X, c.Y, P.X, P.Y) < 46 {
+		if j := w.nearIn(c.X, c.Y, 46); j >= 0 {
+			w.useP(j)
 			c.P += dt
 		} else {
 			c.P = math.Max(0, c.P-dt*.5)
@@ -229,18 +231,20 @@ func (w *World) stepRun(dt float64) {
 			w.openChest(c)
 			continue
 		}
-		if dist(c.X, c.Y, P.X, P.Y) < 1800 {
+		if w.nearIn(c.X, c.Y, 1800) >= 0 {
 			keep = append(keep, c)
 		}
 	}
 	w.MC = keep
 	ck := w.Chests[:0]
 	for _, c := range w.Chests {
-		if dist(c.X, c.Y, P.X, P.Y) < 28 {
+		if j := w.nearIn(c.X, c.Y, 28); j >= 0 {
+			w.useP(j)
+			P := w.P
 			cn := 25.0
 			w.Coins += cn
 			w.Tickets++
-			P.XP += P.NX
+			w.freeLevel()
 			w.sfx("chest")
 			w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 40, Life: 2.5, Text: "CHEST! +25 coins, free level up", Col: "gold"})
 			continue
@@ -253,11 +257,16 @@ func (w *World) stepRun(dt float64) {
 func (w *World) openChest(c *MapChest) {
 	switch {
 	case c.Shrine:
-		w.Boons = []Boon{safeBoons[w.rng.Intn(3)]}
+		boons := []Boon{safeBoons[w.rng.Intn(3)]}
 		p := []int{0, 1, 2}
 		w.rng.Shuffle(3, func(i, j int) { p[i], p[j] = p[j], p[i] })
-		w.Boons = append(w.Boons, pacts[p[0]], pacts[p[1]])
-		w.State = StateShrine
+		boons = append(boons, pacts[p[0]], pacts[p[1]])
+		for _, pc := range w.PL {
+			if !pc.Gone {
+				pc.Queue = append(pc.Queue, &Prompt{Kind: "shrine", Boons: boons})
+			}
+		}
+		w.prompt()
 	case c.Cursed:
 		w.Stats.Cursed++
 		w.spawnEliteAt(true, c.X, c.Y, true)
@@ -274,31 +283,29 @@ func (w *World) openChest(c *MapChest) {
 			w.Gems = append(w.Gems, &Gem{X: c.X + w.rnd(-30, 30), Y: c.Y + w.rnd(-30, 30), C: 5})
 		}
 		for i := 0; i < 6; i++ {
-			w.Gems = append(w.Gems, &Gem{X: c.X + w.rnd(-30, 30), Y: c.Y + w.rnd(-30, 30), V: w.P.NX * .12})
+			w.Gems = append(w.Gems, &Gem{X: c.X + w.rnd(-30, 30), Y: c.Y + w.rnd(-30, 30), V: w.XPS.NX * .12})
 		}
 		w.sfx("chest")
 		w.addFX(&FX{Kind: "txt", X: c.X, Y: c.Y - 30, Life: 2, Text: "Chest opened!", Col: "gold"})
 	}
 }
 
-// ChooseBoon takes shrine boon i (or leaves with -1 / out of range).
+// ChooseBoon takes shrine boon i (or leaves with -1 / out of range) for the player choosing.
 func (w *World) ChooseBoon(i int) {
-	if w.State != StateShrine {
+	if w.State != StateShrine || w.Chooser < 0 {
 		return
 	}
+	w.useP(w.Chooser)
 	if i >= 0 && i < len(w.Boons) {
-		b := w.Boons[i]
-		b.apply(w)
-		if b.Curse != "" {
-			w.Stats.Curses++
-		}
-		w.addFX(&FX{Kind: "txt", X: w.P.X, Y: w.P.Y - 50, Life: 2, Text: b.Name + "!", Col: "gold"})
+		w.applyBoon(w.Boons[i])
+	}
+	c := w.PL[w.Chooser]
+	if len(c.Queue) > 0 {
+		c.Queue = c.Queue[1:]
 	}
 	w.Boons = nil
 	w.State = StatePlay
-	if w.P.XP >= w.P.NX {
-		w.levelUp()
-	}
+	w.prompt()
 }
 
 // coinDrop: enemies sometimes drop coins (web hit() death drops).

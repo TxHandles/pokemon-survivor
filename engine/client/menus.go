@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -41,7 +42,28 @@ func (g *Game) save() {
 	if g.prof != nil {
 		g.prof.S.SetSel(g.csel)
 		g.prof.S.Store()
+		g.cloud.PushSave(g.prof.S)
 	}
+}
+
+// adoptCloud takes a newer save from the cloud (not during a run; the web game waits the same way).
+func (g *Game) adoptCloud(s *meta.Save) {
+	if g.scr == scPlay || g.scr == scPause {
+		g.cloudPending = s
+		return
+	}
+	if s.Num("ts") <= g.prof.S.Num("ts") {
+		if s.Num("ts") < g.prof.S.Num("ts") {
+			g.cloud.PushSave(g.prof.S)
+		}
+		return
+	}
+	g.prof = meta.NewProfile(s, g.db)
+	if sel := s.Sel(); sel != "" && g.db.ByID[sel] != nil && g.prof.Unl(sel) {
+		g.csel = sel
+	}
+	g.prof.S.Store()
+	g.toast("Progress loaded from your account")
 }
 
 func (g *Game) toast(s string) { g.toasts = append(g.toasts, toastMsg{s, 4}) }
@@ -77,6 +99,14 @@ func (g *Game) buildMenu() {
 		g.menuResult()
 	case scSettings:
 		g.menuSettings()
+	case scDex:
+		g.menuDex()
+	case scHist:
+		g.menuHist()
+	case scDaily:
+		g.menuDaily()
+	case scBoards:
+		g.menuBoards()
 	}
 }
 
@@ -122,9 +152,17 @@ func (g *Game) menuMain() {
 	u.label([4]float64{0, 132, sw, 20}, false, textDraw("Go build · preview", 15, false, dim, text.AlignCenter))
 	p := g.prof.S
 	u.label([4]float64{0, 160, sw, 20}, false, textDraw(fmt.Sprintf("%s coins  ·  %d tickets  ·  %d runs  ·  %d wins", commas(p.Coins()), p.Tickets(), int(p.Stat("r")), int(p.Stat("w"))), 14, true, c(230, 230, 240, 255), text.AlignCenter))
-	bw, bh := 320.0, 54.0
+	if g.cloud.Available() {
+		u.label([4]float64{20, sh - 66, sw - 300, 18}, false, textDraw(g.cloud.Status(), 12, false, dim, text.AlignStart))
+		if g.cloud.Online() {
+			u.button("acct", [4]float64{sw - 200, sh - 72, 180, 34}, false, false, btnDraw("Sign out", "", dim, false), func() { g.cloud.SignOut(); g.toast("Signed out") })
+		} else {
+			u.button("acct", [4]float64{sw - 260, sh - 72, 240, 34}, false, false, btnDraw("Sign in with Google", "", c(159, 232, 255, 255), false), func() { g.cloud.SignIn() })
+		}
+	}
+	bw, bh := 320.0, 46.0
 	x := sw/2 - bw/2
-	y := 210.0
+	y := 192.0
 	ready := g.prof.ReadyChallenges()
 	items := []struct {
 		k, label, sub string
@@ -135,6 +173,10 @@ func (g *Game) menuMain() {
 		{"shop", "Shop", "Global upgrades: rerolls, banishes, slots, choices", scShop},
 		{"chal", "Challenges", fmt.Sprintf("%d ready to claim", ready), scChal},
 		{"xfer", "Save transfer", "Move progress to and from the web version", scXfer},
+		{"coop", "Local co-op", "Up to 4 players on one screen (keyboard + gamepads, or bots)", scLobby},
+		{"dex", "Pokédex", "Every Pokémon, evolutions and how to unlock them", scDex},
+		{"daily", "Daily run", "Today's shared challenge and the leaderboards", scDaily},
+		{"hist", "Run history", "Your last runs and how each move performed", scHist},
 		{"settings", "Settings", "Volume, music, screen shake, touch controls", scSettings},
 	}
 	for _, it := range items {
@@ -148,11 +190,14 @@ func (g *Game) menuMain() {
 		}
 		u.button(it.k, [4]float64{x, y, bw, bh}, false, false, btnDraw(it.label, it.sub, col, false), func() {
 			g.settingsFrom = scMenu
+			if it.to == scLobby {
+				g.seats = nil
+			}
 			g.scr = it.to
 			g.ui.focus = ""
 			g.ui.scroll = 0
 		})
-		y += bh + 12
+		y += bh + 8
 	}
 	u.label([4]float64{0, sh - 36, sw, 20}, false, textDraw("Arrows / stick to move  ·  Enter / A to choose  ·  Esc / B to go back  ·  Saved to "+meta.SavePath(), 12, false, alpha(dim, .8), text.AlignCenter))
 }
@@ -871,7 +916,20 @@ func (g *Game) menuResult() {
 		})
 		y += 24
 	}
-	u.button("again", [4]float64{sw/2 - 250, y + 20, 240, 50}, false, false, btnDraw("Play again", "Same Pokémon and setup", gold, false), func() { g.startFromMenu() })
+	if g.coop {
+		yy := y + 10
+		u.label([4]float64{x, yy, 600, 20 + 20*float64(len(w.PL))}, false, func(dst *ebiten.Image, r [4]float64) {
+			g.drawStandings(dst, r[0], r[1], r[2])
+		})
+		y = yy + 30 + 20*float64(len(w.PL))
+	}
+	u.button("again", [4]float64{sw/2 - 250, y + 20, 240, 50}, false, false, btnDraw("Play again", "Same Pokémon and setup", gold, false), func() {
+		if g.coop {
+			g.startCoop()
+			return
+		}
+		g.startFromMenu()
+	})
 	u.button("menu", [4]float64{sw/2 + 10, y + 20, 240, 50}, false, false, btnDraw("Main menu", "", c(159, 232, 255, 255), false), func() { g.scr = scMenu; g.ui.focus = "" })
 }
 
@@ -905,6 +963,7 @@ func (g *Game) startFromMenu() {
 		return m
 	}
 	g.startCfg(id, bi, rand.Int63(), cfg)
+	g.daily = nil
 	g.finished = false
 }
 
@@ -916,6 +975,7 @@ func (g *Game) finishRun() {
 	g.finished = true
 	w := g.W
 	pr := g.prof
+	w.UseLocal(0)
 	root := pr.LineRoot(w.P.ID)
 	r0, _, _ := pr.Mastery(root)
 	var moves [][3]any
@@ -935,10 +995,19 @@ func (g *Game) finishRun() {
 		}
 		return l
 	}
-	res := meta.RunResult{CID: w.P.ID, T: w.T, Kills: w.Kills, Lv: w.P.Lv, Win: w.Won, Coins: w.Coins, Tickets: w.Tickets,
+	kills := w.Kills
+	if g.coop {
+		kills = w.PL[0].Kills
+	}
+	res := meta.RunResult{CID: w.P.ID, T: w.T, Kills: kills, Lv: w.P.Lv, Win: w.Won, Coins: w.Coins, Tickets: w.Tickets,
 		Elites: w.Stats.Elites, MiniBosses: w.Stats.Minis, EliteTk: w.Stats.EliteTk, Cursed: w.Stats.Cursed, Curses: w.Stats.Curses,
 		Bosses: w.Bosses, Ability: w.PS.A.ID, AbilityName: w.PS.A.Name, Tier: w.Run.Tier, Mods: w.Run.Mods, Stage: w.Run.Stage, Mult: w.Run.Mult,
 		Visited: w.Visited, Dmg: w.DMG, Moves: moves, Items: items, Learned: keys(w.Learned), Evolved: keys(w.Evolved), Capstone: keys(w.Capstone)}
+	if g.daily != nil {
+		pr.DailyResult(time.Now(), *g.daily, w.P.ID, w.Kills, w.T, w.Won, moves, items, g.lbName())
+		g.cloud.PushLB(pr.LB().M)
+		g.daily = nil
+	}
 	gain, mx, unl := pr.Finish(res)
 	rk, into, need := pr.Mastery(root)
 	g.end = endInfo{gain: gain, mx: mx, tickets: w.Tickets, rank: rk, into: into, need: need, rankUp: rk - r0, unlocked: unl, win: w.Won}
@@ -963,7 +1032,31 @@ func (g *Game) OpenScreen(name string) {
 		g.scr = scXfer
 	case "settings":
 		g.scr = scSettings
+	case "dex":
+		g.scr = scDex
+	case "hist":
+		g.scr = scHist
+	case "daily":
+		g.scr = scDaily
+	case "boards":
+		g.scr = scBoards
+		g.lbFetch()
+	case "lobby":
+		g.scr = scLobby
 	default:
 		g.scr = scMenu
+	}
+}
+
+// LoadCode replaces the profile with a save code (testing / command line).
+func (g *Game) LoadCode(code string) {
+	s, err := meta.DecodeCode(code)
+	if err != nil {
+		g.toast(err.Error())
+		return
+	}
+	g.prof = meta.NewProfile(s, g.db)
+	if sel := s.Sel(); sel != "" && g.db.ByID[sel] != nil {
+		g.csel = sel
 	}
 }

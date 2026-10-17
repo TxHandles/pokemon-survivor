@@ -273,6 +273,9 @@ func (w *World) fire(s *Slot) {
 func (w *World) at(c mc, t float64, fn func()) {
 	s := c.s
 	w.later(t, func() {
+		if s != nil {
+			w.useP(s.Owner)
+		}
 		prev := w.curSlot
 		w.curSlot = s
 		fn()

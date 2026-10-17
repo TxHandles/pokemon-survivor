@@ -293,6 +293,9 @@ func (w *World) kill(e *Enemy) {
 	}
 	e.Dead = true
 	w.Kills++
+	if w.cur != nil {
+		w.cur.Kills++
+	}
 	switch {
 	case e.Boss:
 		w.sfx("bossdown")
@@ -374,9 +377,11 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 	}
 	if P.HP <= 0 {
 		P.HP = 0
-		P.Dead = true
-		w.State = StateDead
 		w.sfx("death")
+		if w.pdie() {
+			P.Dead = true
+			w.State = StateDead
+		}
 	}
 }
 

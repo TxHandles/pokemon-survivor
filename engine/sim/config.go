@@ -192,6 +192,9 @@ func (w *World) Reroll() bool {
 	}
 	w.Rerolls--
 	w.Opts = w.genOpts()
+	if c := w.PL[w.Chooser]; len(c.Queue) > 0 {
+		c.Queue[0].Opts = w.Opts
+	}
 	return true
 }
 
@@ -204,9 +207,16 @@ func (w *World) Banish(i int) bool {
 	o := w.Opts[i]
 	w.Ban[banKey(o)] = true
 	w.Opts = w.genOpts()
+	if c := w.PL[w.Chooser]; len(c.Queue) > 0 {
+		c.Queue[0].Opts = w.Opts
+	}
 	if len(w.Opts) == 0 {
+		if c := w.PL[w.Chooser]; len(c.Queue) > 0 {
+			c.Queue = c.Queue[1:]
+		}
 		w.Opts = nil
 		w.State = StatePlay
+		w.prompt()
 	}
 	return true
 }

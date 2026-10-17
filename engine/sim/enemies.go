@@ -203,7 +203,7 @@ func (w *World) onDeath(e *Enemy) {
 			n = 5
 		}
 		for i := 0; i < n; i++ {
-			w.Gems = append(w.Gems, &Gem{X: e.X + w.rnd(-24, 24), Y: e.Y + w.rnd(-24, 24), V: w.P.NX * .15})
+			w.Gems = append(w.Gems, &Gem{X: e.X + w.rnd(-24, 24), Y: e.Y + w.rnd(-24, 24), V: w.XPS.NX * .15})
 		}
 		w.dropItem(e.X, e.Y)
 		if e.Mini {
@@ -269,7 +269,7 @@ func (w *World) useItem(k string) {
 		w.curSlot = prev
 		w.addFX(&FX{Kind: "flash", Life: .35})
 	case "candy":
-		P.XP += P.NX
+		w.freeLevel()
 	case "harvest":
 		w.heal(P.MHP * .15)
 	}
@@ -280,6 +280,7 @@ func (w *World) useItem(k string) {
 }
 
 func (w *World) stepPickups(dt float64) {
+	w.useP(w.rndAlive())
 	P := w.P
 	w.candyT -= dt
 	if w.candyT <= 0 {
@@ -302,7 +303,8 @@ func (w *World) stepPickups(dt float64) {
 	keep := w.Items[:0]
 	for _, it := range w.Items {
 		it.T += dt
-		if dist(it.X, it.Y, P.X, P.Y) < 24 {
+		if j := w.nearIn(it.X, it.Y, 24); j >= 0 {
+			w.useP(j)
 			w.useItem(it.K)
 			continue
 		}
@@ -768,7 +770,7 @@ func (w *World) bossClear(b *Enemy) {
 // ---- enemy bullets and telegraphed hazards (web late()) ----
 
 func (w *World) stepEnemyAttacks(dt float64) {
-	P := w.P
+	w.useP(w.rndAlive())
 	w.elT -= dt
 	if w.elT <= 0 && w.T >= 150 && w.spawnHold <= 0 {
 		w.elT = math.Max(22, 70-float64(w.Run.Tier)*4-w.T/40)
@@ -792,6 +794,8 @@ func (w *World) stepEnemyAttacks(dt float64) {
 	w.biomeEvents(dt)
 	keep := w.EB[:0]
 	for _, b := range w.EB {
+		w.useP(w.nearP(b.X, b.Y))
+		P := w.P
 		if b.Homing {
 			a := math.Atan2(P.Y-b.Y, P.X-b.X)
 			cu := math.Atan2(b.VY, b.VX)
@@ -804,7 +808,7 @@ func (w *World) stepEnemyAttacks(dt float64) {
 		b.X += b.VX * dt
 		b.Y += b.VY * dt
 		b.L -= dt
-		if b.L > 0 && dist(b.X, b.Y, P.X, P.Y) < b.R+12 {
+		if b.L > 0 && w.alive(w.CUR) && dist(b.X, b.Y, P.X, P.Y) < b.R+12 {
 			b.L = 0
 			if !w.abProj(b) {
 				if b.Web && !has(P.Types, "flying") && !w.abSlowImm() {
@@ -824,19 +828,23 @@ func (w *World) stepEnemyAttacks(dt float64) {
 		if !h.Gone && h.T <= 0 {
 			h.Gone, h.Fl = true, .25
 			w.Shake = math.Max(w.Shake, .15)
-			if dist(h.X, h.Y, P.X, P.Y) < h.R+10 && h.Dm > 0 {
-				kz := 1.0
-				if h.Bio != "" {
-					kz = w.hzK()
-					if w.abHzImm(h.Bio) {
-						kz = 0
+			for _, pi := range w.aliveIdx() {
+				w.useP(pi)
+				P := w.P
+				if dist(h.X, h.Y, P.X, P.Y) < h.R+10 && h.Dm > 0 {
+					kz := 1.0
+					if h.Bio != "" {
+						kz = w.hzK()
+						if w.abHzImm(h.Bio) {
+							kz = 0
+						}
 					}
-				}
-				if h.Bio == "storm" && w.PS.S("hzHeal") == "storm" {
-					w.heal(P.MHP * .08)
-					w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 30, Life: .9, Text: "Absorbed!", Col: "se"})
-				} else if kz > 0 {
-					w.eHit(h.Dm*kz, h.Type)
+					if h.Bio == "storm" && w.PS.S("hzHeal") == "storm" {
+						w.heal(P.MHP * .08)
+						w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 30, Life: .9, Text: "Absorbed!", Col: "se"})
+					} else if kz > 0 {
+						w.eHit(h.Dm*kz, h.Type)
+					}
 				}
 			}
 		}

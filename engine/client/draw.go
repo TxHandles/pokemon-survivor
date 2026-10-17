@@ -35,7 +35,11 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		k := math.Min(1, w.Shake) * 7 * g.opt("shake")
 		shx, shy = (hash01(int(w.T*60), 1, 3)-.5)*k, (hash01(int(w.T*60), 2, 5)-.5)*k
 	}
-	camX, camY := math.Round(w.P.X-sw/2+shx), math.Round(w.P.Y-sh/2+shy)
+	ccx, ccy := w.Centroid()
+	if !g.coop {
+		ccx, ccy = w.P.X, w.P.Y
+	}
+	camX, camY := math.Round(ccx-sw/2+shx), math.Round(ccy-sh/2+shy)
 	sx := func(x float64) float64 { return x - camX }
 	sy := func(y float64) float64 { return y - camY }
 	if g.floorN != w.BiomeN { // travelled to a new biome
@@ -146,7 +150,11 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		}
 		items = append(items, drawItem{e.Y + e.R, func() { g.drawEnemy(dst, e, x, y) }})
 	}
-	items = append(items, drawItem{w.P.Y + 12, func() { g.drawPlayer(dst, sx(w.P.X), sy(w.P.Y)) }})
+	for i, pc := range w.PL {
+		i, pc := i, pc
+		items = append(items, drawItem{pc.P.Y + 12, func() { g.drawPlayerI(dst, i, pc, sx(pc.P.X), sy(pc.P.Y)) }})
+	}
+	g.drawCenter(dst, sx, sy)
 	sort.SliceStable(items, func(i, j int) bool { return items[i].y < items[j].y })
 	for _, it := range items {
 		it.fn()
@@ -249,17 +257,39 @@ func b2f(b bool, t, f float64) float64 {
 	return f
 }
 
-func (g *Game) drawPlayer(dst *ebiten.Image, x, y float64) {
+// drawPlayerI draws player i (its own animation state and marker colour).
+func (g *Game) drawPlayerI(dst *ebiten.Image, i int, pc *sim.PlayerCtx, x, y float64) {
 	w := g.W
-	P := w.P
-	a := &g.pa
+	P := pc.P
+	if g.pas == nil {
+		g.pas = map[int]*playerAnim{}
+	}
+	a := g.pas[i]
+	if a == nil {
+		a = &playerAnim{}
+		g.pas[i] = a
+	}
 	dt := math.Max(0, math.Min(.1, w.T-a.lastT))
 	a.lastT = w.T
 	soft(dst, x, y+11, 15, 6, c(0, 0, 0, 120))
 	// marker ring so the player stands out in a crowd of look-alike enemies
-	pc := tc(P.Types[0])
-	ring(dst, x, y+11, 17, 2.5, alpha(pc, .85))
+	mc := tc(P.Types[0])
+	if g.coop {
+		mc = playerCols[i%4]
+	}
+	ring(dst, x, y+11, 17, 2.5, alpha(mc, .85))
 	ring(dst, x, y+11, 17, 1, alpha(c(255, 255, 255, 255), .7))
+	if g.coop {
+		drawText(dst, pc.Name, x, y-46, 11, true, mc, text.AlignCenter, true)
+	}
+	if P.Dead {
+		if s := g.assets.Sprite(P.ID); s != nil {
+			fr := s.Front.IdleFrame(0)
+			g.blit(dst, s.Front, fr, x, y+11, s.Scale, s.Scale, .35, false)
+		}
+		drawText(dst, "fainted", x, y+16, 10, true, c(255, 140, 140, 255), text.AlignCenter, true)
+		return
+	}
 	s := g.assets.Sprite(P.ID)
 	if s == nil {
 		disc(dst, x, y, 12, tc(P.Types[0]))
