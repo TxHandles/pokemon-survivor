@@ -239,7 +239,7 @@ func drawObstacle(dst *ebiten.Image, o sim.Obstacle, x, y float64, biome string)
 	n := 7
 	for i := 0; i < n; i++ {
 		a := math.Pi + float64(i)/float64(n-1)*math.Pi
-		k := .8 + .25*math.Sin(float64(i)*2.3+o.Var*9)
+		k := .8 + .25*math.Sin(float64(i)*2.3+(o.X*.013))
 		pts = append(pts, [2]float64{x + math.Cos(a)*r*k, y + r*.25 + math.Sin(a)*r*.95*k})
 	}
 	poly(dst, pts, rock)

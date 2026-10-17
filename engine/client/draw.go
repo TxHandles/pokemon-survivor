@@ -77,7 +77,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	for j := pr0; j <= pr1; j++ {
 		for i := pc0; i <= pc1; i++ {
 			for _, pl := range w.Pools(i, j) {
-				drawPool(dst, pl, sx(pl.X), sy(pl.Y), w.T)
+				g.drawPoolArt(dst, pl, sx(pl.X), sy(pl.Y), w.T)
 			}
 		}
 	}
@@ -88,6 +88,10 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 			col = rgbStr(h.Col)
 		}
 		x, y := sx(h.X), sy(h.Y)
+		if h.Bio != "" && art != nil {
+			g.drawBioHz(dst, h, x, y)
+			continue
+		}
 		if !h.Gone {
 			k := 1 - math.Max(0, h.T)/math.Max(h.T0, .01)
 			disc(dst, x, y, h.R, alpha(col, .12))
@@ -138,7 +142,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		for i := x0; i <= x1; i++ {
 			for _, o := range w.Chunk(i, j) {
 				o := o
-				items = append(items, drawItem{o.Y, func() { drawObstacle(dst, o, sx(o.X), sy(o.Y), w.Biome) }})
+				items = append(items, drawItem{o.Y, func() { g.drawObst(dst, o, sx(o.X), sy(o.Y)) }})
 			}
 		}
 	}

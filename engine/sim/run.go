@@ -104,6 +104,7 @@ func (w *World) enterBiome(t string, li int, first bool) {
 	w.P.WX, w.P.WY, w.P.gw = 0, 0, 0
 	w.bioT = 6
 	w.BiomeN++
+	w.placeLandmarks()
 	if first {
 		w.spawnHold = 0
 	} else {

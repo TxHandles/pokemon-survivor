@@ -139,6 +139,7 @@ func (b *Bot) steer() {
 		for i := -1; i <= 1; i++ {
 			for j := -1; j <= 1; j++ {
 				for _, o := range w.Chunk(chx+i, chy+j) {
+					o.X, o.Y, o.R = o.Bounds()
 					if dist(o.X, o.Y, P.X, P.Y) < o.R+sp*LA+30 {
 						oc = append(oc, o)
 					}

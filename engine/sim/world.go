@@ -32,7 +32,7 @@ func NewCoop(db *content.DB, players []PlayerSpec, biome string, seed int64, cfg
 		cfg.Up = map[string]int{}
 	}
 	w := &World{DB: db, Biome: biome, Seed: seed, rng: rand.New(rand.NewSource(seed)),
-		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[[2]int][]Obstacle{},
+		ViewW: 1280, ViewH: 720, MoveSlots: 2, HeldSlots: 2, nextBoss: 300, nextSwarm: 120, LeashFar: 500, LeashBias: .5, LeashSpread: 2.2, obs: map[[2]int][]Obstacle{}, obsRaw: map[[2]int][]Obstacle{},
 		pools: map[[2]int][]Pool{}, elT: 100, mbT: 150, candyT: 20, bioT: 6, Cfg: cfg, Run: makeRun(cfg), Chooser: -1}
 	n := len(players)
 	w.Run.HM *= coC.hp[n]

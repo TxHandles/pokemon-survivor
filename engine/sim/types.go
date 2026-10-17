@@ -289,7 +289,8 @@ type World struct {
 	nextBoss                         float64
 	nextSwarm                        float64
 	curSlot                          *Slot
-	obs                              map[[2]int][]Obstacle
+	obs, obsRaw                      map[[2]int][]Obstacle
+	LMSP                             []Obstacle // landmarks placed around the start of the location
 	relocT                           float64
 	Msg                              string
 	MsgT                             float64

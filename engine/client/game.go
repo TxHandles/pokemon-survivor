@@ -113,6 +113,7 @@ type Game struct {
 
 func New(dataFS fs.FS, db *content.DB) *Game {
 	uiFS = dataFS
+	loadArt(dataFS)
 	g := &Game{db: db, assets: NewAssets(dataFS, db), biome: -1, sw: 1280, sh: 720, clipIn: make(chan string, 1)}
 	g.prof = meta.NewProfile(meta.LoadStored(), db)
 	g.saveGen++
