@@ -295,6 +295,7 @@ type World struct {
 	obs, obsRaw                      map[[2]int][]Obstacle
 	LMSP                             []Obstacle // landmarks placed around the start of the location
 	curSrc                           *DmgSrc    // the enemy whose attacks are being created
+	probeHits                        *int       // ProbeMove: counts hits
 	relocT                           float64
 	Msg                              string
 	MsgT                             float64

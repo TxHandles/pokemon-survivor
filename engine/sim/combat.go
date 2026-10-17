@@ -141,6 +141,9 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 	if e.Dead || e.Ug {
 		return
 	}
+	if w.probeHits != nil {
+		*w.probeHits++
+	}
 	s := w.curSlot
 	var q *Q
 	if s != nil {

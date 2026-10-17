@@ -294,6 +294,8 @@ func (g *Game) lvCards() []*lvCard {
 				a, _ := w.MovePreview(o.ID, 10, false)
 				b, _ := w.MovePreview(o.ID, 10, true)
 				c.rows = append(c.rows, dmgRow(a, b))
+				pa := w.ProbeMove(o.ID, 10, false)
+				c.rows = append(c.rows, probeRows(&pa, w.ProbeMove(o.ID, 10, true))...)
 				if it != nil {
 					c.note(it.Name+" held · each item level: +8% evolved damage", alpha(webFg, .75))
 				}
@@ -304,6 +306,7 @@ func (g *Game) lvCards() []*lvCard {
 				c.strong = sim.SE[m.Type]
 				d, cd := w.MovePreview(o.ID, 1, false)
 				c.rows = append(c.rows, lvRow{label: "Damage", b: strconv.Itoa(int(math.Round(d)))})
+				c.rows = append(c.rows, probeRows(nil, w.ProbeMove(o.ID, 1, false))...)
 				if cd > 0 {
 					c.rows = append(c.rows, lvRow{label: "Cooldown", b: fmt.Sprintf("%.2fs", cd)})
 				}
@@ -326,6 +329,8 @@ func (g *Game) lvCards() []*lvCard {
 				a, ca := w.MovePreview(o.ID, lv, ev)
 				b, cb := w.MovePreview(o.ID, lv+1, ev)
 				c.rows = append(c.rows, dmgRow(a, b))
+				pa := w.ProbeMove(o.ID, lv, ev)
+				c.rows = append(c.rows, probeRows(&pa, w.ProbeMove(o.ID, lv+1, ev))...)
 				if math.Abs(ca-cb) > .005 {
 					c.rows = append(c.rows, lvRow{label: "Cooldown", a: fmt.Sprintf("%.2fs", ca), b: fmt.Sprintf("%.2fs", cb), delta: fmt.Sprintf("%d%%", int(math.Round((cb-ca)/ca*100))), good: cb < ca})
 				}
@@ -377,6 +382,60 @@ func (g *Game) lvCards() []*lvCard {
 			}
 		}
 		out = append(out, c)
+	}
+	return out
+}
+
+// probeRows: the web mvRows stat lines between Damage and Cooldown (count, pierce, sizes, area,
+// dash length, status duration). A is nil for a new move (only the new values are shown).
+func probeRows(A *sim.Probe, B sim.Probe) []lvRow {
+	type spec struct {
+		label string
+		a, b  float64
+		unit  string
+	}
+	var aa sim.Probe
+	if A != nil {
+		aa = *A
+	}
+	specs := []spec{{B.NL, aa.N, B.N, ""}, {"Pierce", aa.Pierce, B.Pierce, ""}, {"Size", aa.PSz, B.PSz, "x"}, {"Orb size", aa.OSz, B.OSz, "x"},
+		{B.AL, aa.Area, B.Area, ""}, {"Dash length", aa.Dist, B.Dist, ""}, {B.DL, aa.Du, B.Du, "s"}}
+	countL := map[string]bool{"Orbs": true, "Shield charges": true, "Projectiles": true, "Boomerangs": true, "Beams": true, "Strikes": true, "Eruptions": true, "Whirlpools": true, "Targets": true, "Chain jumps": true}
+	f := func(v float64, u string) string {
+		switch u {
+		case "s":
+			return strconv.FormatFloat(math.Round(v*100)/100, 'f', -1, 64) + "s"
+		case "x":
+			return strconv.FormatFloat(v, 'f', 1, 64)
+		}
+		return strconv.Itoa(int(math.Round(v)))
+	}
+	var out []lvRow
+	for _, sp := range specs {
+		if sp.b == 0 || sp.label == "" {
+			continue
+		}
+		if A != nil && sp.a == 0 {
+			continue
+		}
+		if A == nil {
+			out = append(out, lvRow{label: sp.label, b: f(sp.b, sp.unit)})
+			continue
+		}
+		if math.Round(sp.a*100) == math.Round(sp.b*100) {
+			continue
+		}
+		r := lvRow{label: sp.label, a: f(sp.a, sp.unit), b: f(sp.b, sp.unit), good: sp.b > sp.a}
+		df := sp.b - sp.a
+		switch {
+		case sp.unit == "s":
+			r.delta = fmt.Sprintf("%d%%", int(math.Round(df/sp.a*100)))
+		case sp.unit == "x" || (sp.a > 0 && math.Abs(df) < sp.a*5 && sp.label != "Pierce" && !countL[sp.label]):
+			r.delta = fmt.Sprintf("%+d%%", int(math.Round(df/sp.a*100)))
+		default:
+			r.delta = fmt.Sprintf("%+d", int(math.Round(df)))
+		}
+		out = append(out, r)
 	}
 	return out
 }
