@@ -30,6 +30,8 @@ const (
 
 // Game implements ebiten.Game.
 type Game struct {
+	lobbyRet bool   // browsing Shop / Pokémon / Pokédex from a co-op lobby
+	lobbyTo  screen // that lobby (scOnline or scLobby)
 	fr       friendsState
 	rstArm   bool // Reset progress pressed once
 	histCopy string
@@ -347,6 +349,23 @@ func (g *Game) Update() error {
 	g.tick++
 	if g.scr != g.prevScr {
 		g.histCopy, g.rstArm = "", false
+		if g.scr == scOnline && g.lobbyRet { // back in the lobby: send any new upgrades / unlocks
+			g.lobbyRet = false
+			if r := g.on.room; r != nil {
+				for i, id := range g.unlockedRoster() { // a Pokémon picked on the Pokémon screen
+					if id == g.csel {
+						g.on.idx = i
+					}
+				}
+				if !r.Host {
+					g.on.ready = false
+				}
+				r.SetMe(g.mySpec(), g.on.ready)
+			}
+		}
+		if g.scr == scPlay || (g.scr == scLobby && g.lobbyRet) {
+			g.lobbyRet = false
+		}
 		if g.scr == scMenu { // a different Poké Ball on the menu each visit, like the web version
 			g.menuBall = rand.Intn(26)
 		}
@@ -355,6 +374,7 @@ func (g *Game) Update() error {
 	defer g.audioTick()
 	g.cloud.Poll(g.adoptCloud)
 	g.friendsTick()
+	g.lobbyKeepAlive()
 	if p, ok := g.cloud.(interface{ NeedPush() bool }); ok && p.NeedPush() {
 		g.cloud.PushSave(g.prof.S)
 	}

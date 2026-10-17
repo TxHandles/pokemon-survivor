@@ -184,6 +184,15 @@ func (g *Game) updateLobby() {
 		if inR(g.lobbyBtn(0), fx, fy) {
 			g.scr = scMenu
 		}
+		for i, b := range lobbyShopBtns {
+			if inR(g.lobbyShopRect(i), fx, fy) {
+				g.lobbyRet, g.lobbyTo = true, scLobby
+				g.scr = b.to
+				g.ui.focus = ""
+				g.ui.scroll = 0
+				return
+			}
+		}
 		if inR(g.lobbyBtn(1), fx, fy) {
 			g.addSeat(device{kind: "bot", pad: ebiten.GamepadID(100 + len(g.seats))})
 		}
@@ -203,6 +212,37 @@ func (g *Game) updateLobby() {
 	}
 }
 
+var lobbyShopBtns = []struct {
+	label string
+	to    screen
+}{{"Shop", scShop}, {"Pokémon", scChars}, {"Pokédex", scDex}}
+
+func lobbyShopIcon(i int) any {
+	switch i {
+	case 0:
+		return gCart
+	case 1:
+		return uiIcon("ball0.png")
+	}
+	return uiIcon("dex.png")
+}
+
+func (g *Game) lobbyShopRect(i int) [4]float64 {
+	x := 142.0
+	for j := 0; j < i; j++ {
+		x += smallBtnW(lobbyShopBtns[j].label, lobbyShopIcon(j), " ") + 8
+	}
+	return [4]float64{x, 25, smallBtnW(lobbyShopBtns[i].label, lobbyShopIcon(i), " "), 30}
+}
+
+func (g *Game) drawLobbyShopBtns(dst *ebiten.Image) {
+	mx, my := ebiten.CursorPosition()
+	for i, b := range lobbyShopBtns {
+		r := g.lobbyShopRect(i)
+		smallBtn(dst, r, b.label, inR(r, float64(mx), float64(my)), false, lobbyShopIcon(i), " ")
+	}
+}
+
 func (g *Game) lobbyBtn(i int) [4]float64 {
 	sw, sh := float64(g.sw), float64(g.sh)
 	switch i {
@@ -215,6 +255,7 @@ func (g *Game) lobbyBtn(i int) [4]float64 {
 }
 
 func (g *Game) drawLobby(dst *ebiten.Image) {
+	defer g.drawLobbyShopBtns(dst)
 	g.drawBackdrop(dst)
 	sw, sh := float64(g.sw), float64(g.sh)
 	drawText(dst, "LOCAL CO-OP", sw/2, 26, 32, true, gold, text.AlignCenter, true)

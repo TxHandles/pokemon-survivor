@@ -277,6 +277,20 @@ func (g *Game) menuOnline() {
 	u.button("setup", [4]float64{x, 356, 600, 46}, false, false, btnDraw("Run setup", g.setupSummary(), c(159, 232, 255, 255), false), func() { g.scr = scSetup; g.settingsFrom = scOnline; g.ui.focus = "" })
 }
 
+// lobbyKeepAlive keeps the room running while its player browses other screens, and starts
+// the run if the host starts it meanwhile.
+func (g *Game) lobbyKeepAlive() {
+	r := g.on.room
+	if r == nil || g.on.ls != nil || g.scr == scOnline || !g.lobbyRet {
+		return
+	}
+	r.Update()
+	if r.Started && r.Start != nil && r.Start != g.on.started {
+		g.lobbyRet = false
+		g.startOnline(r.Start)
+	}
+}
+
 func (g *Game) menuRoomLobby() {
 	sw, sh := float64(g.sw), float64(g.sh)
 	u := &g.ui
@@ -307,6 +321,28 @@ func (g *Game) menuRoomLobby() {
 	u.label(leaveR, false, func(dst *ebiten.Image, rr [4]float64) {
 		btnDraw("< Leave", "", dim, false)(dst, rr, inR(rr, float64(mx), float64(my)))
 	})
+	// shop, Pokémon and Pokédex without leaving the room
+	bx := leaveR[0] + leaveR[2] + 12
+	for _, b := range []struct {
+		label string
+		icon  any
+		to    screen
+	}{{"Shop", gCart, scShop}, {"Pokémon", uiIcon("ball0.png"), scChars}, {"Pokédex", uiIcon("dex.png"), scDex}} {
+		b := b
+		w := smallBtnW(b.label, b.icon, " ")
+		br := [4]float64{bx, 25, w, 30}
+		u.label(br, false, func(dst *ebiten.Image, rr [4]float64) {
+			smallBtn(dst, rr, b.label, inR(rr, float64(mx), float64(my)), false, b.icon, " ")
+		})
+		if click(br) {
+			g.lobbyRet, g.lobbyTo = true, scOnline
+			g.scr = b.to
+			g.ui.focus = ""
+			g.ui.scroll = 0
+			return
+		}
+		bx += w + 8
+	}
 	if click(leaveR) || keyJust(ebiten.KeyEscape) || padBtn(ebiten.StandardGamepadButtonRightRight) {
 		g.leaveRoom()
 		g.on.mode = "menu"

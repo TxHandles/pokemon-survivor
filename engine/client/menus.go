@@ -133,6 +133,9 @@ func (g *Game) header(title, sub string) {
 }
 
 func (g *Game) backButton(to screen) {
+	if g.lobbyRet && to == scMenu { // opened from a co-op lobby: go back there
+		to = g.lobbyTo
+	}
 	g.ui.button("back", [4]float64{20, 20, 110, 40}, false, false, btnDraw("< Back", "", dim, false), func() { g.scr = to; g.ui.focus = "" })
 	if g.ui.edit != "" || g.ui.swallow {
 		return
