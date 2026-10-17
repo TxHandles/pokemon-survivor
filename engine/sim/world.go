@@ -567,7 +567,9 @@ func (w *World) stepEnemies(dt float64) {
 		px, py := e.X, e.Y
 		mv := 0.0
 		if !(e.Stun > 0 || e.Frz > 0 || e.Root > 0) {
+			w.curSrc = w.esrc(e, false)
 			sm := w.ai(e, dt) * b2f(P.Phs > 0, 1.3, 1)
+			w.curSrc = nil
 			if e.Dead || w.State != StatePlay {
 				continue
 			}
@@ -646,7 +648,7 @@ func (w *World) stepEnemies(dt float64) {
 		}
 		if P.Inv <= 0 && !e.Dead && !e.Ug && !(e.Stun > 0 || e.Frz > 0 || e.Fear > 0 || e.Charm > 0) && dist(e.X, e.Y, P.X, P.Y) < e.R+12 {
 			if !w.dodge() {
-				w.hurtS(e.Dm, hurtSrc{t: e.Type, contact: true, elite: e.Elite})
+				w.hurtS(e.Dm, hurtSrc{t: e.Type, contact: true, elite: e.Elite, src: w.esrc(e, true)})
 			}
 			if th := w.PS.F("thorn"); th > 0 && !e.Dead {
 				prev := w.curSlot

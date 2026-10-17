@@ -12,6 +12,7 @@ type EBullet struct {
 	X, Y, VX, VY, L, R, Dm float64
 	Type                   string // damage type ("" = neutral)
 	Web, Homing            bool
+	Src                    *DmgSrc
 }
 
 // Hazard is a telegraphed area attack: it shows for T0 seconds, then hits once.
@@ -22,6 +23,7 @@ type Hazard struct {
 	Gone               bool
 	Fl                 float64
 	Bio                string // biome event hazard (storm / rockfall): type immunity applies
+	Src                *DmgSrc
 }
 
 // Pickup is a map item: magnet, berry, battery, belt, bomb, candy.
@@ -182,7 +184,7 @@ func b2s(b bool, t, f string) string {
 // onDeath: elite / affix effects when an enemy faints (web eDie).
 func (w *World) onDeath(e *Enemy) {
 	if e.Expl {
-		w.HZ = append(w.HZ, &Hazard{X: e.X, Y: e.Y, R: 85, T: 1, T0: 1, Dm: e.Dm * 1.5, Col: "255,153,85"})
+		w.HZ = append(w.HZ, &Hazard{X: e.X, Y: e.Y, R: 85, T: 1, T0: 1, Dm: e.Dm * 1.5, Col: "255,153,85", Src: srcExpl})
 	}
 	if e.Split {
 		for i := 0; i < 4; i++ {
@@ -390,7 +392,7 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 			w.Shake = math.Max(w.Shake, .12)
 			w.addFX(&FX{Kind: "puff", X: e.X, Y: e.Y, R: 46, Life: .35, Type: "ground"})
 			if hyp(P.X-e.X, P.Y-e.Y) < 46+12 {
-				w.eHit(e.Dm*1.1, e.Type)
+				w.eHitS(e.Dm*1.1, hurtSrc{t: e.Type, src: w.esrc(e, false)})
 			}
 		}
 		return 0
@@ -420,7 +422,7 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 		if e.rkw > 0 {
 			e.rkw -= dt
 			if e.rkw <= 0 {
-				w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: dx / d * 170, VY: dy / d * 170, L: 3, R: 9, Dm: e.Dm * .3, Type: e.Type, Web: true})
+				w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: dx / d * 170, VY: dy / d * 170, L: 3, R: 9, Dm: e.Dm * .3, Type: e.Type, Web: true, Src: w.curSrc})
 			}
 			return 0
 		}
@@ -496,7 +498,7 @@ func (w *World) roleAI(e *Enemy, dt float64) float64 {
 		m = 0
 		if e.rkw <= 0 {
 			if e.Rk == "shoot" {
-				w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: dx / d * 210, VY: dy / d * 210, L: 2.6, R: 7, Dm: e.Dm * .5, Type: e.Type})
+				w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: dx / d * 210, VY: dy / d * 210, L: 2.6, R: 7, Dm: e.Dm * .5, Type: e.Type, Src: w.curSrc})
 			} else {
 				w.addFX(&FX{Kind: "pv", X: e.X, Y: e.Y, R: healR, Life: .35, Type: "fairy"})
 				for _, o := range w.E {
@@ -564,12 +566,12 @@ func (w *World) dodge() bool {
 func (w *World) eRing(e *Enemy, n int, o, sp, k float64) {
 	for i := 0; i < n; i++ {
 		a := o + float64(i)*6.283/float64(n)
-		w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, L: 4, R: 6, Dm: e.Dm * k, Type: e.Type})
+		w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, L: 4, R: 6, Dm: e.Dm * k, Type: e.Type, Src: w.curSrc})
 	}
 }
 
 func (w *World) bul(e *Enemy, a, sp, k float64, homing bool) {
-	b := &EBullet{X: e.X, Y: e.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, L: 4, R: 6, Dm: e.Dm * k, Type: e.Type}
+	b := &EBullet{X: e.X, Y: e.Y, VX: math.Cos(a) * sp, VY: math.Sin(a) * sp, L: 4, R: 6, Dm: e.Dm * k, Type: e.Type, Src: w.curSrc}
 	if homing {
 		b.Homing, b.L, b.R = true, 6, 9
 	}
@@ -577,7 +579,7 @@ func (w *World) bul(e *Enemy, a, sp, k float64, homing bool) {
 }
 
 func (w *World) hz(x, y, r, t, dm float64, typ, col string) {
-	w.HZ = append(w.HZ, &Hazard{X: x, Y: y, R: r, T: t, T0: t, Dm: dm, Type: typ, Col: col})
+	w.HZ = append(w.HZ, &Hazard{X: x, Y: y, R: r, T: t, T0: t, Dm: dm, Type: typ, Col: col, Src: w.curSrc})
 }
 
 // boss attack kit (web NA + atkGo)
@@ -814,7 +816,7 @@ func (w *World) stepEnemyAttacks(dt float64) {
 				if b.Web && !has(P.Types, "flying") && !w.abSlowImm() {
 					P.WebT = 1.8
 				}
-				w.eHitS(b.Dm, hurtSrc{t: b.Type, proj: true})
+				w.eHitS(b.Dm, hurtSrc{t: b.Type, proj: true, src: b.Src})
 			}
 		}
 		if b.L > 0 {
@@ -843,7 +845,14 @@ func (w *World) stepEnemyAttacks(dt float64) {
 						w.heal(P.MHP * .08)
 						w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 30, Life: .9, Text: "Absorbed!", Col: "se"})
 					} else if kz > 0 {
-						w.eHit(h.Dm*kz, h.Type)
+						src := h.Src
+						switch h.Bio {
+						case "storm":
+							src = srcStorm
+						case "rockfall":
+							src = srcRockfall
+						}
+						w.eHitS(h.Dm*kz, hurtSrc{t: h.Type, src: src})
 					}
 				}
 			}
@@ -1021,10 +1030,10 @@ func (w *World) playerTerrain(dt float64) (spd float64, hk string) {
 	case "toxic":
 		spd = sl(.8)
 	case "lava":
-		w.hurt((P.MHP*.055*dt+1.5*dt)*kk, "")
+		w.hurtS((P.MHP*.055*dt+1.5*dt)*kk, hurtSrc{src: srcLava})
 	}
 	if hk == "toxic" {
-		w.hurt(P.MHP*.025*dt*kk, "")
+		w.hurtS(P.MHP*.025*dt*kk, hurtSrc{src: srcToxic})
 	}
 	if P.WebT > 0 {
 		if !w.abSlowImm() {

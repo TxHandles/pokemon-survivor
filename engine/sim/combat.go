@@ -355,6 +355,12 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 		red += w.PS.F("redStill")
 	}
 	P.HP -= d * ppow(.96, w.up("arm")) * ppow(.93, w.pe("metal")) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
+	src := s.src
+	if src == nil {
+		src = srcUnknown
+	}
+	dd := h0 - P.HP
+	w.dlog(dd, src)
 	w.abHurt(h0 - P.HP)
 	if h0-P.HP > .6 {
 		P.HurtT = w.T
@@ -377,6 +383,7 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 	}
 	if P.HP <= 0 {
 		P.HP = 0
+		P.dl.KB = &DmgHit{w.T, dd, src}
 		w.sfx("death")
 		if w.pdie() {
 			P.Dead = true

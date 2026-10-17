@@ -102,6 +102,7 @@ type DashState struct {
 }
 
 type Player struct {
+	dl                dmgLog
 	ID, Name          string
 	Types             []string
 	Stats             content.Stats
@@ -129,6 +130,7 @@ type Player struct {
 
 type Enemy struct {
 	PokeID        string
+	srcC, srcA    *DmgSrc // damage-source names (contact / attacks)
 	Type          string
 	X, Y, R       float64
 	HP, MHP       float64
@@ -292,6 +294,7 @@ type World struct {
 	curSlot                          *Slot
 	obs, obsRaw                      map[[2]int][]Obstacle
 	LMSP                             []Obstacle // landmarks placed around the start of the location
+	curSrc                           *DmgSrc    // the enemy whose attacks are being created
 	relocT                           float64
 	Msg                              string
 	MsgT                             float64
@@ -361,7 +364,18 @@ func (w *World) addFX(f *FX) {
 	w.FX = append(w.FX, f)
 }
 
-func (w *World) later(t float64, fn func()) { w.DL = append(w.DL, &delay{t, fn}) }
+func (w *World) later(t float64, fn func()) {
+	if src := w.curSrc; src != nil { // attacks fired later still name the enemy that started them
+		f := fn
+		fn = func() {
+			prev := w.curSrc
+			w.curSrc = src
+			f()
+			w.curSrc = prev
+		}
+	}
+	w.DL = append(w.DL, &delay{t, fn})
+}
 
 // RunStats counts things the meta layer records at the end of a run.
 type RunStats struct {

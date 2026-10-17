@@ -707,6 +707,7 @@ func (g *Game) TestPause() { g.auto = false; g.scr = scPause }
 
 func (g *Game) TestResults() {
 	g.auto = false
+	g.W.TestKO()
 	g.W.State = sim.StateDead
 	g.finishRun()
 	g.scr = scResult

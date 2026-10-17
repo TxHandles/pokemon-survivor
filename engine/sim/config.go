@@ -148,7 +148,7 @@ func (w *World) specAI(e *Enemy, dt float64) float64 {
 			} else {
 				e.st = 2.6
 				if d < 460 {
-					w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: dx / d * 200, VY: dy / d * 200, L: 3, R: 6, Dm: e.Dm * .7, Type: e.Type})
+					w.EB = append(w.EB, &EBullet{X: e.X, Y: e.Y, VX: dx / d * 200, VY: dy / d * 200, L: 3, R: 6, Dm: e.Dm * .7, Type: e.Type, Src: w.curSrc})
 				}
 			}
 		}
@@ -177,7 +177,7 @@ func (w *World) specAI(e *Enemy, dt float64) float64 {
 		m = 1.35
 		if d < 44 {
 			e.Dead = true
-			w.HZ = append(w.HZ, &Hazard{X: e.X, Y: e.Y, R: 70, T: .8, T0: .8, Dm: e.Dm * 1.5, Type: e.Type})
+			w.HZ = append(w.HZ, &Hazard{X: e.X, Y: e.Y, R: 70, T: .8, T0: .8, Dm: e.Dm * 1.5, Type: e.Type, Src: w.curSrc})
 		}
 	}
 	return m

@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"image/color"
 	"math"
 	"math/rand"
 	"strings"
@@ -311,6 +312,7 @@ func (g *Game) menuXfer() {
 func (g *Game) menuResult() {
 	sw := float64(g.sw)
 	u := &g.ui
+	u.area = [4]float64{0, 0, sw, float64(g.sh)}
 	e := g.end
 	w := g.W
 	title := "Knocked out"
@@ -321,7 +323,7 @@ func (g *Game) menuResult() {
 		}
 	}
 	y := 90.0
-	u.label([4]float64{0, y, sw, 40}, false, textDraw(title, 32, true, webFg, text.AlignCenter))
+	u.label([4]float64{0, y, sw, 40}, true, textDraw(title, 32, true, webFg, text.AlignCenter))
 	y += 50
 	es := fmt.Sprintf("Time %s · Level %d · %d defeated · +%s coins", fmtT(w.T), w.P.Lv, w.Kills, commas(e.gain))
 	if w.Run.Mult > 1 {
@@ -335,7 +337,7 @@ func (g *Game) menuResult() {
 		es += fmt.Sprintf(" · %d challenge%s ready to claim", n, plural(n))
 	}
 	ls := wrap(es, font(14, false), 480)
-	u.label([4]float64{sw/2 - 240, y, 480, float64(len(ls)) * 18}, false, func(dst *ebiten.Image, r [4]float64) {
+	u.label([4]float64{sw/2 - 240, y, 480, float64(len(ls)) * 18}, true, func(dst *ebiten.Image, r [4]float64) {
 		for i, l := range ls {
 			drawText(dst, l, sw/2, r[1]+float64(i)*18, 14, false, alpha(webFg, .9), text.AlignCenter, true)
 		}
@@ -344,7 +346,7 @@ func (g *Game) menuResult() {
 	// mastery (web .mrend)
 	root := g.prof.LineRoot(w.P.ID)
 	mh := 84 + 18*float64(len(e.unlocked))
-	u.label([4]float64{sw/2 - 243, y, 486, mh}, false, func(dst *ebiten.Image, r [4]float64) {
+	u.label([4]float64{sw/2 - 243, y, 486, mh}, true, func(dst *ebiten.Image, r [4]float64) {
 		roundRect(dst, r[0], r[1], r[2], r[3], 10, alpha(webAcc, .33))
 		roundRect(dst, r[0]+1, r[1]+1, r[2]-2, r[3]-2, 9, mix(hexC("#10131a"), webAcc, .08))
 		x := r[0] + 13
@@ -362,28 +364,34 @@ func (g *Game) menuResult() {
 		}
 	})
 	y += mh + 14
+	if rc := w.DeathRecap(w.P); rc != nil && !e.win && w.P.HP <= 0 {
+		h := recapH(rc)
+		u.label([4]float64{sw/2 - 236, y, 472, h}, true, func(dst *ebiten.Image, r [4]float64) { g.drawRecap(dst, rc, r) })
+		y += h + 10
+	}
 	dh := 17 * float64(min(8, len(w.DMG))+1)
-	u.label([4]float64{sw/2 - 230, y, 460, dh}, false, func(dst *ebiten.Image, r [4]float64) {
+	u.label([4]float64{sw/2 - 230, y, 460, dh}, true, func(dst *ebiten.Image, r [4]float64) {
 		g.drawDamageBy(dst, r[0], r[1], r[2])
 	})
 	y += dh + 6
 	x := sw/2 - 300
 	if g.coop {
 		yy := y + 10
-		u.label([4]float64{x, yy, 600, 20 + 20*float64(len(w.PL))}, false, func(dst *ebiten.Image, r [4]float64) {
+		u.label([4]float64{x, yy, 600, 20 + 20*float64(len(w.PL))}, true, func(dst *ebiten.Image, r [4]float64) {
 			g.drawStandings(dst, r[0], r[1], r[2])
 		})
 		y = yy + 30 + 20*float64(len(w.PL))
 	}
 	if g.online() || (g.coop && g.on.room != nil) {
 		if g.on.note != "" {
-			u.label([4]float64{0, y - 4, sw, 20}, false, textDraw(g.on.note, 13, true, c(255, 179, 179, 255), text.AlignCenter))
+			u.label([4]float64{0, y - 4, sw, 20}, true, textDraw(g.on.note, 13, true, c(255, 179, 179, 255), text.AlignCenter))
 		}
-		u.button("again", [4]float64{sw/2 - 250, y + 20, 240, 50}, false, false, btnDraw("Back to the room", "Play again with the same people", gold, false), func() { g.endOnlineRun() })
-		u.button("menu", [4]float64{sw/2 + 10, y + 20, 240, 50}, false, false, btnDraw("Leave", "Main menu", c(159, 232, 255, 255), false), func() { g.leaveRoom(); g.scr = scMenu; g.ui.focus = "" })
+		u.button("again", [4]float64{sw/2 - 250, y + 20, 240, 50}, true, false, btnDraw("Back to the room", "Play again with the same people", gold, false), func() { g.endOnlineRun() })
+		u.button("menu", [4]float64{sw/2 + 10, y + 20, 240, 50}, true, false, btnDraw("Leave", "Main menu", c(159, 232, 255, 255), false), func() { g.leaveRoom(); g.scr = scMenu; g.ui.focus = "" })
+		u.scrollMax = math.Max(0, y+90-u.area[3])
 		return
 	}
-	u.button("again", [4]float64{sw/2 - 160, y + 14, 150, 44}, false, false, func(dst *ebiten.Image, r [4]float64, hot bool) {
+	u.button("again", [4]float64{sw/2 - 160, y + 14, 150, 44}, true, false, func(dst *ebiten.Image, r [4]float64, hot bool) {
 		webBtnDraw(dst, r, hot, false, false)
 		drawText(dst, "Play again", r[0]+r[2]/2, r[1]+13, 15, false, webFg, text.AlignCenter, false)
 	}, func() {
@@ -393,10 +401,11 @@ func (g *Game) menuResult() {
 		}
 		g.startFromMenu()
 	})
-	u.button("menu", [4]float64{sw/2 + 10, y + 14, 150, 44}, false, false, func(dst *ebiten.Image, r [4]float64, hot bool) {
+	u.button("menu", [4]float64{sw/2 + 10, y + 14, 150, 44}, true, false, func(dst *ebiten.Image, r [4]float64, hot bool) {
 		webBtnDraw(dst, r, hot, false, false)
 		drawText(dst, "Main menu", r[0]+r[2]/2, r[1]+13, 15, false, webFg, text.AlignCenter, false)
 	}, func() { g.scr = scMenu; g.ui.focus = "" })
+	u.scrollMax = math.Max(0, y+80-u.area[3])
 }
 
 // ---- starting and finishing runs ----
@@ -536,5 +545,84 @@ func (g *Game) LoadCode(code string) {
 	g.saveGen++
 	if sel := s.Sel(); sel != "" && g.db.ByID[sel] != nil {
 		g.csel = sel
+	}
+}
+
+// ---- "what knocked you out" (web deathHTML) ----
+
+func recapTip(rc *sim.Recap) []string {
+	if rc.Tip == "" {
+		return nil
+	}
+	return wrap(rc.Tip, font(12, false), 424)
+}
+
+func recapH(rc *sim.Recap) float64 {
+	h := 10 + 22 + 52 + 20 + 18*float64(len(rc.Last10)) + 20 + 18*float64(len(rc.Run)) + 10
+	if t := recapTip(rc); len(t) > 0 {
+		h += 16*float64(len(t)) + 18
+	}
+	return h
+}
+
+func srcCol(s *sim.DmgSrc) color.NRGBA {
+	if s == nil || s.Type == "" {
+		return hexC("#99aaaa")
+	}
+	return tc(s.Type)
+}
+
+func (g *Game) drawRecap(dst *ebiten.Image, rc *sim.Recap, r [4]float64) {
+	webBox(dst, r[0], r[1], r[2], r[3], 12, alpha(white, .13), c(0, 0, 0, 102))
+	x, y := r[0]+12, r[1]+10
+	drawText(dst, "What knocked you out", x, y, 14, true, webFg, text.AlignStart, false)
+	y += 22
+	kc := srcCol(rc.KB.S)
+	disc(dst, x+22, y+22, 22, kc)
+	disc(dst, x+22, y+22, 20, c(0, 0, 0, 200))
+	if rc.KB.S != nil && rc.KB.S.Type != "" {
+		g.drawTypeIcon(dst, rc.KB.S.Type, x+22, y+22, 26, false)
+	} else {
+		drawText(dst, "?", x+22, y+11, 20, true, webFg, text.AlignCenter, false)
+	}
+	name := "Unknown"
+	if rc.KB.S != nil {
+		name = rc.KB.S.Name
+	}
+	drawText(dst, fitText(name, 14, true, r[2]-90), x+54, y+5, 14, true, kc, text.AlignStart, false)
+	fin := fmt.Sprintf("Final hit: %d damage at %s", int(math.Round(rc.KB.D)), fmtT(rc.KB.T))
+	drawText(dst, fin, x+54, y+25, 11, false, alpha(webFg, .85), text.AlignStart, false)
+	y += 52
+	rows := func(title string, tot float64, l []sim.DmgAgg) {
+		drawText(dst, title, x, y, 12, true, alpha(webFg, .75), text.AlignStart, false)
+		y += 20
+		mx := 1.0
+		if len(l) > 0 {
+			mx = math.Max(1, l[0].D)
+		}
+		for _, o := range l {
+			col := srcCol(o.S)
+			if o.S.Type != "" {
+				g.drawTypeIcon(dst, o.S.Type, x+8, y+7, 15, false)
+			} else {
+				disc(dst, x+8, y+7, 5, col)
+			}
+			drawText(dst, fitText(o.S.Name, 12, false, 148), x+22, y, 12, false, webFg, text.AlignStart, false)
+			bw := math.Max(3, o.D/mx*120)
+			roundRect(dst, x+176, y+3, bw, 8, 4, col)
+			pc := int(math.Round(o.D / math.Max(1, tot) * 100))
+			v := fmt.Sprintf("%d (%d%%, %d hit%s)", int(math.Round(o.D)), pc, o.Hits, plural(o.Hits))
+			drawText(dst, v, x+176+bw+6, y, 11, false, alpha(webFg, .85), text.AlignStart, false)
+			y += 18
+		}
+	}
+	rows(fmt.Sprintf("Last 10 seconds: %d damage taken", int(math.Round(rc.Last10Total))), rc.Last10Total, rc.Last10)
+	rows(fmt.Sprintf("Whole run: %d damage taken", int(math.Round(rc.RunTotal))), rc.RunTotal, rc.Run)
+	if t := recapTip(rc); len(t) > 0 {
+		y += 6
+		roundRect(dst, x-2, y, r[2]-20, 16*float64(len(t))+10, 8, alpha(webAcc, .1))
+		for i, l := range t {
+			drawText(dst, l, x+6, y+5+16*float64(i), 12, false, hexC("#ffe9a8"), text.AlignStart, false)
+		}
 	}
 }

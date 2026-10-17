@@ -404,6 +404,7 @@ func (w *World) abProc(e *Enemy, t string, d float64) {
 type hurtSrc struct {
 	t                    string // damage type
 	contact, proj, elite bool
+	src                  *DmgSrc
 }
 
 // abRed: damage-taken multiplier; 0 when absorbed (web abRed).
