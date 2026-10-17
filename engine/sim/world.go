@@ -190,7 +190,7 @@ func (w *World) spawnBoss() {
 		name = p.Name
 	}
 	w.sfx("boss")
-	w.message(bd.Name + " (" + name + ") appears!")
+	w.message(name + " (Boss) appears!")
 }
 
 func (w *World) swarm() {

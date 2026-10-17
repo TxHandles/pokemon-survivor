@@ -281,3 +281,11 @@ func (w *World) TestFire(id string, lv int, after float64) {
 		}
 	}
 }
+
+// TestMud (screenshots): drops a few ground-hit mud puddles around the current player.
+func (w *World) TestMud() {
+	for i := 0; i < 4; i++ {
+		a := float64(i) * 1.7
+		w.ZN = append(w.ZN, &Zone{X: w.P.X + math.Cos(a)*(70+float64(i)*25), Y: w.P.Y + math.Sin(a)*(60+float64(i)*20), R: 30, L: 1.2 - float64(i)*.2, Life0: 1.2, Tk: 9, Type: "ground", D: 1, Mud: true})
+	}
+}

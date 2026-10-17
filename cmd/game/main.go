@@ -89,6 +89,10 @@ func main() {
 			g.W.TestFire(id, 5, ft)
 			g.Freeze = true
 		}
+		if opts["mud"] != "" {
+			g.W.TestMud()
+			g.Freeze = true
+		}
 		switch opts["then"] { // testing: open a screen after fast-forwarding
 		case "pause":
 			g.TestPause()

@@ -126,7 +126,7 @@ func (g *Game) drawBossBar(dst *ebiten.Image) {
 		bx := sw/2 - bw/2
 		name := e.BD.Name
 		if p := g.db.ByID[e.PokeID]; p != nil {
-			name += " · " + p.Name
+			name = p.Name + " (Boss)"
 		}
 		drawText(dst, fmt.Sprintf("%s  ·  Phase %d", name, max(1, e.Ph)), sw/2, 92, 13, true, tc(e.Type), text.AlignCenter, true)
 		webBox(dst, bx, 112, bw, 16, 8, hexC("#5a2a2a"), hexC("#080b12"))

@@ -93,7 +93,7 @@ func (g *Game) drawHUDCommon(dst *ebiten.Image) {
 		roundRect(dst, bx-8, 86, bw+16, 40, 8, panel)
 		name := e.BD.Name
 		if p := g.db.ByID[e.PokeID]; p != nil {
-			name += " · " + p.Name
+			name = p.Name + " (Boss)"
 		}
 		drawText(dst, fmt.Sprintf("%s  ·  Phase %d", name, max(1, e.Ph)), sw/2, 90, 13, true, tc(e.Type), text.AlignCenter, false)
 		bar(dst, bx, 110, bw, 10, e.HP/e.MHP, c(255, 80, 80, 255), c(40, 46, 60, 255))

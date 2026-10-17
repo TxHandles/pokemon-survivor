@@ -761,28 +761,57 @@ func (g *Game) camCenter() (float64, float64) {
 	return w.Centroid()
 }
 
-// drawMud: a brown, bubbling mud puddle left by ground attacks.
+// drawMud: a glossy, oozing puddle of mud left by ground attacks. It spreads out when it lands, its
+// edge wobbles and pushes out little lobes, and wet highlights and popping bubbles keep it readable on
+// any floor (a dark rim separates it even from brown desert sand).
 func (g *Game) drawMud(dst *ebiten.Image, z *sim.Zone, x, y, fade float64) {
 	t := g.W.T
 	sd := z.X*.37 + z.Y*.21
-	pts := make([][2]float64, 0, 14)
-	for i := 0; i < 14; i++ {
-		a := float64(i) / 14 * 2 * math.Pi
-		r := z.R * (.82 + .14*math.Sin(a*3+sd) + .06*math.Sin(a*5+sd*2))
-		pts = append(pts, [2]float64{x + math.Cos(a)*r, y + math.Sin(a)*r*.62})
+	age := z.Life0 - z.L
+	grow := math.Min(1, .45+age*3.5) // splats out over the first moments
+	R := z.R * grow
+	const N = 28
+	edge := func(k float64, dy float64) [][2]float64 {
+		pts := make([][2]float64, 0, N)
+		for i := 0; i < N; i++ {
+			a := float64(i) / N * 2 * math.Pi
+			r := .86 + .07*math.Sin(a*3+sd+t*2.2) + .04*math.Sin(a*5-t*3.1+sd*2)
+			for j := 0; j < 4; j++ { // oozing lobes that bulge out of the rim and sink back
+				fj := float64(j)
+				la := sd*1.7 + fj*1.57
+				df := math.Atan2(math.Sin(a-la), math.Cos(a-la))
+				r += (.1 + .14*(.5+.5*math.Sin(t*2.4+fj*1.9+sd))) * math.Exp(-df*df/.12)
+			}
+			r *= R * k
+			pts = append(pts, [2]float64{x + math.Cos(a)*r, y + dy + math.Sin(a)*r*.62})
+		}
+		return pts
 	}
-	poly(dst, pts, c(74, 50, 28, uint8(200*fade)))
-	polyline(dst, append(pts, pts[0]), 2, c(46, 30, 16, uint8(220*fade)))
-	inner := make([][2]float64, len(pts))
-	for i, p := range pts {
-		inner[i] = [2]float64{x + (p[0]-x)*.68, y + (p[1]-y)*.68 - 1}
-	}
-	poly(dst, inner, c(112, 78, 44, uint8(210*fade)))
-	soft(dst, x-z.R*.25, y-z.R*.18, z.R*.3, z.R*.12, c(190, 150, 100, uint8(70*fade)))
-	for i := 0; i < 3; i++ { // bubbles that swell and pop
-		ph := math.Mod(t*1.3+float64(i)*.37+sd, 1)
-		bx := x + math.Cos(sd+float64(i)*2.1)*z.R*.45
-		by := y + math.Sin(sd+float64(i)*2.1)*z.R*.25
-		ring(dst, bx, by, 1.5+ph*3.5, 1.2, c(150, 112, 70, uint8(200*fade*(1-ph))))
+	al := func(v float64) uint8 { return uint8(math.Max(0, math.Min(255, v*fade))) }
+	soft(dst, x, y+2, R*1.25, R*.82, c(0, 0, 0, al(90))) // dark halo: stands out on light and brown floors alike
+	out := edge(1, 0)
+	poly(dst, out, c(44, 28, 14, al(235)))
+	polyline(dst, append(out, out[0]), 2.5, c(26, 16, 8, al(240)))
+	poly(dst, edge(.84, -1), c(86, 56, 30, al(240)))
+	poly(dst, edge(.55, -2), c(112, 76, 42, al(230)))
+	// wet shine: a moving specular streak and a couple of glints
+	sh := math.Sin(t*1.5+sd) * .25
+	strokeEllipse(dst, x, y-2, R*.62, R*.36, 3.6+sh, 4.6+sh, 2.5, c(255, 236, 205, al(150)))
+	disc(dst, x-R*.32, y-R*.22, R*.07+1, c(255, 245, 225, al(190)))
+	disc(dst, x+R*.25, y+R*.12, R*.04+.8, c(255, 245, 225, al(140)))
+	for i := 0; i < 4; i++ { // bubbles that swell and pop
+		fi := float64(i)
+		ph := math.Mod(t*1.1+fi*.29+sd, 1)
+		bx := x + math.Cos(sd+fi*1.7)*R*.45
+		by := y + math.Sin(sd+fi*1.7)*R*.26
+		br := 1.5 + ph*4
+		if ph < .85 {
+			disc(dst, bx, by, br, c(120, 84, 48, al(230)))
+			ring(dst, bx, by, br, 1.2, c(30, 18, 8, al(220)))
+			disc(dst, bx-br*.35, by-br*.35, br*.3, c(255, 240, 215, al(200)))
+		} else { // pop: a little splash ring
+			k := (ph - .85) / .15
+			ring(dst, bx, by, br+k*5, 1.4, c(140, 100, 60, al(220*(1-k))))
+		}
 	}
 }
