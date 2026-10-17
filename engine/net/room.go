@@ -42,9 +42,13 @@ type Peer struct {
 	Conn      Conn
 }
 
-// Net makes connections for a platform (WebRTC + Firestore in the browser).
+// Net makes connections for a platform (WebRTC, signalled through Firestore).
 type Net interface {
 	Available() (ok bool, why string)
+	// Login resolves who we are (the signed-in user, or an anonymous one); cb may run on another goroutine.
+	Login(cb func(uid, name, err string))
+	// SetRoomOpen marks a hosted room open / in a run (late joiners get a clear message).
+	SetRoomOpen(code string, open bool)
 	// Host opens a room; onCode gets the room code, onPeer each guest that connects.
 	Host(name string, onCode func(code string), onPeer func(Peer), onErr func(string)) (stop func())
 	// Join connects to a host's room.

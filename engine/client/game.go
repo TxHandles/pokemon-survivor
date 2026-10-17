@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"github.com/TxHandles/pokemon-survivor/engine/lockstep"
+	"github.com/TxHandles/pokemon-survivor/engine/net"
 	"io/fs"
 	"math"
 	"math/rand"
@@ -96,7 +97,7 @@ func New(dataFS fs.FS, db *content.DB) *Game {
 	g.scr = scMenu
 	g.audio = NewAudio(g.opt)
 	g.cloud = newCloud()
-	g.dataIDv = dataID(dataFS)
+	g.dataIDv = net.DataID(dataFS)
 	for _, p := range db.Pokemon { // first forms: the roster you pick from in this build
 		if p.EvolvesFrom == "" && p.RegionalOf == "" && !p.Legendary {
 			g.roster = append(g.roster, p.ID)

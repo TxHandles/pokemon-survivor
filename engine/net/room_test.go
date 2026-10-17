@@ -39,7 +39,9 @@ type memNet struct {
 	rooms map[string]func(Peer)
 }
 
-func (m *memNet) Available() (bool, string) { return true, "" }
+func (m *memNet) Available() (bool, string)             { return true, "" }
+func (m *memNet) Login(cb func(string, string, string)) { cb("u", "n", "") }
+func (m *memNet) SetRoomOpen(string, bool)              {}
 func (m *memNet) Host(name string, onCode func(string), onPeer func(Peer), onErr func(string)) func() {
 	m.rooms["ABCDE"] = onPeer
 	onCode("ABCDE")

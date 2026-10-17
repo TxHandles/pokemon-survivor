@@ -20,6 +20,9 @@ const codeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 // FixedCode, when set, is used as the room code instead of a random one (testing).
 var FixedCode string
 
+// SignalBase is unused in the browser (the HTTP test relay is the page's own origin).
+var SignalBase = ""
+
 func randCode() string {
 	if FixedCode != "" {
 		return FixedCode
@@ -192,6 +195,8 @@ type signal interface {
 	// guest: send an offer to a room, get the answer
 	offer(code, name, sdp string, onAnswer func(string), onErr func(string)) func()
 	available() (bool, string)
+	login(cb func(uid, name, err string))
+	setOpen(code string, open bool)
 }
 
 // rtcNet implements Net over WebRTC with a signal.
@@ -210,6 +215,10 @@ func NewNet(mode string) Net {
 }
 
 func (n *rtcNet) Available() (bool, string) { return n.sig.available() }
+
+func (n *rtcNet) Login(cb func(uid, name, err string)) { n.sig.login(cb) }
+
+func (n *rtcNet) SetRoomOpen(code string, open bool) { n.sig.setOpen(code, open) }
 
 func (n *rtcNet) Host(name string, onCode func(string), onPeer func(Peer), onErr func(string)) func() {
 	var conns []*jsConn
@@ -297,6 +306,32 @@ func (fbSignal) uid() string {
 		return ""
 	}
 	return u.Get("uid").String()
+}
+
+func (s fbSignal) login(cb func(uid, name, err string)) {
+	if ok, why := s.available(); !ok {
+		cb("", "", why)
+		return
+	}
+	u := fb().Call("auth").Get("currentUser")
+	name := "Player"
+	if dn := u.Get("displayName"); dn.Type() == js.TypeString && dn.String() != "" {
+		name = dn.String()
+		for i, r := range name {
+			if r == ' ' {
+				name = name[:i]
+				break
+			}
+		}
+	}
+	cb(u.Get("uid").String(), name, "")
+}
+
+func (fbSignal) setOpen(code string, open bool) {
+	if f := fb(); f.IsUndefined() || code == "" {
+		return
+	}
+	lobbyDoc(code).Call("set", js.ValueOf(map[string]any{"open": open}), js.ValueOf(map[string]any{"merge": true})).Call("catch", js.FuncOf(func(js.Value, []js.Value) any { return nil }))
 }
 
 func lobbyDoc(code string) js.Value {
@@ -397,19 +432,15 @@ func (s *fbSignal) offer(code, name, sdp string, onAnswer func(string), onErr fu
 	}
 }
 
-// SetRoomOpen marks the host's room open / in a run (so late joiners get a clear message).
-func SetRoomOpen(code string, open bool) {
-	if f := fb(); f.IsUndefined() || code == "" {
-		return
-	}
-	lobbyDoc(code).Call("set", js.ValueOf(map[string]any{"open": open}), js.ValueOf(map[string]any{"merge": true})).Call("catch", js.FuncOf(func(js.Value, []js.Value) any { return nil }))
-}
-
 // ---- BroadcastChannel signalling: tabs of one browser (testing) ----
 
 type bcSignal struct{}
 
 func (bcSignal) available() (bool, string) { return true, "" }
+func (bcSignal) login(cb func(string, string, string)) {
+	cb("local-"+randCode()+randCode(), "Player", "")
+}
+func (bcSignal) setOpen(string, bool) {}
 
 func bchan() js.Value { return js.Global().Get("BroadcastChannel").New("ps-signal") }
 
@@ -450,6 +481,10 @@ func (bcSignal) offer(code, name, sdp string, onAnswer func(string), onErr func(
 type httpSignal struct{}
 
 func (httpSignal) available() (bool, string) { return true, "" }
+func (httpSignal) login(cb func(string, string, string)) {
+	cb("local-"+randCode()+randCode(), "Player", "")
+}
+func (httpSignal) setOpen(string, bool) {}
 
 func fetchText(method, url, body string, ok func(status int, text string), fail func(string)) {
 	opt := map[string]any{"method": method}

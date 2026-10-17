@@ -2,12 +2,10 @@ package client
 
 import (
 	"fmt"
-	"hash/fnv"
-	"io/fs"
 	"math"
 	"math/rand"
-	"sort"
 	"strings"
+	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -26,38 +24,28 @@ const scOnline screen = 160
 const inputDelay = 4 // ticks (~67 ms) of input delay for online runs
 
 type onlineState struct {
-	mode    string // menu | join | lobby
-	code    string // code being typed
-	room    *net.Room
-	ls      *lockstep.Session
-	cmds    []lockstep.Cmd
-	idx     int // my roster index
-	ability int
-	ready   bool
-	stallT  float64       // seconds the sim has been waiting on others
-	note    string        // shown on the results screen (disconnects, desync)
-	sigMode string        // "" (Firestore) | local | http (testing)
-	started *net.StartMsg // the start we already acted on
-	autoGo  bool          // testing: ready up / start as soon as possible
-}
-
-// dataID hashes the embedded content so peers can check they run the same data.
-func dataID(dataFS fs.FS) string {
-	h := fnv.New64a()
-	var names []string
-	fs.WalkDir(dataFS, ".", func(p string, d fs.DirEntry, err error) error {
-		if err == nil && !d.IsDir() {
-			names = append(names, p)
-		}
-		return nil
-	})
-	sort.Strings(names)
-	for _, n := range names {
-		b, _ := fs.ReadFile(dataFS, n)
-		h.Write([]byte(n))
-		h.Write(b)
-	}
-	return fmt.Sprintf("%x-%d", h.Sum64(), net.Protocol)
+	mode      string // menu | join | lobby
+	code      string // code being typed
+	room      *net.Room
+	ls        *lockstep.Session
+	cmds      []lockstep.Cmd
+	idx       int // my roster index
+	ability   int
+	ready     bool
+	stallT    float64 // seconds the sim has been waiting on others
+	note      string  // shown on the results screen (disconnects, desync)
+	sigMode   string  // "" (Firestore) | local | http (testing)
+	net       net.Net
+	uid       string
+	name      string
+	loginBusy bool
+	loginErr  string
+	mu        sync.Mutex
+	events    []func()
+	started   *net.StartMsg // the start we already acted on
+	autoGo    bool          // testing: ready up / start as soon as possible
+	autoKind  string
+	autoCode  string
 }
 
 func (g *Game) online() bool { return g.on.room != nil && g.on.ls != nil }
@@ -78,33 +66,65 @@ func (g *Game) mySpec() sim.PlayerSpec {
 	return sim.PlayerSpec{ID: id, Ability: g.on.ability & 1, Up: up, Training: pr.Training(fam)}
 }
 
-func (g *Game) onlineName() string {
-	if n := g.cloud.Name(); n != "" {
-		return firstWordOf(n)
+func (g *Game) onlineName() string { return nonEmptyStr(g.on.name, "Player") }
+func (g *Game) onlineUID() string  { return g.on.uid }
+
+func nonEmptyStr(a, b string) string {
+	if a != "" {
+		return a
 	}
-	return "Player"
+	return b
 }
 
-func firstWordOf(s string) string {
-	if i := strings.IndexByte(s, ' '); i > 0 {
-		return s[:i]
+// onlineNet is the platform transport (one instance; it keeps the sign-in).
+func (g *Game) onlineNet() net.Net {
+	if g.on.net == nil {
+		g.on.net = net.NewNet(g.on.sigMode)
 	}
-	return s
+	return g.on.net
 }
 
-func (g *Game) onlineUID() string {
-	if u := g.cloud.UID(); u != "" {
-		return u
+// onlineLogin resolves our uid / name once (async); the screen shows progress until it is done.
+func (g *Game) onlineLogin() {
+	if g.on.uid != "" || g.on.loginBusy {
+		return
 	}
-	return fmt.Sprintf("local-%06d", rand.Intn(1000000))
+	n := g.onlineNet()
+	if ok, why := n.Available(); !ok {
+		g.on.loginErr = why
+		return
+	}
+	g.on.loginBusy = true
+	g.on.loginErr = ""
+	n.Login(func(uid, name, err string) {
+		g.on.mu.Lock()
+		g.on.events = append(g.on.events, func() {
+			g.on.loginBusy = false
+			g.on.uid, g.on.name, g.on.loginErr = uid, name, err
+		})
+		g.on.mu.Unlock()
+	})
 }
 
-func (g *Game) onlineNet() net.Net { return net.NewNet(g.on.sigMode) }
+// onlinePoll runs events posted from other goroutines (call once per frame on online screens).
+func (g *Game) onlinePoll() {
+	g.on.mu.Lock()
+	ev := g.on.events
+	g.on.events = nil
+	g.on.mu.Unlock()
+	for _, f := range ev {
+		f()
+	}
+}
 
 func (g *Game) hostRoom() {
 	n := g.onlineNet()
 	if ok, why := n.Available(); !ok {
 		g.toast(why)
+		return
+	}
+	if g.on.uid == "" {
+		g.toast(nonEmptyStr(g.on.loginErr, "Still signing in…"))
 		return
 	}
 	g.leaveRoom()
@@ -132,6 +152,10 @@ func (g *Game) joinRoom(code string) {
 		g.toast(why)
 		return
 	}
+	if g.on.uid == "" {
+		g.toast(nonEmptyStr(g.on.loginErr, "Still signing in…"))
+		return
+	}
 	g.leaveRoom()
 	for i, id := range g.unlockedRoster() {
 		if id == g.csel {
@@ -148,7 +172,7 @@ func (g *Game) joinRoom(code string) {
 func (g *Game) leaveRoom() {
 	if g.on.room != nil {
 		if g.on.room.Host {
-			net.SetRoomOpen(g.on.room.Code, false)
+			g.onlineNet().SetRoomOpen(g.on.room.Code, false)
 		}
 		g.on.room.Leave()
 	}
@@ -161,6 +185,7 @@ func (g *Game) leaveRoom() {
 func (g *Game) menuOnline() {
 	sw := float64(g.sw)
 	u := &g.ui
+	g.onlinePoll()
 	r := g.on.room
 	switch g.on.mode {
 	case "join":
@@ -204,6 +229,27 @@ func (g *Game) menuOnline() {
 	g.backButton(scMenu)
 	x := sw/2 - 300
 	ok, why := g.onlineNet().Available()
+	if ok {
+		g.onlineLogin()
+		switch {
+		case g.on.uid != "":
+			why = "Ready · playing as " + g.onlineName()
+			if g.on.autoKind != "" { // testing: host / join right away
+				k, c := g.on.autoKind, g.on.autoCode
+				g.on.autoKind = ""
+				if k == "host" {
+					g.hostRoom()
+				} else {
+					g.joinRoom(c)
+				}
+				return
+			}
+		case g.on.loginErr != "":
+			ok, why = false, g.on.loginErr
+		default:
+			ok, why = false, "Signing in…"
+		}
+	}
 	u.label([4]float64{x, 100, 600, 118}, false, func(dst *ebiten.Image, rr [4]float64) {
 		roundRect(dst, rr[0], rr[1], rr[2], rr[3], 12, panel)
 		lines := []string{
@@ -216,11 +262,7 @@ func (g *Game) menuOnline() {
 				drawText(dst, w, rr[0]+20, rr[1]+16+float64(i)*30+float64(j)*14, 12, false, dim, text.AlignStart, false)
 			}
 		}
-		st := g.cloud.Status()
-		if !ok {
-			st = why
-		}
-		drawText(dst, st, rr[0]+20, rr[1]+rr[3]-24, 12, true, b2c(ok, c(120, 255, 140, 255), c(255, 140, 140, 255)), text.AlignStart, false)
+		drawText(dst, why, rr[0]+20, rr[1]+rr[3]-24, 12, true, b2c(ok, c(120, 255, 140, 255), c(255, 140, 140, 255)), text.AlignStart, false)
 	})
 	u.button("host", [4]float64{x, 236, 290, 54}, false, !ok, btnDraw("Host a room", "Get a code to share", gold, !ok), func() { g.hostRoom() })
 	u.button("join", [4]float64{x + 310, 236, 290, 54}, false, !ok, btnDraw("Join a room", "Enter a friend's code", c(159, 232, 255, 255), !ok), func() { g.on.mode = "join"; g.on.code = ""; g.ui.focus = "" })
@@ -422,7 +464,7 @@ func (g *Game) hostStart() {
 	if st == nil {
 		return
 	}
-	net.SetRoomOpen(r.Code, false)
+	g.onlineNet().SetRoomOpen(r.Code, false)
 	g.startOnline(st)
 }
 
@@ -588,7 +630,7 @@ func (g *Game) endOnlineRun() {
 	}
 	if r.Host {
 		r.EndRun()
-		net.SetRoomOpen(r.Code, true)
+		g.onlineNet().SetRoomOpen(r.Code, true)
 	}
 	g.on.ready = r.Host
 	g.on.mode = "lobby"
@@ -649,12 +691,14 @@ func (g *Game) SignalMode(m string) { g.on.sigMode = m }
 func (g *Game) AutoHost(code string, auto bool) {
 	net.FixedCode = code
 	g.on.autoGo, g.auto = auto, auto
+	g.on.autoKind, g.on.autoCode = "host", code
+	g.on.mode = "menu"
 	g.scr = scOnline
-	g.hostRoom()
 }
 
 func (g *Game) AutoJoin(code string, auto bool) {
 	g.on.autoGo, g.auto = auto, auto
+	g.on.autoKind, g.on.autoCode = "join", code
+	g.on.mode = "menu"
 	g.scr = scOnline
-	g.joinRoom(code)
 }
