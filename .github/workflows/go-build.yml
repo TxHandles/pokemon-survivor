@@ -3,7 +3,6 @@ name: Go build
 on:
   push:
     branches: [main]
-    tags: ['go-v*']
   workflow_dispatch:
 
 permissions:
@@ -42,11 +41,15 @@ jobs:
             git commit -m "Site: update the Go browser build (${GITHUB_SHA::7}) [skip ci]"
             git push
           fi
-      - name: Release (tags only)
-        if: startsWith(github.ref, 'refs/tags/go-v')
+      - name: Version
+        id: ver
+        run: echo "v=$(tr -d ' \n' < VERSION)" >> "$GITHUB_OUTPUT"
+      - name: Release (the go-v<VERSION> release always carries the current main build)
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          name: Pokémon Survivor ${{ github.ref_name }} (Windows)
+          tag_name: go-v${{ steps.ver.outputs.v }}
+          name: Pokémon Survivor ${{ steps.ver.outputs.v }} (Windows)
           body: |
             Windows build of the Go version. Download `PokemonSurvivor.exe` and run it (Windows may warn
             about an unknown publisher the first time: More info → Run anyway). The browser version is at

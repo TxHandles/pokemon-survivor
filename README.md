@@ -74,4 +74,5 @@ two `netpeer`s (`-host CODE` / `-join CODE`, with `-signal http://localhost:8773
 The browser build accepts `?demo=<id>&biome=<type>&seed=<n>&t=<seconds>` to watch the bot play, and
 `?coop=fire,water,grass` for a bot co-op demo.
 GitHub Actions builds both on every push and publishes the browser build to the site (`go/`, gzipped wasm);
-pushing a `go-v*` tag makes a GitHub release with the Windows exe (`git tag go-v0.2.0 && git push origin go-v0.2.0`).
+the GitHub release `go-v<VERSION>` (from the `VERSION` file) always carries the Windows exe of the current main;
+bump `VERSION` to start a new release.
