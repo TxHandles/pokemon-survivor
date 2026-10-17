@@ -22,6 +22,7 @@ const (
 type Input struct {
 	MoveX, MoveY float64 // -1..1 (already normalised by the client)
 	Dash         bool    // pressed this frame (Shift / RB / R1)
+	Act2         bool    // second action button (Left Ctrl / LB / L1)
 }
 
 // Q holds a move's merged parameters (shape defaults + moves.json params + tier multipliers).
@@ -127,6 +128,14 @@ type Player struct {
 	gw                float64
 	Hazard            string  // hazard under the player this frame
 	Pm, Pbl, Phs, Pgr float64 // shrine boons / pacts (seconds left)
+	DQ2               float64 // second action button request time (-1 = none)
+	Fly               *FlyState
+	Roll              *RollState
+	Prot              float64 // Protect / Detect: seconds of shield left
+	ProtType          string
+	protD, protR      float64
+	protNext          float64
+	protSlot          *Slot
 }
 
 type Enemy struct {
@@ -163,8 +172,13 @@ type Enemy struct {
 	pmk                bool
 	Sh, ShMax          float64 // shield
 	Mini, Arm, Vamp    bool
-	Swift              bool  // a fast, fragile runner
-	Toss               *Toss // being grabbed and thrown (Seismic Toss)
+	Swift              bool    // a fast, fragile runner
+	Toss               *Toss   // being grabbed and thrown (Seismic Toss)
+	Slp, slpK          float64 // asleep (Hypnosis / Sing): seconds left, damage bonus of the waking hit
+	LS                 float64 // Leech Seed: seconds left
+	lsD, lsK           float64
+	lsSlot             *Slot
+	lsOwner            int
 	Expl, Split, Sumn  bool
 	Af                 []string
 	sut                float64
@@ -273,6 +287,8 @@ type World struct {
 	PR           []*Proj
 	FX           []*FX
 	ZN           []*Zone
+	Decoys       []*Decoy // Substitute
+	Cracks       []*Crack // Earthquake fissures
 	Gems         []*Gem
 	Orbs         []Orb
 	Slots        []*Slot

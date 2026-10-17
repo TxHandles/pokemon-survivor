@@ -766,6 +766,7 @@ func (g *Game) updateOnlinePlay() {
 		if tactive {
 			in.MoveX, in.MoveY = tin.MoveX, tin.MoveY
 			in.Dash = in.Dash || tin.Dash
+			in.Act2 = in.Act2 || tin.Act2
 		}
 	}
 	g.onlineStep(in)

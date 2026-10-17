@@ -44,7 +44,7 @@ func TestEveryMove(t *testing.T) {
 				w.Step(1.0/60, b.Input(1.0/60))
 			}
 			dmg := w.DMG[m.ID]
-			if dmg <= 0 && m.Shape != "wave" {
+			if dmg <= 0 && m.Shape != "wave" && m.Shape != "sleep" {
 				t.Errorf("%s (%s, evo=%v) dealt no damage", m.ID, m.Shape, evo)
 			}
 		}

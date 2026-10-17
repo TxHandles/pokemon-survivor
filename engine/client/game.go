@@ -341,7 +341,8 @@ func (g *Game) playInput() sim.Input {
 		}
 	}
 	dash := keyJust(ebiten.KeyShiftLeft, ebiten.KeyShiftRight) || padBtn(ebiten.StandardGamepadButtonFrontTopRight)
-	return sim.Input{MoveX: x, MoveY: y, Dash: dash}
+	act2 := keyJust(ebiten.KeyControlLeft) || padBtn(ebiten.StandardGamepadButtonFrontTopLeft)
+	return sim.Input{MoveX: x, MoveY: y, Dash: dash, Act2: act2}
 }
 
 // ---- update ----
@@ -517,6 +518,7 @@ func (g *Game) updatePlay() {
 			if d.kind == "kb" && tactive {
 				di.MoveX, di.MoveY = tin.MoveX, tin.MoveY
 				di.Dash = di.Dash || tin.Dash
+				di.Act2 = di.Act2 || tin.Act2
 			}
 			if i == 0 {
 				in = di
@@ -529,6 +531,7 @@ func (g *Game) updatePlay() {
 		if tactive && !g.auto {
 			in.MoveX, in.MoveY = tin.MoveX, tin.MoveY
 			in.Dash = in.Dash || tin.Dash
+			in.Act2 = in.Act2 || tin.Act2
 		}
 	}
 	w.Step(1.0/60, in)

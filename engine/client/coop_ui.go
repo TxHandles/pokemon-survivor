@@ -386,7 +386,7 @@ func typesList() []string {
 // devInput reads one player's device.
 func (g *Game) devInput(d device) sim.Input {
 	x, y := 0.0, 0.0
-	dash := false
+	dash, act2 := false, false
 	switch d.kind {
 	case "kb":
 		if keyDown(ebiten.KeyD, ebiten.KeyArrowRight) {
@@ -405,6 +405,7 @@ func (g *Game) devInput(d device) sim.Input {
 			x, y = x*.707, y*.707
 		}
 		dash = keyJust(ebiten.KeyShiftLeft, ebiten.KeyShiftRight)
+		act2 = keyJust(ebiten.KeyControlLeft)
 	case "pad":
 		id := d.pad
 		if !ebiten.IsStandardGamepadLayoutAvailable(id) {
@@ -429,8 +430,9 @@ func (g *Game) devInput(d device) sim.Input {
 			y = 1
 		}
 		dash = inpututil.IsStandardGamepadButtonJustPressed(id, ebiten.StandardGamepadButtonFrontTopRight)
+		act2 = inpututil.IsStandardGamepadButtonJustPressed(id, ebiten.StandardGamepadButtonFrontTopLeft)
 	}
-	return sim.Input{MoveX: x, MoveY: y, Dash: dash}
+	return sim.Input{MoveX: x, MoveY: y, Dash: dash, Act2: act2}
 }
 
 // drawCenter draws the Pokémon Center (co-op revive point).

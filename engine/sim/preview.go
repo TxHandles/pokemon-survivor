@@ -126,6 +126,9 @@ func (w *World) ProbeMoveB(id string, lv int, ev bool, extra string) (r Probe) {
 		r.NL = "Shield charges"
 		return
 	}
+	if probeGo(w, &r, m.Shape, q, lv, sl, ev, bs) {
+		return
+	}
 	defer func() { _ = recover() }() // a probe must never take the game down
 	cp := *w
 	pc := *w.P
@@ -133,6 +136,7 @@ func (w *World) ProbeMoveB(id string, lv int, ev bool, extra string) (r Probe) {
 	cp.rng = rand.New(rand.NewSource(int64(lv)*7919 + 17))
 	cp.PR, cp.FX, cp.ZN, cp.DL, cp.EB, cp.HZ, cp.Events = nil, nil, nil, nil, nil, nil, nil
 	cp.Items, cp.Gems = nil, nil
+	cp.Decoys, cp.Cracks = nil, nil
 	cp.DMG = map[string]float64{}
 	cp.Orbs = nil
 	hits := 0
@@ -269,6 +273,12 @@ func (w *World) TestFire(id string, lv int, after float64) {
 			if e.Toss != nil && !e.Dead {
 				w.stepToss(e, 1.0/60)
 			}
+		}
+		if w.P.Fly != nil && w.P.Fly.T > 1.0/60 {
+			w.P.Fly.T -= 1.0 / 60
+		}
+		if w.P.Roll != nil {
+			w.stepRoll(1.0/60, 0, 0)
 		}
 		for i := 0; i < len(w.DL); i++ {
 			if d := w.DL[i]; d.t-1.0/60 <= 0 {

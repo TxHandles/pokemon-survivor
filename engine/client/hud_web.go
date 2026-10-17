@@ -167,9 +167,9 @@ func (g *Game) drawEquipped(dst *ebiten.Image, x0, y0 float64) {
 		}
 		g.drawTypeIcon(dst, s.Type, x+19, y0+18, 24, false)
 		f := w.CoolFrac(s)
-		if s.Kind == "dash" {
-			f = w.DashReady()
-			drawText(dst, "SHIFT", x+4, y0+2, 8, true, webAcc, text.AlignStart, true)
+		if sim.ActiveKind(s.Kind) {
+			f = w.ActiveReady(s)
+			drawText(dst, b2s(w.ActiveButton(s) == 1, "CTRL", "SHIFT"), x+4, y0+2, 8, true, webAcc, text.AlignStart, true)
 		}
 		if f < 1 {
 			rect(dst, x+4, y0+33, 30*f, 2.5, alpha(white, .85))
@@ -308,7 +308,9 @@ func (g *Game) lvCards() []*lvCard {
 				c.tag, c.tagCol = "EVOLUTION", webAcc
 				a, _ := w.MovePreview(o.ID, 10, false)
 				b, _ := w.MovePreview(o.ID, 10, true)
-				c.rows = append(c.rows, dmgRow(a, b))
+				if b > 0 {
+					c.rows = append(c.rows, dmgRow(a, b))
+				}
 				pa := w.ProbeMove(o.ID, 10, false)
 				c.rows = append(c.rows, probeRows(&pa, w.ProbeMove(o.ID, 10, true))...)
 				if it != nil {
@@ -320,12 +322,17 @@ func (g *Game) lvCards() []*lvCard {
 				c.tag, c.tagCol = "NEW MOVE · "+strings.ToUpper(m.Type[:1])+m.Type[1:], hexC("#6fe38f")
 				c.strong = sim.SE[m.Type]
 				d, cd := w.MovePreview(o.ID, 1, false)
-				c.rows = append(c.rows, lvRow{label: "Damage", b: strconv.Itoa(int(math.Round(d)))})
+				if d > 0 {
+					c.rows = append(c.rows, lvRow{label: "Damage", b: strconv.Itoa(int(math.Round(d)))})
+				}
 				c.rows = append(c.rows, probeRows(nil, w.ProbeMove(o.ID, 1, false))...)
 				if cd > 0 {
 					c.rows = append(c.rows, lvRow{label: "Cooldown", b: fmt.Sprintf("%.2fs", cd)})
 				}
 				c.note(m.Desc, alpha(webFg, .75))
+				if sim.ActiveKind(m.Shape) {
+					c.note("Button move: Shift / RB, or Ctrl / LB if you already have one", hexC("#7fd8ff"))
+				}
 				if it != nil {
 					col := webAcc
 					s := "Evolves at Lv 10 · needs " + it.Name
@@ -346,7 +353,9 @@ func (g *Game) lvCards() []*lvCard {
 				}
 				a, ca := w.MovePreviewB(o.ID, lv, ev, "")
 				b, cb := w.MovePreviewB(o.ID, lv+1, ev, o.Bonus)
-				c.rows = append(c.rows, dmgRow(a, b))
+				if b > 0 {
+					c.rows = append(c.rows, dmgRow(a, b))
+				}
 				pa := w.ProbeMoveB(o.ID, lv, ev, "")
 				c.rows = append(c.rows, probeRows(&pa, w.ProbeMoveB(o.ID, lv+1, ev, o.Bonus))...)
 				if math.Abs(ca-cb) > .005 {

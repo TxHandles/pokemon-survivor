@@ -202,7 +202,7 @@ type touchState struct {
 	stickOn     bool
 	ox, oy      float64 // stick origin
 	x, y        float64 // stick vector -1..1
-	dash        bool
+	dash, act2  bool
 	tapX, tapY  float64
 	tapped      bool
 	pauseTapped bool
@@ -222,7 +222,7 @@ func (g *Game) touchEnabled() bool {
 // touchInput reads the virtual stick and dash button; returns whether a touch is driving the player.
 func (g *Game) touchInput() (sim.Input, bool) {
 	t := &g.touch
-	t.dash = false
+	t.dash, t.act2 = false, false
 	t.tapped = false
 	t.pauseTapped = false
 	ids := ebiten.AppendTouchIDs(nil)
@@ -262,15 +262,19 @@ func (g *Game) touchInput() (sim.Input, bool) {
 		switch {
 		case fx > sw-80 && fy < 70: // pause button
 			t.pauseTapped = true
-		case fx > sw*.62 && fy > float64(g.sh)*.45: // dash zone
-			t.dash = true
+		case fx > sw*.62 && fy > float64(g.sh)*.45: // action zone (upper part: second action when there are two)
+			if fy < float64(g.sh)*.66 && g.W != nil && len(g.W.ActiveSlots()) > 1 {
+				t.act2 = true
+			} else {
+				t.dash = true
+			}
 		case !t.stickOn && fx < sw*.62:
 			t.stickOn, t.stickID = true, id
 			t.ox, t.oy = fx, fy
 			t.x, t.y = 0, 0
 		}
 	}
-	return sim.Input{MoveX: t.x, MoveY: t.y, Dash: t.dash}, t.stickOn || t.dash
+	return sim.Input{MoveX: t.x, MoveY: t.y, Dash: t.dash, Act2: t.act2}, t.stickOn || t.dash || t.act2
 }
 
 // touchTap reports a tap this frame (for menus and choice cards) and where.
@@ -296,20 +300,33 @@ func (g *Game) drawTouch(dst *ebiten.Image) {
 		ring(dst, 110, sh-120, 52, 2, c(255, 255, 255, 40))
 		disc(dst, 110, sh-120, 22, c(255, 255, 255, 40))
 	}
-	// dash button
-	f := 1.0
-	if g.W != nil {
-		f = g.W.DashReady()
+	// action buttons (a second one above when two button moves are equipped)
+	for btn, by := range []float64{sh - 120, sh - 232} {
+		f := 1.0
+		lbl := "DASH"
+		if g.W != nil {
+			f = g.W.ButtonReady(btn)
+			for _, s := range g.W.ActiveSlots() {
+				if g.W.ActiveButton(s) == btn {
+					lbl = strings.ToUpper(fitText(s.Move.Name, 13, true, 84))
+					break
+				}
+			}
+		}
+		if btn == 1 && f < 0 {
+			break
+		}
+		col := c(255, 255, 255, 60)
+		if f >= 1 {
+			col = alpha(gold, .55)
+		}
+		rr := b2f(btn == 0, 46, 38)
+		disc(dst, sw-110, by, rr, col)
+		if f >= 0 && f < 1 {
+			sector(dst, sw-110, by, rr, -math.Pi/2+math.Pi*f, math.Pi*f, alpha(gold, .35))
+		}
+		drawText(dst, lbl, sw-110, by-8, 13, true, c(255, 255, 255, 230), text.AlignCenter, true)
 	}
-	col := c(255, 255, 255, 60)
-	if f >= 1 {
-		col = alpha(gold, .55)
-	}
-	disc(dst, sw-110, sh-120, 46, col)
-	if f >= 0 && f < 1 {
-		sector(dst, sw-110, sh-120, 46, -math.Pi/2+math.Pi*f, math.Pi*f, alpha(gold, .35))
-	}
-	drawText(dst, "DASH", sw-110, sh-129, 15, true, c(255, 255, 255, 230), text.AlignCenter, true)
 	// pause
 	roundRect(dst, sw-64, 14, 48, 40, 8, c(20, 26, 40, 170))
 	rect(dst, sw-50, 24, 7, 20, c(230, 235, 245, 230))

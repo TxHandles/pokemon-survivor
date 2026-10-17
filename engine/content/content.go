@@ -50,6 +50,8 @@ type Move struct {
 	HeldItem string         `json:"heldItem"`
 	Icon     string         `json:"icon"`
 	Params   map[string]any `json:"params"`
+	NoStart  bool           `json:"noStart"` // deals no damage: never a starting move
+	Learn    []string       `json:"-"`       // Go-only moves: the types that can learn it
 }
 
 type Learnset struct {
@@ -143,6 +145,25 @@ func readJSON(f fs.FS, name string, v any) error {
 // goMoves: moves with a Go-only mechanic (shape, description); the web version keeps the data's.
 var goMoves = map[string][2]string{
 	"fighting_seismictoss": {"toss", "Grabs the nearest foes and throws them over your shoulder, hurting them and whatever they land on"},
+	"flying_fly":           {"fly", "Button: take off, steer your shadow, and dive onto it for a heavy landing"},
+	"rock_rollout":         {"rollout", "Button: curl up and roll through foes, speeding up with every hit until it ends or you crash"},
+	"ground_earthquake":    {"quake", "Shockwaves roll out from you and leave glowing fissures that keep hurting foes"},
+	"ground_magnitude":     {"magnitude", "A quake of random strength (4-10) centred on you; higher magnitudes hit wider and harder"},
+	"grass_leechseed":      {"seed", "Plants seeds that drain foes and heal you; a seed jumps to a nearby foe when its host faints"},
+}
+
+// goNewMoves: moves only the Go version has (the web data doesn't list them).
+var goNewMoves = []*Move{
+	{ID: "normal_protect", Name: "Protect", Type: "normal", Shape: "protect", Tier: "basic", HeldItem: "metal", Icon: "🛡",
+		Desc: "A brief shield that blocks all damage; every blocked hit sends out a shockwave", Learn: []string{"normal", "water", "steel", "bug", "rock"}},
+	{ID: "fighting_detect", Name: "Detect", Type: "fighting", Shape: "protect", Tier: "basic", HeldItem: "focus", Icon: "👁",
+		Desc: "Sense every attack for a moment: blocks all damage and strikes back with shockwaves", Learn: []string{"fighting", "dark", "flying", "electric"}, Params: map[string]any{"cd": 7.0, "du": .9}},
+	{ID: "psychic_hypnosis", Name: "Hypnosis", Type: "psychic", Shape: "sleep", Tier: "basic", HeldItem: "wise", Icon: "🌀", NoStart: true,
+		Desc: "A hypnotic wave puts foes in front of you to sleep; the next hit on a sleeper deals bonus damage", Learn: []string{"psychic", "ghost", "poison"}, Params: map[string]any{"cone": 1.0, "r": 210.0}},
+	{ID: "normal_sing", Name: "Sing", Type: "normal", Shape: "sleep", Tier: "basic", HeldItem: "wise", Icon: "🎵", NoStart: true,
+		Desc: "A lullaby puts nearby foes to sleep; the next hit on a sleeper deals bonus damage", Learn: []string{"normal", "fairy", "water", "grass"}},
+	{ID: "normal_substitute", Name: "Substitute", Type: "normal", Shape: "sub", Tier: "basic", HeldItem: "eject", Icon: "🧸",
+		Desc: "Leaves a decoy that draws foes and their shots, then bursts", Learn: []string{"normal", "ghost", "psychic", "dark", "fairy"}},
 }
 
 func Load(f fs.FS) (*DB, error) {
@@ -167,6 +188,7 @@ func Load(f fs.FS) (*DB, error) {
 			db.children[p.EvolvesFrom] = append(db.children[p.EvolvesFrom], p.ID)
 		}
 	}
+	db.MoveList = append(db.MoveList, goNewMoves...)
 	for _, m := range db.MoveList {
 		db.Moves[m.ID] = m
 		if o, ok := goMoves[m.ID]; ok { // moves the Go build plays with their own mechanic
@@ -296,6 +318,17 @@ func (db *DB) LearnList(id string) []string {
 			}
 		}
 	}
+	for _, m := range goNewMoves { // Go-only moves: learnable by any Pokémon of their types
+		if p == nil || has(ids, m.ID) {
+			continue
+		}
+		for _, t := range m.Learn {
+			if has(p.Types, t) {
+				ids = append(ids, m.ID)
+				break
+			}
+		}
+	}
 	out := ids[:0:0]
 	for _, x := range ids {
 		if m := db.Moves[x]; m != nil && db.TierOK(id, m.Tier) {
@@ -307,11 +340,11 @@ func (db *DB) LearnList(id string) []string {
 
 // StartMove is the line's starting move.
 func (db *DB) StartMove(id string) string {
-	if ls := db.Learnsets[db.learnRoot(id)]; ls != nil {
+	if ls := db.Learnsets[db.learnRoot(id)]; ls != nil && (db.Moves[ls.Start] == nil || !db.Moves[ls.Start].NoStart) {
 		return ls.Start
 	}
 	for _, m := range db.MoveList {
-		if m.Type == db.ByID[id].Types[0] && m.Tier == "basic" {
+		if m.Type == db.ByID[id].Types[0] && m.Tier == "basic" && !m.NoStart {
 			return m.ID
 		}
 	}
@@ -401,4 +434,13 @@ func (db *DB) AbilityPair(id string) [2]Ability {
 		b.ID, b.Tier = fmt.Sprintf("%s:t2:%d", ty, i2), 2
 	}
 	return [2]Ability{a, b}
+}
+
+func has(l []string, x string) bool {
+	for _, v := range l {
+		if v == x {
+			return true
+		}
+	}
+	return false
 }

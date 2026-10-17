@@ -149,6 +149,11 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 	if s != nil {
 		q = s.Q
 	}
+	if e.Slp > 0 { // the hit that wakes a sleeper lands harder
+		base *= e.slpK
+		e.Slp = 0
+		w.addFX(&FX{Kind: "txt", X: e.X, Y: e.Y - e.R - 12, Life: .7, Text: "Wake-up!", Col: "crit"})
+	}
 	if q != nil {
 		if v := q.F("vps", 0); v > 0 && e.Psn > 0 {
 			base *= v
@@ -354,7 +359,7 @@ func (w *World) hurt(d float64, t string) { w.hurtS(d, hurtSrc{t: t}) }
 // last-chance saves (Focus Sash, Sturdy, Power Construct, revive).
 func (w *World) hurtS(d float64, s hurtSrc) {
 	P := w.P
-	if P.Dead {
+	if P.Dead || P.Fly != nil || w.protectBlock() {
 		return
 	}
 	h0 := P.HP

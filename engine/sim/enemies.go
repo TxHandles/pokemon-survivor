@@ -184,6 +184,9 @@ func b2s(b bool, t, f string) string {
 
 // onDeath: elite / affix effects when an enemy faints (web eDie).
 func (w *World) onDeath(e *Enemy) {
+	if e.LS > 0 {
+		w.seedJump(e)
+	}
 	if e.Expl {
 		w.HZ = append(w.HZ, &Hazard{X: e.X, Y: e.Y, R: 85, T: 1, T0: 1, Dm: e.Dm * 1.5, Col: "255,153,85", Src: srcExpl})
 	}
@@ -817,6 +820,9 @@ func (w *World) stepEnemyAttacks(dt float64) {
 		b.X += b.VX * dt
 		b.Y += b.VY * dt
 		b.L -= dt
+		if b.L > 0 && len(w.Decoys) > 0 && w.decoyEats(b) {
+			b.L = 0
+		}
 		if b.L > 0 && w.alive(w.CUR) && dist(b.X, b.Y, P.X, P.Y) < b.R+12 {
 			b.L = 0
 			if !w.abProj(b) {

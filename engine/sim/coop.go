@@ -195,7 +195,7 @@ func (w *World) addPlayer(db *content.DB, spec PlayerSpec) (*PlayerCtx, error) {
 		c.ab.pt = pl[0]
 	}
 	mh := math.Round((80 + 14*up("hp")) * b2f(w.Run.Glass, .5, 1) * (1 + c.PS.F("hpM")) * st.HP)
-	c.P = &Player{ID: spec.ID, Name: p.Name, Types: p.Types, Stats: st, HP: mh, MHP: mh, Sp: 125 * st.Spd * (1 + .03*up("spd")), Lv: 1, NX: 5, FX: 1, DQ: -1, AtkT: -9}
+	c.P = &Player{ID: spec.ID, Name: p.Name, Types: p.Types, Stats: st, HP: mh, MHP: mh, Sp: 125 * st.Spd * (1 + .03*up("spd")), Lv: 1, NX: 5, FX: 1, DQ: -1, DQ2: -1, AtkT: -9}
 	sm := db.StartMove(spec.ID)
 	c.Slots = []*Slot{{ID: sm, Move: db.Moves[sm], Kind: db.Moves[sm].Shape, Type: db.Moves[sm].Type, Lv: 1, Q: BuildQ(db.Moves[sm]), Owner: len(w.PL)}}
 	c.Learned[sm] = true

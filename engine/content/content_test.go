@@ -33,3 +33,21 @@ func TestLoad(t *testing.T) {
 		}
 	}
 }
+
+// Moves that deal no damage can never be a starting move.
+func TestNoStartMoves(t *testing.T) {
+	db, err := content.Load(data.FS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range db.Pokemon {
+		if m := db.Moves[db.StartMove(p.ID)]; m == nil || m.NoStart {
+			t.Errorf("%s starts with %v", p.ID, db.StartMove(p.ID))
+		}
+	}
+	for _, id := range []string{"normal_protect", "psychic_hypnosis", "normal_sing", "normal_substitute", "fighting_detect"} {
+		if db.Moves[id] == nil {
+			t.Errorf("%s missing", id)
+		}
+	}
+}

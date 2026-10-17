@@ -159,9 +159,9 @@ func (g *Game) moveCard(dst *ebiten.Image, w *sim.World, s *sim.Slot, x, y, cw, 
 	lv := "Lv " + strconv.Itoa(s.Lv)
 	drawText(dst, lv, x+51, y+23, 11, true, alpha(webFg, .7), text.AlignStart, true)
 	f := w.CoolFrac(s)
-	if s.Kind == "dash" {
-		f = w.DashReady()
-		drawText(dst, "SHIFT", x+cw-7, y+23, 10, true, b2c(f >= 1, webAcc, alpha(webFg, .5)), text.AlignEnd, true)
+	if sim.ActiveKind(s.Kind) {
+		f = w.ActiveReady(s)
+		drawText(dst, btnLabel(w.ActiveButton(s)), x+cw-7, y+23, 10, true, b2c(f >= 1, webAcc, alpha(webFg, .5)), text.AlignEnd, true)
 	} else if s.Evo {
 		drawText(dst, "EVOLVED", x+cw-7, y+23, 10, true, webAcc, text.AlignEnd, true)
 	}
@@ -225,4 +225,12 @@ func (g *Game) drawCoopEquip(dst *ebiten.Image) {
 		g.itemRow(dst, pc.Held, pc.HeldOrder, x+8, y)
 		y += 40
 	}
+}
+
+// btnLabel names action button b (0 main, 1 second) for keyboard and controller.
+func btnLabel(b int) string {
+	if b == 1 {
+		return "CTRL / LB"
+	}
+	return "SHIFT / RB"
 }

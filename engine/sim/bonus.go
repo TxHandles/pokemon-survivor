@@ -58,6 +58,16 @@ func BonusPool(shape string) []string {
 		return []string{BonusDmg, BonusCD, BonusArea, BonusCnt}
 	case "orbit":
 		return []string{BonusDmg, BonusSize, BonusSpd, BonusArea, BonusCnt}
+	case "fly":
+		return []string{BonusDmg, BonusCD, BonusSize}
+	case "rollout":
+		return []string{BonusDmg, BonusCD, BonusSize, BonusSpd}
+	case "quake", "seed":
+		return []string{BonusDmg, BonusCD, BonusArea, BonusCnt}
+	case "sleep":
+		return []string{BonusCD, BonusArea}
+	case "protect", "magnitude", "sub":
+		return []string{BonusDmg, BonusCD, BonusArea}
 	case "toss":
 		return []string{BonusDmg, BonusCD, BonusCnt, BonusArea, BonusSize}
 	case "strike", "erupt", "mine", "rupture":

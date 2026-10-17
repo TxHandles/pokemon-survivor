@@ -302,6 +302,7 @@ func (w *World) Step(dt float64, in Input) {
 	w.stepProjectiles(dt)
 	w.stepFX(dt)
 	w.stepZones(dt)
+	w.stepGoMoves(dt)
 	w.stepOrbits(dt)
 	w.compact()
 	w.stepGems(dt)
@@ -342,7 +343,7 @@ func (w *World) stepPlayer(dt float64, in Input) {
 			*t -= dt
 		}
 	}
-	spm := P.Sp * (1 + .08*w.pe("boots") + w.abSpd() + b2f(P.SpdT > w.T, .2, 0)) * b2f(w.ab.kbst > 0, 1+w.PS.F("kspd"), 1) * b2f(P.Phs > 0, 1.25, 1) * tm
+	spm := P.Sp * (1 + .08*w.pe("boots") + w.abSpd() + b2f(P.SpdT > w.T, .2, 0)) * b2f(w.ab.kbst > 0, 1+w.PS.F("kspd"), 1) * b2f(P.Phs > 0, 1.25, 1) * tm * b2f(P.Fly != nil, 1.45, 1)
 	if hk == "ice" {
 		q := math.Min(1, dt*(1.6+(1-math.Min(1, w.hzK()))*14))
 		P.VX += (x*spm - P.VX) * q
@@ -355,8 +356,16 @@ func (w *World) stepPlayer(dt float64, in Input) {
 	if P.Dash != nil {
 		w.dashStep(dt)
 	}
-	if !has(P.Types, "flying") && !has(P.Types, "ghost") {
+	if P.Roll != nil {
+		w.stepRoll(dt, x, y)
+	}
+	if P.Fly != nil {
+		w.stepFly(dt)
+	} else if !has(P.Types, "flying") && !has(P.Types, "ghost") {
 		w.push(&P.X, &P.Y, 12)
+	}
+	if P.Prot > 0 {
+		P.Prot -= dt
 	}
 	P.Inv = math.Max(0, P.Inv-dt)
 	if v := w.pe("lifeorb"); v > 0 && P.HP > P.MHP*.5 {
@@ -367,12 +376,9 @@ func (w *World) stepPlayer(dt float64, in Input) {
 	}
 	w.abTick(dt)
 	// moves
-	if in.Dash {
-		P.DQ = w.T
-	}
 	for _, s := range w.Slots {
 		s.CD -= dt
-		if s.Kind == "dash" {
+		if ActiveKind(s.Kind) {
 			if s.CD < 0 {
 				s.CD = 0
 			}
@@ -386,32 +392,7 @@ func (w *World) stepPlayer(dt float64, in Input) {
 			s.CD = w.cdOf(s) * w.cdM()
 		}
 	}
-	if P.Dash == nil {
-		var rd *Slot
-		for _, s := range w.Slots {
-			if s.Kind == "dash" && s.CD <= 0 && (rd == nil || s.Lv > rd.Lv) {
-				rd = s
-			}
-		}
-		if rd != nil {
-			do := P.DQ >= 0 && w.T-P.DQ < .25
-			if !do && w.AutoDash {
-				if e := w.near1(P.X, P.Y, 300); e != nil {
-					a := math.Atan2(e.Y-P.Y, e.X-P.X)
-					P.adA = &a
-					do = true
-				}
-			}
-			if do {
-				P.DQ = -1
-				w.fire(rd)
-				rd.CD = w.cdOf(rd) * w.cdM()
-			}
-		}
-	}
-	if P.DQ >= 0 && w.T-P.DQ >= .25 {
-		P.DQ = -1
-	}
+	w.stepActions(in)
 }
 
 func (w *World) dashStep(dt float64) {
@@ -556,6 +537,12 @@ func (w *World) stepEnemies(dt float64) {
 				w.hitRaw(e, e.BurnD*.5*(1+.15*w.pe("heat")), "burn")
 			}
 		}
+		if e.Slp > 0 {
+			e.Slp -= dt
+		}
+		if e.LS > 0 {
+			w.stepSeed(e, dt)
+		}
 		if e.Psn > 0 {
 			e.Psn -= dt
 			e.psnK -= dt
@@ -574,7 +561,11 @@ func (w *World) stepEnemies(dt float64) {
 		}
 		px, py := e.X, e.Y
 		mv := 0.0
-		if !(e.Stun > 0 || e.Frz > 0 || e.Root > 0) {
+		lureA, lured := 0.0, false
+		if len(w.Decoys) > 0 && !(e.Fear > 0) && !e.Boss {
+			lureA, lured = w.lure(e, P.X, P.Y)
+		}
+		if !(e.Stun > 0 || e.Frz > 0 || e.Root > 0 || e.Slp > 0) {
 			w.curSrc = w.esrc(e, false)
 			sm := w.ai(e, dt) * b2f(P.Phs > 0, 1.3, 1)
 			w.curSrc = nil
@@ -593,6 +584,9 @@ func (w *World) stepEnemies(dt float64) {
 			aa := a
 			if e.aoSet {
 				aa = e.ao
+			}
+			if lured { // a Substitute draws it in
+				aa = lureA
 			}
 			if e.dtr > 0 {
 				e.dtr -= dt
@@ -654,7 +648,7 @@ func (w *World) stepEnemies(dt float64) {
 			w.hit(e, math.Round(4*v*(1+w.T/300)), P.Types[0], 0, 0, 0)
 			w.curSlot = prev
 		}
-		if P.Inv <= 0 && !e.Dead && !e.Ug && !(e.Stun > 0 || e.Frz > 0 || e.Fear > 0 || e.Charm > 0) && dist(e.X, e.Y, P.X, P.Y) < e.R+12 {
+		if P.Inv <= 0 && !e.Dead && !e.Ug && !(e.Stun > 0 || e.Frz > 0 || e.Fear > 0 || e.Charm > 0 || e.Slp > 0) && dist(e.X, e.Y, P.X, P.Y) < e.R+12 {
 			if !w.dodge() {
 				w.hurtS(e.Dm, hurtSrc{t: e.Type, contact: true, elite: e.Elite, src: w.esrc(e, true)})
 			}
@@ -1335,13 +1329,16 @@ func (w *World) botPickFrom(opts []Option) int {
 // SlotsView exposes equipped moves for the HUD.
 func (w *World) SlotsView() []*Slot { return w.Slots }
 
-// DashReady reports the equipped dash move's cooldown fraction (1 = ready), or -1 with no dash move.
-func (w *World) DashReady() float64 {
-	for _, s := range w.Slots {
-		if s.Kind == "dash" {
-			cd := w.cdOf(s) * w.cdM()
-			return 1 - math.Max(0, s.CD)/cd
+// DashReady reports the main action button move's charge (1 = ready), or -1 with no button move.
+func (w *World) DashReady() float64 { return w.ButtonReady(0) }
+
+// ButtonReady is action button btn's charge (0 main, 1 second; 1 = ready), or -1 when nothing is on it.
+func (w *World) ButtonReady(btn int) float64 {
+	best := -1.0
+	for _, s := range w.ActiveSlots() {
+		if w.ActiveButton(s) == btn {
+			best = math.Max(best, w.ActiveReady(s))
 		}
 	}
-	return -1
+	return best
 }

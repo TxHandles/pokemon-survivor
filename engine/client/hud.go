@@ -135,13 +135,11 @@ func (g *Game) drawHUDCommon(dst *ebiten.Image) {
 		drawText(dst, name, x+12, y+7, 13, true, white, text.AlignStart, false)
 		drawText(dst, fmt.Sprintf("Lv %d · %s", s.Lv, cap1(s.Kind)), x+12, y+25, 11, false, dim, text.AlignStart, false)
 		f := 1.0
-		if s.Kind == "dash" {
-			f = w.DashReady()
-		}
-		if s.Kind == "dash" {
+		if sim.ActiveKind(s.Kind) {
+			f = w.ActiveReady(s)
 			bar(dst, x+12, y+41, 126, 5, f, b2c(f >= 1, gold, col), c(40, 46, 60, 255))
 			if f >= 1 {
-				drawText(dst, "SHIFT / RB", x+138, y+7, 10, true, gold, text.AlignEnd, false)
+				drawText(dst, btnLabel(w.ActiveButton(s)), x+138, y+7, 10, true, gold, text.AlignEnd, false)
 			}
 		} else {
 			bar(dst, x+12, y+41, 126, 5, float64(s.Lv)/10, col, c(40, 46, 60, 255))
@@ -346,7 +344,7 @@ func (g *Game) drawTitle(dst *ebiten.Image) {
 		drawText(dst, mark+kind+": "+a.Name+" — "+a.Desc, float64(g.sw)/2, by+54+float64(i)*20, 13, i == g.ability, col, text.AlignCenter, true)
 	}
 	drawText(dst, "(E / Y to switch ability)", float64(g.sw)/2, by+96, 12, false, alpha(dim, .8), text.AlignCenter, true)
-	drawText(dst, "Enter / A to start  ·  WASD / stick to move  ·  Shift / RB to dash  ·  Esc to pause", float64(g.sw)/2, float64(g.sh)-34, 13, false, dim, text.AlignCenter, true)
+	drawText(dst, "Enter / A to start  ·  WASD / stick to move  ·  Shift / RB and Ctrl / LB for button moves  ·  Esc to pause", float64(g.sw)/2, float64(g.sh)-34, 13, false, dim, text.AlignCenter, true)
 }
 
 func (g *Game) pauseRects() [3][4]float64 {

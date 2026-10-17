@@ -76,6 +76,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 			soft(dst, x, y, z.R*1.3, z.R*1.1, alpha(col, .45*fade))
 		}
 	}
+	g.drawCracks(dst, sx, sy)
 	// biome hazard pools
 	pc0, pc1 := int(math.Floor((camX-100)/cs)), int(math.Floor((camX+sw+100)/cs))
 	pr0, pr1 := int(math.Floor((camY-100)/cs)), int(math.Floor((camY+sh+100)/cs))
@@ -158,7 +159,16 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		if x < -120 || y < -150 || x > sw+120 || y > sh+60 {
 			continue
 		}
-		items = append(items, drawItem{e.Y + e.R, func() { g.drawEnemy(dst, e, x, y) }})
+		items = append(items, drawItem{e.Y + e.R, func() {
+			g.drawEnemy(dst, e, x, y)
+			if e.Slp > 0 || e.LS > 0 {
+				g.drawEnemyMarks(dst, e, x, y)
+			}
+		}})
+	}
+	for _, d := range w.Decoys {
+		d := d
+		items = append(items, drawItem{d.Y + 12, func() { g.drawDecoy(dst, d, sx(d.X), sy(d.Y)) }})
 	}
 	for i, pc := range w.PL {
 		i, pc := i, pc
@@ -243,6 +253,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	for _, f := range w.FX {
 		g.drawFX(dst, f, sx, sy)
 	}
+	g.drawPlayerOverlays(dst, sx, sy)
 	// floating damage numbers on top
 	for _, f := range w.FX {
 		if f.Kind != "txt" || (g.opt("dnum") == 0 && f.Col != "gold" && f.Col != "se" && f.Col != "conf" && f.Col != "heal") {
@@ -294,7 +305,16 @@ func (g *Game) drawPlayerI(dst *ebiten.Image, i int, pc *sim.PlayerCtx, x, y flo
 	}
 	dt := math.Max(0, math.Min(.1, w.T-a.lastT))
 	a.lastT = w.T
-	soft(dst, x, y+11, 15, 6, c(0, 0, 0, 120))
+	if P.Roll != nil && !P.Dead { // curled up into a ball
+		g.drawRollBall(dst, P, x, y)
+		return
+	}
+	if P.Fly != nil && !P.Dead { // airborne: the landing zone stays on the ground, the sprite rises
+		g.drawFlyTarget(dst, P, x, y+11)
+		y -= flyHeight(P.Fly)
+	} else {
+		soft(dst, x, y+11, 15, 6, c(0, 0, 0, 120))
+	}
 	// marker ring so the player stands out in a crowd of look-alike enemies
 	mc := tc(P.Types[0])
 	if g.coop {
@@ -517,6 +537,9 @@ func (g *Game) drawEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) {
 }
 
 func (g *Game) drawFX(dst *ebiten.Image, f *sim.FX, sx, sy func(float64) float64) {
+	if g.drawGoFX(dst, f, sx, sy) {
+		return
+	}
 	if f.Slot != nil {
 		if v := g.visOf(f.Slot); v != nil && g.visFX(dst, v, f, sx, sy) {
 			return

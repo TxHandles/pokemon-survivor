@@ -40,18 +40,19 @@ const (
 type Frame struct {
 	MX, MY int8
 	Dash   bool
+	Act2   bool
 	Cmds   []Cmd
 }
 
 // Quantise turns a client input into a Frame.
 func Quantise(in sim.Input) Frame {
-	return Frame{MX: q8(in.MoveX), MY: q8(in.MoveY), Dash: in.Dash}
+	return Frame{MX: q8(in.MoveX), MY: q8(in.MoveY), Dash: in.Dash, Act2: in.Act2}
 }
 
 func q8(v float64) int8 { return int8(math.Round(math.Max(-1, math.Min(1, v)) * 127)) }
 
 func (f Frame) input() sim.Input {
-	return sim.Input{MoveX: float64(f.MX) / 127, MoveY: float64(f.MY) / 127, Dash: f.Dash}
+	return sim.Input{MoveX: float64(f.MX) / 127, MoveY: float64(f.MY) / 127, Dash: f.Dash, Act2: f.Act2}
 }
 
 // Transport carries messages to the other peers. Send broadcasts; Recv returns what arrived.
@@ -342,12 +343,12 @@ func encodeGone(t, p int) []byte {
 	return append(b, byte(p))
 }
 
-// input: [1][tick u32][player u8][mx i8][my i8][dash u8][ncmd u8]([kind u8][arg i8])*
+// input: [1][tick u32][player u8][mx i8][my i8][buttons u8: 1 dash, 2 second action][ncmd u8]([kind u8][arg i8])*
 func encodeInput(t, p int, f *Frame) []byte {
 	b := make([]byte, 0, 10+2*len(f.Cmds))
 	b = append(b, msgInput)
 	b = binary.LittleEndian.AppendUint32(b, uint32(t))
-	b = append(b, byte(p), byte(f.MX), byte(f.MY), b2u(f.Dash), byte(len(f.Cmds)))
+	b = append(b, byte(p), byte(f.MX), byte(f.MY), b2u(f.Dash)|b2u(f.Act2)<<1, byte(len(f.Cmds)))
 	for _, c := range f.Cmds {
 		b = append(b, byte(c.Kind), byte(c.Arg))
 	}
@@ -375,7 +376,7 @@ func decode(b []byte) (kind, t, p int, f *Frame, h uint64, err error) {
 		if len(b) < 10 {
 			return 0, 0, 0, nil, 0, errBad
 		}
-		f = &Frame{MX: int8(b[6]), MY: int8(b[7]), Dash: b[8] != 0}
+		f = &Frame{MX: int8(b[6]), MY: int8(b[7]), Dash: b[8]&1 != 0, Act2: b[8]&2 != 0}
 		n := int(b[9])
 		if len(b) < 10+2*n {
 			return 0, 0, 0, nil, 0, errBad
