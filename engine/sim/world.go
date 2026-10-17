@@ -28,6 +28,7 @@ func NewCoop(db *content.DB, players []PlayerSpec, biome string, seed int64, cfg
 	if len(players) == 0 || len(players) > 4 {
 		return nil, fmt.Errorf("need 1-4 players")
 	}
+
 	if cfg.Up == nil {
 		cfg.Up = map[string]int{}
 	}
@@ -509,6 +510,10 @@ func (w *World) stepEnemies(dt float64) {
 		if e.Dead {
 			continue
 		}
+		if e.Toss != nil { // held / flying: no AI and no contact damage
+			w.stepToss(e, dt)
+			continue
+		}
 		w.useP(w.nearP(e.X, e.Y))
 		P := w.P
 		a := math.Atan2(P.Y-e.Y, P.X-e.X)
@@ -880,17 +885,31 @@ func (w *World) stepZones(dt float64) {
 				}
 			}
 		}
+		if z.Mud {
+			for _, e := range w.E {
+				if !e.Dead && dist(z.X, z.Y, e.X, e.Y) < z.R+e.R {
+					e.Slow = math.Max(e.Slow, .35)
+				}
+			}
+		}
 		if z.Tk <= 0 {
 			z.Tk = .5 * (1 - .07*w.pe("heat")) * b2f(z.Cap, .5, 1)
+			if z.Mud {
+				z.Tk = .4
+			}
+			w.noProc = z.Mud
 			for _, e := range w.E {
-				if !e.Dead && dist(z.X, z.Y, e.X, e.Y) < z.R+e.R && e.zt <= w.T {
-					e.zt = w.T + .4*b2f(z.Cap, .5, 1)
+				if !e.Dead && dist(z.X, z.Y, e.X, e.Y) < z.R+e.R && (z.Mud || e.zt <= w.T) {
+					if !z.Mud { // mud ticks on its own clock, so it never blocks the move's own zones
+						e.zt = w.T + .4*b2f(z.Cap, .5, 1)
+					}
 					w.hit(e, z.D, z.Type, 0, 0, 0)
 					if slowT[z.Type] || z.Ev {
 						e.Slow = .6
 					}
 				}
 			}
+			w.noProc = false
 		}
 		w.curSlot = prev
 	}

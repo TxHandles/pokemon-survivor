@@ -1043,15 +1043,40 @@ func (g *Game) menuChal() {
 			continue
 		}
 		open += len(act)
-		h := fmt.Sprintf("%s (%d/%d)", c.name, len(cat)-len(act), len(cat))
-		gl := c.gl
-		u.label([4]float64{0, y, sw, 20}, true, func(dst *ebiten.Image, r [4]float64) {
-			w := richLine(nil, 0, 0, 15, true, webFg, gl, h)
-			richLine(dst, sw/2-w/2, r[1], 15, true, alpha(webFg, .85), gl, h)
-		})
-		y += 28
+		claim := 0
 		for _, a := range act {
-			row(a)
+			if pr.Claimable(a) {
+				claim++
+			}
+		}
+		if g.chalCat == nil {
+			g.chalCat = map[string]bool{}
+		}
+		isOpen, set := g.chalCat[c.k]
+		if !set {
+			isOpen = claim > 0
+		}
+		h := fmt.Sprintf("%s (%d/%d)", c.name, len(cat)-len(act), len(cat))
+		if claim > 0 {
+			h += fmt.Sprintf("  · %d to claim", claim)
+		}
+		gl, k, op := c.gl, c.k, isOpen
+		u.button("cc:"+k, [4]float64{sw/2 - rw/2, y - 4, rw, 26}, true, false, func(dst *ebiten.Image, r [4]float64, hot bool) {
+			w := richLine(nil, 0, 0, 15, true, webFg, gl, h) + 18
+			x0 := sw/2 - w/2
+			col := alpha(webFg, b2f(hot, 1, .85))
+			if claim > 0 {
+				col = webAcc
+			}
+			ax, ay := x0+5, r[1]+13
+			poly(dst, b2a(op, [][2]float64{{ax - 5, ay - 3}, {ax + 5, ay - 3}, {ax, ay + 4}}, [][2]float64{{ax - 3, ay - 5}, {ax + 4, ay}, {ax - 3, ay + 5}}), col)
+			richLine(dst, x0+18, r[1]+4, 15, true, col, gl, h)
+		}, func() { g.chalCat[k] = !op })
+		y += 28
+		if isOpen {
+			for _, a := range act {
+				row(a)
+			}
 		}
 	}
 	if open == 0 {

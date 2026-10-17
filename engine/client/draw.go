@@ -50,6 +50,10 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		col := tc(z.Type)
 		fade := math.Min(1, z.L/math.Max(.2, math.Min(.6, z.Life0)))
 		x, y := sx(z.X), sy(z.Y)
+		if z.Mud { // ground hit: a puddle of sticky mud
+			g.drawMud(dst, z, x, y, fade)
+			continue
+		}
 		if v := g.visOf(z.Slot); v != nil && !z.Mine {
 			g.visZone(dst, v, z, x, y)
 			continue
@@ -401,7 +405,22 @@ func (g *Game) drawEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) {
 		}
 		return
 	}
-	soft(dst, x, y+e.R*.85, e.R*1.35, e.R*.5, c(0, 0, 0, 110))
+	if ok, ph, z := e.Tossed(); ok { // grabbed by Seismic Toss: shadow stays on the ground, foe flies
+		k := 1 - math.Min(.6, z/120)
+		soft(dst, x, y+e.R*.85, e.R*1.35*k, e.R*.5*k, c(0, 0, 0, uint8(110*k)))
+		y -= z
+		fc := tc("fighting")
+		if ph < 2 {
+			ring(dst, x, y, e.R+4, 2.5, alpha(fc, .85))
+			soft(dst, x, y, e.R*1.8, e.R*1.8, alpha(fc, .3))
+		} else {
+			for i := 1; i <= 3; i++ { // motion blur along the arc
+				soft(dst, x, y+float64(i)*z*.08, e.R*(1.2-.2*float64(i)), e.R*(1.2-.2*float64(i)), alpha(fc, .25/float64(i)))
+			}
+		}
+	} else {
+		soft(dst, x, y+e.R*.85, e.R*1.35, e.R*.5, c(0, 0, 0, 110))
+	}
 	if e.Swift { // speed streaks behind quick runners
 		d := 1.0
 		if e.FaceL {
@@ -522,9 +541,11 @@ func (g *Game) drawFX(dst *ebiten.Image, f *sim.FX, sx, sy func(float64) float64
 			ring(dst, x, y, f.R, math.Max(3, f.TW*.8), alpha(col, .55*a))
 			ring(dst, x, y, f.R, 1.5, alpha(c(255, 255, 255, 255), .6*a))
 		}
-	case "arc":
-		sector(dst, x, y, f.R, f.A, f.Wd, alpha(col, .35*a))
-		sector(dst, x, y, f.R, f.A, f.Wd*.5, alpha(mix(col, c(255, 255, 255, 255), .4), .3*a))
+	case "arc": // plain swipe (effects setting off)
+		p, al := swipeP(f)
+		hd, tl := swipeSpan(f, p, true)
+		crescent(dst, x, y, f.R, f.R*.4, tl, hd, col, .6*al)
+		crescent(dst, x, y, f.R, f.R*.12, tl+(hd-tl)*.4, hd, c(255, 255, 255, 255), .6*al)
 	case "rect":
 		orect(dst, x, y, f.A, f.Ln, f.Wd, alpha(col, .4*a))
 	case "beam":
@@ -738,4 +759,30 @@ func (g *Game) camCenter() (float64, float64) {
 		}
 	}
 	return w.Centroid()
+}
+
+// drawMud: a brown, bubbling mud puddle left by ground attacks.
+func (g *Game) drawMud(dst *ebiten.Image, z *sim.Zone, x, y, fade float64) {
+	t := g.W.T
+	sd := z.X*.37 + z.Y*.21
+	pts := make([][2]float64, 0, 14)
+	for i := 0; i < 14; i++ {
+		a := float64(i) / 14 * 2 * math.Pi
+		r := z.R * (.82 + .14*math.Sin(a*3+sd) + .06*math.Sin(a*5+sd*2))
+		pts = append(pts, [2]float64{x + math.Cos(a)*r, y + math.Sin(a)*r*.62})
+	}
+	poly(dst, pts, c(74, 50, 28, uint8(200*fade)))
+	polyline(dst, append(pts, pts[0]), 2, c(46, 30, 16, uint8(220*fade)))
+	inner := make([][2]float64, len(pts))
+	for i, p := range pts {
+		inner[i] = [2]float64{x + (p[0]-x)*.68, y + (p[1]-y)*.68 - 1}
+	}
+	poly(dst, inner, c(112, 78, 44, uint8(210*fade)))
+	soft(dst, x-z.R*.25, y-z.R*.18, z.R*.3, z.R*.12, c(190, 150, 100, uint8(70*fade)))
+	for i := 0; i < 3; i++ { // bubbles that swell and pop
+		ph := math.Mod(t*1.3+float64(i)*.37+sd, 1)
+		bx := x + math.Cos(sd+float64(i)*2.1)*z.R*.45
+		by := y + math.Sin(sd+float64(i)*2.1)*z.R*.25
+		ring(dst, bx, by, 1.5+ph*3.5, 1.2, c(150, 112, 70, uint8(200*fade*(1-ph))))
+	}
 }

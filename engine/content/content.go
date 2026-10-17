@@ -140,6 +140,11 @@ func readJSON(f fs.FS, name string, v any) error {
 }
 
 // Load reads every content file from f (the data/ directory).
+// goMoves: moves with a Go-only mechanic (shape, description); the web version keeps the data's.
+var goMoves = map[string][2]string{
+	"fighting_seismictoss": {"toss", "Grabs the nearest foes and throws them over your shoulder, hurting them and whatever they land on"},
+}
+
 func Load(f fs.FS) (*DB, error) {
 	db := &DB{ByID: map[string]*Pokemon{}, Moves: map[string]*Move{}, Stats: map[string]Stats{}, children: map[string][]string{}}
 	var pk struct{ Pokemon []*Pokemon }
@@ -164,6 +169,9 @@ func Load(f fs.FS) (*DB, error) {
 	}
 	for _, m := range db.MoveList {
 		db.Moves[m.ID] = m
+		if o, ok := goMoves[m.ID]; ok { // moves the Go build plays with their own mechanic
+			m.Shape, m.Desc = o[0], o[1]
+		}
 	}
 	// stats: type base forms get baseStats x type balance; others copy their statsFrom base x statMult
 	base := map[string]Stats{}

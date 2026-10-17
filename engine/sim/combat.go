@@ -68,9 +68,9 @@ type stEff struct {
 var typeStatus = map[string]stEff{
 	"fire": {"bn", .2, 3}, "dragon": {"bn", .15, 3}, "poison": {"ps", .25, 4}, "water": {"sl", 1, 1.4}, "ground": {"sl", 1, 1},
 	"bug": {"sl", 1, 1}, "electric": {"su", .12, .6}, "ice": {"fz", .1, 1}, "grass": {"rt", .12, 1}, "dark": {"fe", .08, 1},
-	"fairy": {"cm", .1, 1.2},
+	"fairy": {"cm", .1, 1.2}, "psychic": {"cf", .1, 1.2}, "ghost": {"fe", .1, 1}, "normal": {"su", .08, .4},
 }
-var knockType = map[string]float64{"rock": 2, "steel": 2, "flying": 1.5, "fighting": 3}
+var knockType = map[string]float64{"rock": 2, "steel": 2, "flying": 1.5, "fighting": 4.5}
 
 func bossK(e *Enemy) float64 {
 	if e.Boss {
@@ -227,6 +227,12 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 			w.healCapped(d * v)
 		}
 	}
+	if t == "fighting" && kb == 0 { // every fighting hit shoves
+		kb = 1
+		if fx == 0 && fy == 0 {
+			fx, fy = w.P.X, w.P.Y
+		}
+	}
 	if kl := w.pe("eject") + knockType[t]; kb > 0 && kl > 0 {
 		ks := 40.0
 		if kb == 2 {
@@ -243,6 +249,7 @@ func (w *World) hit(e *Enemy, base float64, t string, kb int, fx, fy float64) {
 			w.applyStatus(e, st.K, st.Dur, d)
 		}
 		w.abProc(e, t, d)
+		w.typeProc(e, t, d)
 		if v := w.pe("heat"); v > 0 && w.rng.Float64() < .05*v {
 			w.applyStatus(e, "bn", 3, d)
 		}
@@ -415,4 +422,41 @@ func itoa(n int) string {
 		b[i] = '-'
 	}
 	return string(b[i:])
+}
+
+// typeProc: the extra on-hit effects of types that don't burn, poison or slow.
+// Ground leaves a patch of mud (slows and hurts for a moment); rock chips nearby foes.
+func (w *World) typeProc(e *Enemy, t string, d float64) {
+	if w.noProc {
+		return
+	}
+	switch t {
+	case "ground":
+		if w.rng.Float64() >= .25 {
+			return
+		}
+		n := 0
+		for _, z := range w.ZN {
+			if z.Mud {
+				n++
+				if sq(z.X-e.X)+sq(z.Y-e.Y) < 30*30 {
+					return
+				}
+			}
+		}
+		if n >= 14 {
+			return
+		}
+		w.ZN = append(w.ZN, &Zone{X: e.X, Y: e.Y, R: 30, L: 1.2, Life0: 1.2, Tk: .15, Type: "ground", D: math.Max(1, d*.2), Mud: true, Slot: w.curSlot})
+	case "rock":
+		if w.rng.Float64() >= .2 {
+			return
+		}
+		w.addFX(&FX{Kind: "puff", X: e.X, Y: e.Y, R: 40, Life: .25, Type: "rock"})
+		for _, o := range w.E {
+			if o != e && !o.Dead && sq(o.X-e.X)+sq(o.Y-e.Y) < sq(45+o.R) {
+				w.hitRaw(o, d*.35, "")
+			}
+		}
+	}
 }

@@ -86,6 +86,7 @@ type Game struct {
 	collSel      string
 	lifeSel      string
 	chalOpen     bool
+	chalCat      map[string]bool // challenge groups opened / closed by hand (default: open if something is claimable)
 	lbNameEdit   string
 	boardsFrom   screen
 	pauseSel     int

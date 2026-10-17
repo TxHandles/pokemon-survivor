@@ -163,7 +163,8 @@ type Enemy struct {
 	pmk                bool
 	Sh, ShMax          float64 // shield
 	Mini, Arm, Vamp    bool
-	Swift              bool // a fast, fragile runner
+	Swift              bool  // a fast, fragile runner
+	Toss               *Toss // being grabbed and thrown (Seismic Toss)
 	Expl, Split, Sumn  bool
 	Af                 []string
 	sut                float64
@@ -228,6 +229,7 @@ type Zone struct {
 	Arm, Age, Br, Md  float64
 	Slot              *Slot
 	Life0             float64
+	Mud               bool // a ground hit's mud patch (slows, small damage, no further procs)
 }
 
 type Gem struct {
@@ -303,6 +305,7 @@ type World struct {
 	curSrc                           *DmgSrc    // the enemy whose attacks are being created
 	SwapPick                         bool       // the level-up options are "which item to swap out"
 	probeHits                        *int       // ProbeMove: counts hits
+	noProc                           bool       // inside a mud patch tick: no new type procs
 	relocT                           float64
 	Msg                              string
 	MsgT                             float64

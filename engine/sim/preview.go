@@ -202,6 +202,15 @@ func (w *World) ProbeMoveB(id string, lv int, ev bool, extra string) (r Probe) {
 		if k == "dash" {
 			r.Dist = ml
 		}
+	case k == "toss":
+		for _, e := range cp.E {
+			if e.Toss != nil {
+				r.N++
+				r.PSz = e.Toss.lr * 2
+			}
+		}
+		r.NL = "Foes thrown"
+		r.Area, r.AL = (q.F("r", 150)+q.F("rp", 9)*(1+float64(lv-1)*.45))*cp.rgm()*s.BonusAreaMul(), "Grab range"
 	case k == "chain":
 		r.N, r.NL = float64(hits), "Chain jumps"
 	default:
@@ -256,6 +265,11 @@ func (w *World) TestFire(id string, lv int, after float64) {
 	w.fire(s)
 	for t := 0.0; t < after; t += 1.0 / 60 {
 		w.stepFX(1.0 / 60)
+		for _, e := range w.E {
+			if e.Toss != nil && !e.Dead {
+				w.stepToss(e, 1.0/60)
+			}
+		}
 		for i := 0; i < len(w.DL); i++ {
 			if d := w.DL[i]; d.t-1.0/60 <= 0 {
 				w.DL = append(w.DL[:i], w.DL[i+1:]...)

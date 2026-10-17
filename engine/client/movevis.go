@@ -261,23 +261,11 @@ func (g *Game) visFX(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64)
 		}
 		return true
 	case "arc":
-		al := math.Max(0, math.Min(1, f.Life*4))
-		gradSector(dst, x, y, f.R*.15, f.R, f.A, f.Wd, alpha(v.c1, 0), alpha(v.c1, .8), v.c2, al)
-		strokeEllipse(dst, x, y, f.R, f.R, f.A-f.Wd, f.A+f.Wd, 2, alpha(v.c0, al))
-		for i := 0; i < 2; i++ {
-			rr := f.R * (.7 + .14*float64(i))
-			strokeEllipse(dst, x, y, rr, rr, f.A-f.Wd*.8, f.A+f.Wd*.8, 3, alpha(v.c2, al))
+		if v.kind == "spin" {
+			g.visSpin(dst, v, f, sx, sy)
+			return true
 		}
-		n := int(math.Max(3, math.Min(7, math.Round(f.Wd*5))))
-		for i := 0; i <= n; i++ {
-			a := f.A - f.Wd + 2*f.Wd*float64(i)/float64(n)
-			v.G(dst, "b", x+math.Cos(a)*f.R, y+math.Sin(a)*f.R, 22, a, al)
-		}
-		if v.sty == 1 {
-			v.G(dst, "p", x+math.Cos(f.A)*f.R*.7, y+math.Sin(f.A)*f.R*.7, math.Min(46, 22+f.R*.2), f.A, al)
-		} else {
-			v.G(dst, "o", x+math.Cos(f.A)*f.R*.7, y+math.Sin(f.A)*f.R*.7, math.Min(46, 22+f.R*.2), 0, al)
-		}
+		g.visSwipe(dst, v, f, x, y)
 		return true
 	case "rect":
 		if f.Ln > 600 {
@@ -586,23 +574,162 @@ func fireEruptRing(dst *ebiten.Image, f *sim.FX, x, y float64) {
 }
 
 func firePunch(dst *ebiten.Image, f *sim.FX, x, y, T float64, ic *ebiten.Image) {
-	al := math.Max(0, math.Min(1, f.Life*4))
-	gradSector(dst, x, y, f.R*.2, f.R, f.A, f.Wd, alpha(hexC("#ff4a1a"), 0), hexC("#ff7a1f"), hexC("#ffd24a"), al)
-	n := int(math.Max(5, math.Round(f.Wd*7)))
-	for i := 0; i <= n; i++ {
+	p, al := swipeP(f)
+	head, tail := swipeSpan(f, p, idh(f.Type)%2 == 0)
+	crescent(dst, x, y, f.R, f.R*.42, tail, head, hexC("#ff4a1a"), al*.85)
+	crescent(dst, x, y, f.R*.96, f.R*.2, tail+(head-tail)*.35, head, hexC("#ffb733"), al)
+	crescent(dst, x, y, f.R, f.R*.07, tail+(head-tail)*.6, head, hexC("#fff2c0"), al)
+	for i := 0; i < 6; i++ { // flame tongues licking off the leading edge
 		fi := float64(i)
-		a := f.A - f.Wd + (2*f.Wd)*fi/float64(n)
-		L := 8 + 14*hsh(fi+math.Floor(T*16))
+		a := head - (head-tail)*fi/7
+		L := 8 + 12*hsh(fi+math.Floor(T*16))
 		px, py := x+math.Cos(a)*f.R, y+math.Sin(a)*f.R
 		c := hexC("#ffd24a")
 		if i%2 == 1 {
 			c = hexC("#ff5a1f")
 		}
-		poly(dst, [][2]float64{{px + math.Cos(a+1.57)*5, py + math.Sin(a+1.57)*5}, {px + math.Cos(a)*L, py + math.Sin(a)*L}, {px + math.Cos(a-1.57)*5, py + math.Sin(a-1.57)*5}}, alpha(c, al))
+		poly(dst, [][2]float64{{px + math.Cos(a+1.57)*4, py + math.Sin(a+1.57)*4}, {px + math.Cos(a)*L, py + math.Sin(a)*L}, {px + math.Cos(a-1.57)*4, py + math.Sin(a-1.57)*4}}, alpha(c, al*(1-fi/7)))
 	}
-	// the web version draws a fist emoji here; the fighting-type icon stands in
-	if ic != nil {
-		stamp(dst, ic, x+math.Cos(f.A)*f.R*.7, y+math.Sin(f.A)*f.R*.7, 26, 0, al)
+}
+
+// ---- melee swipes (Low Kick, Slash, Fire Punch…) ----
+
+// swipeP: how far through its life a swipe is (0 → 1) and its opacity.
+func swipeP(f *sim.FX) (p, al float64) {
+	l0 := math.Max(f.Life0, 1e-6)
+	p = 1 - f.Life/l0
+	al = math.Min(1, f.Life/l0*3)
+	return
+}
+
+// swipeSpan: the swept angles; the leading edge races across the arc, the tail follows.
+func swipeSpan(f *sim.FX, p float64, cw bool) (head, tail float64) {
+	e := 1 - math.Pow(1-math.Min(1, p*2.2), 3)                 // the blade races across...
+	et := math.Pow(math.Max(0, math.Min(1, (p-.25)/.75)), 1.4) // ...and its trail follows, lagging
+	w := math.Max(f.Wd*1.12, .9)                               // narrow hits still read as a proper swing
+	if cw {
+		return f.A - w + 2*w*e, f.A - w + 2*w*et
+	}
+	return f.A + w - 2*w*e, f.A + w - 2*w*et
+}
+
+// crescent fills a moon-shaped band between angles a0 and a1: full radius r on the outside, and a
+// thickness that swells to th in the middle and tapers to points at both ends.
+func crescent(dst *ebiten.Image, x, y, r, th, a0, a1 float64, col color.NRGBA, al float64) {
+	if math.Abs(a1-a0) < .02 || al <= 0 {
+		return
+	}
+	const N = 22
+	pts := make([][2]float64, 0, 2*N+2)
+	for i := 0; i <= N; i++ {
+		a := a0 + (a1-a0)*float64(i)/N
+		pts = append(pts, [2]float64{x + math.Cos(a)*r, y + math.Sin(a)*r})
+	}
+	for i := N; i >= 0; i-- {
+		t := float64(i) / N
+		a := a0 + (a1-a0)*t
+		// thickest just behind the leading edge (t near 1), like a brush stroke
+		k := math.Sin(math.Pi * math.Pow(t, 1.6))
+		rr := r - th*k
+		pts = append(pts, [2]float64{x + math.Cos(a)*rr, y + math.Sin(a)*rr})
+	}
+	poly(dst, pts, alpha(col, al))
+}
+
+// visSwipe: a crescent slash sweeps across the attack's area, with speed lines and a burst of the
+// type's particles at the leading edge.
+func (g *Game) visSwipe(dst *ebiten.Image, v *mvis, f *sim.FX, x, y float64) {
+	p, al := swipeP(f)
+	cw := v.h%2 == 0
+	head, tail := swipeSpan(f, p, cw)
+	R := f.R
+	crescent(dst, x, y, R*1.02, R*.62, tail, head, v.c0, al*.45)
+	crescent(dst, x, y, R, R*.5, tail, head, v.c1, al*.8)
+	crescent(dst, x, y, R*.98, R*.26, tail+(head-tail)*.3, head, v.c2, al)
+	crescent(dst, x, y, R, R*.08, tail+(head-tail)*.5, head, c(255, 255, 255, 255), al*.9)
+	for i := 0; i < 3; i++ { // speed lines inside the swing
+		rr := R * (.48 + .12*float64(i))
+		a0 := tail + (head-tail)*(.15+.15*float64(i))
+		if math.Abs(head-a0) > .05 {
+			lo, hi := math.Min(a0, head), math.Max(a0, head)
+			strokeEllipse(dst, x, y, rr, rr, lo, hi, 1.5, alpha(c(255, 255, 255, 255), al*.45))
+		}
+	}
+	// particles thrown off the leading edge, drifting outward
+	hx, hy := math.Cos(head), math.Sin(head)
+	for i := 0; i < 4; i++ {
+		fi := float64(i)
+		a := head - (head-tail)*(fi*.18)
+		d := R * (.75 + .3*p + .1*hsh(fi+float64(v.h)))
+		v.G(dst, "b", x+math.Cos(a)*d, y+math.Sin(a)*d, 16+6*hsh(fi+3), a, al*(1-fi*.18))
+	}
+	if p > .25 && p < .8 { // impact spark where the swipe lands
+		k := (p - .25) / .55
+		sxp, syp := x+hx*R*.9, y+hy*R*.9
+		for i := 0; i < 5; i++ {
+			a := head + (float64(i)-2)*.5
+			l := R * .22 * (1 - k)
+			line(dst, sxp+math.Cos(a)*l*.3, syp+math.Sin(a)*l*.3, sxp+math.Cos(a)*l, syp+math.Sin(a)*l, 2, alpha(c(255, 255, 255, 255), al*(1-k)))
+		}
+	}
+}
+
+// visSpin: spinning kicks (Rolling Kick…). Two comet-tailed kick trails whirl around the user, the
+// ground scuffs into a dust ring, and the type's particles fling outward. Spin moves make a new
+// effect every tick, so only the newest is drawn and the motion runs on the world clock.
+func (g *Game) visSpin(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64) float64) {
+	if f.Life < f.Life0*.15 {
+		return
+	}
+	W := g.W
+	T := W.T
+	cx, cy := f.X, f.Y
+	if f.Slot != nil && f.Slot.Owner >= 0 && f.Slot.Owner < len(W.PL) { // follow the kicker
+		cx, cy = W.PL[f.Slot.Owner].P.X, W.PL[f.Slot.Owner].P.Y
+	}
+	x, y := sx(cx), sy(cy)
+	R := f.R
+	// scuffed ground: a dusty ring and kicked-up pebbles
+	soft(dst, x, y+6, R*1.05, R*.5, alpha(v.c0, .16))
+	strokeEllipse(dst, x, y+6, R*.95, R*.45, 0, 2*math.Pi, 3, alpha(c(200, 175, 135, 255), .35))
+	for i := 0; i < 8; i++ {
+		fi := float64(i)
+		ph := math.Mod(T*1.8+fi/8, 1)
+		a := fi*.785 + T*.7
+		d := R * (.7 + .4*ph)
+		disc(dst, x+math.Cos(a)*d, y+6+math.Sin(a)*d*.47-ph*(1-ph)*30, 2.2*(1-ph)+.6, c(190, 160, 120, uint8(200*(1-ph))))
+	}
+	rot := T * 11
+	for k := 0; k < 2; k++ {
+		h := rot + float64(k)*math.Pi
+		rr := R * (.82 + .06*math.Sin(T*7+float64(k)*2))
+		// the tail, squashed a little for a top-down tilt
+		const N = 18
+		pts := make([][2]float64, 0, 2*N+2)
+		for i := 0; i <= N; i++ {
+			t := float64(i) / N
+			a := h - 2.1*t
+			r := rr + R*.16*(1-t)
+			pts = append(pts, [2]float64{x + math.Cos(a)*r, y + math.Sin(a)*r*.75})
+		}
+		for i := N; i >= 0; i-- {
+			t := float64(i) / N
+			a := h - 2.1*t
+			r := rr - R*.16*(1-t)*(1-t)
+			pts = append(pts, [2]float64{x + math.Cos(a)*r, y + math.Sin(a)*r*.75})
+		}
+		poly(dst, pts, alpha(v.c1, .6))
+		polyline(dst, pts[:N/2+1], 2.5, alpha(v.c2, .9))
+		hx, hy := x+math.Cos(h)*rr, y+math.Sin(h)*rr*.75
+		glow(dst, hx, hy, math.Min(16, R*.15), v.c2, .75)
+		disc(dst, hx, hy, 3.5, c(255, 255, 255, 235))
+		for i := 0; i < 3; i++ { // sparks flung off the heel
+			fi := float64(i)
+			ph := math.Mod(T*3+fi/3+float64(k)*.5, 1)
+			a := h - .5 - fi*.4
+			d := rr + R*.5*ph
+			v.G(dst, "b", x+math.Cos(a)*d, y+math.Sin(a)*d*.75, 14+6*(1-ph), a, 1-ph)
+		}
 	}
 }
 
