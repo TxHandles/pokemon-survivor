@@ -3,7 +3,7 @@ name: Go build
 on:
   push:
     branches: [main]
-    paths: ['**.go', 'go.mod', 'go.sum', 'data/**', 'web/**', 'tools/build_go.sh', '.github/workflows/go-build.yml']
+    paths: ['**.go', 'go.mod', 'go.sum', 'data/**', 'web/**', 'tools/*.sh', '.github/workflows/go-build.yml']
     tags: ['go-v*']
   workflow_dispatch:
 
@@ -16,7 +16,9 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Test simulation
-        run: go test ./engine/content ./engine/sim ./engine/meta ./engine/synth
+        run: go test ./engine/content ./engine/sim ./engine/meta ./engine/synth ./engine/lockstep
+      - name: Cross-target determinism (native vs wasm)
+        run: ./tools/crosscheck.sh
       - name: Build Windows + web
         run: ./tools/build_go.sh
       - uses: actions/upload-artifact@v4

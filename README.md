@@ -20,8 +20,10 @@ A native rebuild in Go with [Ebitengine](https://ebitengine.org), reading the sa
 | `engine/sim` | The game simulation — pure logic, no graphics, so bots can run it headless |
 | `engine/meta` | Progression: save file (same format as the web game), shop, unlocks, mastery, challenges, rewards |
 | `engine/synth` | Procedural sound effects and the placeholder music loop (same recipes as the web game) |
+| `engine/lockstep` | Deterministic lockstep for online co-op: input frames, menu picks as commands, state-hash desync checks (transport not yet wired) |
 | `engine/client` | Rendering, input (keyboard, gamepad, mouse, touch), audio, HUD and menus |
 | `cmd/game` | The playable game (Windows / browser) |
+| `cmd/simhash` | Prints a state-hash trace of a fixed run; `tools/crosscheck.sh` compares native vs wasm to prove the sim is bit-identical across builds |
 | `cmd/sim` | Headless bot runner for balance checks: `go run ./cmd/sim -runs 20 -mins 5` |
 | `web/index.html` | Page that loads the browser build |
 | `music/` | Location and menu tracks: embedded in the Windows build, fetched by the browser build |
@@ -43,7 +45,12 @@ as the web game for that day; daily records sync when signed in).
 Local co-op (main menu → Local co-op): up to 4 players on one screen — keyboard (WASD / arrows), gamepads, and bot
 teammates. In the lobby: Enter / A joins, B (or the + key) adds a bot, left / right picks a Pokémon, E / Y toggles the
 ability, Enter / A readies up, Esc / B leaves. Level-ups come from a shared XP pool and each player picks their own
-moves; fainted players revive at the Pokémon Center that appears on the map. There is no online (network) co-op.
+moves; fainted players revive at the Pokémon Center that appears on the map.
+
+Online co-op is in progress: the simulation is deterministic and bit-identical between the Windows and browser builds
+(it uses portable float math instead of the platform-specific `math.Exp` / `Pow` / `Hypot`), and `engine/lockstep`
+runs peers in lockstep over any transport. The network transport and lobby are the next step. Builds for other CPU
+architectures (arm64) are not checked yet.
 
 The browser build accepts `?demo=<id>&biome=<type>&seed=<n>&t=<seconds>` to watch the bot play, and
 `?coop=fire,water,grass` for a bot co-op demo.

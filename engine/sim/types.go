@@ -3,7 +3,6 @@
 package sim
 
 import (
-	"math"
 	"math/rand"
 
 	"github.com/TxHandles/pokemon-survivor/engine/content"
@@ -344,9 +343,9 @@ type World struct {
 	Chooser int
 }
 
-func hyp(x, y float64) float64 { return math.Hypot(x, y) }
+func hyp(x, y float64) float64 { return phyp(x, y) }
 func dist(ax, ay, bx, by float64) float64 {
-	return math.Hypot(ax-bx, ay-by)
+	return phyp(ax-bx, ay-by)
 }
 func (w *World) rnd(a, b float64) float64 { return a + w.rng.Float64()*(b-a) }
 

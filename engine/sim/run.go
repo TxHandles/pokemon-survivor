@@ -54,10 +54,10 @@ func (w *World) ef() float64 {
 	if !w.Endless {
 		return 1
 	}
-	return math.Pow(1.2, (w.T-w.ET)/60)
+	return ppow(1.2, (w.T-w.ET)/60)
 }
 
-func (w *World) spS() float64 { return math.Min(1.8, math.Pow(w.ef(), .15)) }
+func (w *World) spS() float64 { return math.Min(1.8, ppow(w.ef(), .15)) }
 
 // LocName is a biome location's display name.
 func (w *World) LocName(t string, li int) string {

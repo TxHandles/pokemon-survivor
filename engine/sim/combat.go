@@ -124,7 +124,7 @@ func clampK(v float64) float64 { return math.Max(-700, math.Min(700, v)) }
 // knock pushes an enemy away from (fx,fy) by ks (scaled for big enemies / bosses).
 func (e *Enemy) knock(fx, fy, ks float64) {
 	dx, dy := e.X-fx, e.Y-fy
-	l := math.Hypot(dx, dy)
+	l := phyp(dx, dy)
 	if l == 0 {
 		l = 1
 	}
@@ -354,7 +354,7 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 	if P.Still > 1 {
 		red += w.PS.F("redStill")
 	}
-	P.HP -= d * math.Pow(.96, w.up("arm")) * math.Pow(.93, w.pe("metal")) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
+	P.HP -= d * ppow(.96, w.up("arm")) * ppow(.93, w.pe("metal")) * b2f(P.Pbl > 0, 2, 1) * math.Max(.2, 1-red) / P.Stats.Def
 	w.abHurt(h0 - P.HP)
 	if h0-P.HP > .6 {
 		P.HurtT = w.T

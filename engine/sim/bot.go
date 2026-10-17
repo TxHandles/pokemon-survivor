@@ -35,7 +35,7 @@ func (b *Bot) steer() {
 	sp := P.Sp * (1 + .08*w.pe("boots"))
 	const LA = .5
 	hpf := P.HP / P.MHP
-	riskw := .45 + 3.2*math.Pow(math.Max(0, 1-hpf), 2)
+	riskw := .45 + 3.2*ppow(math.Max(0, 1-hpf), 2)
 	var near []*Enemy
 	cx, cy, cn := 0.0, 0.0, 0
 	for _, e := range w.E {
@@ -172,7 +172,7 @@ func (b *Bot) steer() {
 			Rs := 60 + b2f(e.Boss, 70, 0) + b2f(e.Elite, 30, 0) + e.R*.5
 			if dd < Rs {
 				wt := b2f(e.Boss, 3.5, b2f(e.Elite, 2.2, 1)) * math.Max(.6, math.Min(3, e.Dm/9))
-				c += riskw * wt * math.Pow((Rs-dd)/Rs, 2) * 60
+				c += riskw * wt * ppow((Rs-dd)/Rs, 2) * 60
 			}
 		}
 		ahead := 0

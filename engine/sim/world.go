@@ -601,7 +601,7 @@ func (w *World) stepEnemies(dt float64) {
 		if e.KX != 0 || e.KY != 0 {
 			e.X += e.KX * dt
 			e.Y += e.KY * dt
-			dc := math.Exp(-6 * dt)
+			dc := pexp(-6 * dt)
 			e.KX *= dc
 			e.KY *= dc
 			if math.Abs(e.KX)+math.Abs(e.KY) < 2 {
