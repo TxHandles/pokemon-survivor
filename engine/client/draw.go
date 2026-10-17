@@ -53,6 +53,10 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		col := tc(z.Type)
 		fade := math.Min(1, z.L/math.Max(.2, math.Min(.6, z.Life0)))
 		x, y := sx(z.X), sy(z.Y)
+		if v := g.visOf(z.Slot); v != nil && !z.Mine {
+			g.visZone(dst, v, z, x, y)
+			continue
+		}
 		switch {
 		case z.Mine:
 			armed := z.Age >= z.Arm
@@ -201,15 +205,29 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		}
 	}
 	// orbits, projectiles
-	for _, o := range w.Orbs {
-		col := tc(o.Type)
-		soft(dst, sx(o.X), sy(o.Y), o.R*2.2, o.R*2.2, alpha(col, .45))
-		disc(dst, sx(o.X), sy(o.Y), o.R, col)
-		disc(dst, sx(o.X)-o.R*.3, sy(o.Y)-o.R*.3, o.R*.35, c(255, 255, 255, 190))
+	for i, pc := range w.PL {
+		orbs := pc.Orbs
+		if i == w.CUR {
+			orbs = w.Orbs
+		}
+		for _, o := range orbs {
+			if v := g.visOfID(o.Mv); v != nil {
+				g.visOrb(dst, v, o, sx(o.X), sy(o.Y), sx(pc.P.X), sy(pc.P.Y))
+				continue
+			}
+			col := tc(o.Type)
+			soft(dst, sx(o.X), sy(o.Y), o.R*2.2, o.R*2.2, alpha(col, .45))
+			disc(dst, sx(o.X), sy(o.Y), o.R, col)
+			disc(dst, sx(o.X)-o.R*.3, sy(o.Y)-o.R*.3, o.R*.35, c(255, 255, 255, 190))
+		}
 	}
 	for _, p := range w.PR {
 		x, y := sx(p.X), sy(p.Y)
 		if x < -30 || y < -30 || x > sw+30 || y > sh+30 {
+			continue
+		}
+		if v := g.visOf(p.Slot); v != nil {
+			g.visProj(dst, v, p, x, y)
 			continue
 		}
 		col := tc(p.Type)
@@ -474,6 +492,11 @@ func (g *Game) drawEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) {
 }
 
 func (g *Game) drawFX(dst *ebiten.Image, f *sim.FX, sx, sy func(float64) float64) {
+	if f.Slot != nil {
+		if v := g.visOf(f.Slot); v != nil && g.visFX(dst, v, f, sx, sy) {
+			return
+		}
+	}
 	col := tc(f.Type)
 	k := 1 - f.Life/math.Max(f.Life0, 1e-6) // 0 -> 1 over the effect's life
 	a := math.Min(1, f.Life/math.Max(f.Life0*.6, 1e-6))

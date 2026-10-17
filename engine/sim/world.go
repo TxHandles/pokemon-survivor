@@ -930,7 +930,7 @@ func (w *World) stepOrbits1(dt float64) {
 		w.curSlot = s
 		for i := 0; i < n; i++ {
 			a := s.orbA + float64(i)*6.283/float64(n)
-			o := Orb{X: w.P.X + math.Cos(a)*rr, Y: w.P.Y + math.Sin(a)*rr, R: 9 * sz, Type: s.Type}
+			o := Orb{X: w.P.X + math.Cos(a)*rr, Y: w.P.Y + math.Sin(a)*rr, R: 9 * sz, Type: s.Type, Mv: s.ID}
 			w.Orbs = append(w.Orbs, o)
 			for _, e := range w.E {
 				if !e.Dead && e.orbT[oi%8] <= w.T && dist(o.X, o.Y, e.X, e.Y) < e.R+o.R {

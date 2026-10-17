@@ -237,6 +237,7 @@ type Gem struct {
 type Orb struct {
 	X, Y, R float64
 	Type    string
+	Mv      string // move id (for its visuals)
 }
 
 type delay struct {
