@@ -42,6 +42,9 @@ func main() {
 	if c := opts["join"]; c != "" { // join an online room right away (testing; &auto=1 readies up by itself)
 		g.AutoJoin(c, opts["auto"] == "1")
 	}
+	if a, ok := opts["fradd"], opts["fraccept"] == "1"; a != "" || ok { // testing: send a friend request / accept requests
+		g.TestFriends(a, ok, opts["name"])
+	}
 	if sel := opts["sel"]; sel != "" { // testing: pre-select a Pokémon in the Pokédex
 		g.DexSelect(sel)
 	}

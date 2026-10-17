@@ -7,6 +7,8 @@ import (
 	"io/fs"
 	"math"
 	"math/rand"
+	"path/filepath"
+	"runtime"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -28,6 +30,7 @@ const (
 
 // Game implements ebiten.Game.
 type Game struct {
+	fr       friendsState
 	rstArm   bool // Reset progress pressed once
 	histCopy string
 	amb      ambState
@@ -118,6 +121,9 @@ type Game struct {
 
 func New(dataFS fs.FS, db *content.DB) *Game {
 	uiFS = dataFS
+	if runtime.GOOS != "js" { // keep the desktop's online account (and friend code) between launches
+		net.IdentityFile = filepath.Join(filepath.Dir(meta.SavePath()), "online_id.txt")
+	}
 	loadArt(dataFS)
 	loadFloors(dataFS)
 	g := &Game{db: db, assets: NewAssets(dataFS, db), biome: -1, sw: 1280, sh: 720, clipIn: make(chan string, 1)}
@@ -345,6 +351,7 @@ func (g *Game) Update() error {
 	}
 	defer g.audioTick()
 	g.cloud.Poll(g.adoptCloud)
+	g.friendsTick()
 	if p, ok := g.cloud.(interface{ NeedPush() bool }); ok && p.NeedPush() {
 		g.cloud.PushSave(g.prof.S)
 	}
@@ -353,7 +360,7 @@ func (g *Game) Update() error {
 		g.scr = scMenu
 	case scLobby:
 		g.updateLobby()
-	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings, scDex, scHist, scDaily, scBoards, scOnline, scColl, scLife:
+	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings, scDex, scHist, scDaily, scBoards, scOnline, scColl, scLife, scFriends:
 		g.buildMenu()
 		g.ui.update()
 		if g.ui.clicked {

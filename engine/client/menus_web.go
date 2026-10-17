@@ -343,6 +343,10 @@ func (g *Game) menuMain() {
 	y += ch + 12
 	// menu: two columns like the web version
 	ready := pr.ReadyChallenges()
+	frLabel := "Friends"
+	if n := g.frRequests(); n > 0 {
+		frLabel = fmt.Sprintf("Friends (%d)", n)
+	}
 	chal := "Challenges"
 	if ready > 0 {
 		chal = fmt.Sprintf("Challenges (%d ready)", ready)
@@ -369,6 +373,7 @@ func (g *Game) menuMain() {
 		{"settings", "Settings", gGear, scSettings},
 		{"coop", "Local co-op", gPad, scLobby},
 		{"online", "Online co-op", gGlobe, scOnline},
+		{"friends", frLabel, gPeople, scFriends},
 	}
 	mw := math.Min(460, sw*.94)
 	bw := (mw - 8) / 2

@@ -162,6 +162,14 @@ func NewNet(mode string) Net {
 
 func (n *rtcNet) Available() (bool, string) { return n.sig.available() }
 
+// Store returns the Firestore store (nil with the test relay).
+func (n *rtcNet) Store() Store {
+	if f, ok := n.sig.(*fbRest); ok {
+		return restStore{f}
+	}
+	return nil
+}
+
 func (n *rtcNet) Login(cb func(uid, name, err string)) { n.sig.login(cb) }
 
 func (n *rtcNet) SetRoomOpen(code string, open bool) { n.sig.setOpen(code, open) }

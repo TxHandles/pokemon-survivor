@@ -20,6 +20,7 @@ type widget struct {
 	disabled bool
 	key      string // stable id, keeps focus across frames
 	scroll   bool   // inside the scrolling area
+	top      bool   // popup: drawn last, gets clicks first
 }
 
 type uiState struct {
@@ -64,6 +65,15 @@ func (u *uiState) visible(w *widget) bool {
 // label adds a non-interactive drawing.
 func (u *uiState) label(r [4]float64, scroll bool, d func(dst *ebiten.Image, r [4]float64)) {
 	u.add(&widget{r: r, scroll: scroll, draw: func(dst *ebiten.Image, r [4]float64, _ bool) { d(dst, r) }})
+}
+
+// popup widgets: drawn over everything and clicked first.
+func (u *uiState) topLabel(r [4]float64, d func(dst *ebiten.Image, r [4]float64)) {
+	u.add(&widget{r: r, top: true, draw: func(dst *ebiten.Image, r [4]float64, _ bool) { d(dst, r) }})
+}
+
+func (u *uiState) topButton(key string, r [4]float64, d func(dst *ebiten.Image, r [4]float64, hot bool), act func()) {
+	u.add(&widget{key: key, r: r, top: true, draw: d, act: act})
 }
 
 // button adds a clickable widget.
@@ -118,9 +128,11 @@ func (u *uiState) update() {
 	}
 	u.scroll = math.Max(0, math.Min(u.scrollMax, u.scroll))
 	var clickable []*widget
-	for _, w := range u.ws {
-		if w.act != nil && w.key != "" {
-			clickable = append(clickable, w)
+	for _, top := range []bool{true, false} {
+		for _, w := range u.ws {
+			if w.act != nil && w.key != "" && w.top == top {
+				clickable = append(clickable, w)
+			}
 		}
 	}
 	// mouse hover sets focus; click (or a touch tap) activates
@@ -197,7 +209,15 @@ func (u *uiState) update() {
 
 func (u *uiState) draw(dst *ebiten.Image) {
 	var clipped *ebiten.Image
-	for _, w := range u.ws {
+	ws := make([]*widget, 0, len(u.ws))
+	for _, top := range []bool{false, true} {
+		for _, w := range u.ws {
+			if w.top == top {
+				ws = append(ws, w)
+			}
+		}
+	}
+	for _, w := range ws {
 		if w.draw == nil || !u.visible(w) {
 			continue
 		}

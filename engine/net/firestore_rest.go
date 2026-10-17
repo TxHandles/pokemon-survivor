@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -26,12 +29,13 @@ const (
 var fbDocs = "https://firestore.googleapis.com/v1/projects/" + fbProject + "/databases/(default)/documents"
 
 type fbRest struct {
-	mu    sync.Mutex
-	uid   string
-	token string
-	exp   time.Time
-	name  string
-	cl    *http.Client
+	mu      sync.Mutex
+	uid     string
+	token   string
+	exp     time.Time
+	name    string
+	refresh string
+	cl      *http.Client
 }
 
 func newFBRest() *fbRest {
@@ -57,6 +61,31 @@ func (f *fbRest) ensureToken() error {
 	if f.token != "" && time.Now().Before(f.exp) {
 		return nil
 	}
+	if f.refresh == "" && IdentityFile != "" {
+		if b, err := os.ReadFile(IdentityFile); err == nil {
+			f.refresh = strings.TrimSpace(string(b))
+		}
+	}
+	if f.refresh != "" { // keep the same anonymous account
+		form := url.Values{"grant_type": {"refresh_token"}, "refresh_token": {f.refresh}}
+		resp, err := f.cl.PostForm("https://securetoken.googleapis.com/v1/token?key="+fbAPIKey, form)
+		if err == nil {
+			b, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			var r struct {
+				IDToken      string `json:"id_token"`
+				RefreshToken string `json:"refresh_token"`
+				UserID       string `json:"user_id"`
+			}
+			json.Unmarshal(b, &r)
+			if resp.StatusCode == 200 && r.IDToken != "" {
+				f.token, f.uid, f.refresh = r.IDToken, r.UserID, nonEmpty(r.RefreshToken, f.refresh)
+				f.exp = time.Now().Add(50 * time.Minute)
+				f.saveIdentity()
+				return nil
+			}
+		}
+	}
 	resp, err := f.cl.Post("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+fbAPIKey, "application/json", strings.NewReader(`{"returnSecureToken":true}`))
 	if err != nil {
 		return fmt.Errorf("could not reach the sign-in service (%v)", err)
@@ -64,10 +93,10 @@ func (f *fbRest) ensureToken() error {
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
 	var r struct {
-		IDToken   string `json:"idToken"`
-		LocalID   string `json:"localId"`
-		ExpiresIn string `json:"expiresIn"`
-		Error     struct{ Message string }
+		IDToken      string `json:"idToken"`
+		LocalID      string `json:"localId"`
+		RefreshToken string `json:"refreshToken"`
+		Error        struct{ Message string }
 	}
 	json.Unmarshal(b, &r)
 	if resp.StatusCode != 200 || r.IDToken == "" {
@@ -77,9 +106,17 @@ func (f *fbRest) ensureToken() error {
 		}
 		return fmt.Errorf("sign-in failed: %s", nonEmpty(msg, resp.Status))
 	}
-	f.token, f.uid = r.IDToken, r.LocalID
+	f.token, f.uid, f.refresh = r.IDToken, r.LocalID, r.RefreshToken
 	f.exp = time.Now().Add(50 * time.Minute)
+	f.saveIdentity()
 	return nil
+}
+
+func (f *fbRest) saveIdentity() {
+	if IdentityFile != "" && f.refresh != "" {
+		os.MkdirAll(filepath.Dir(IdentityFile), 0o755)
+		os.WriteFile(IdentityFile, []byte(f.refresh), 0o600)
+	}
 }
 
 // doc is a Firestore document body.
@@ -291,4 +328,139 @@ func (f *fbRest) offer(code, name, sdp string, onAnswer func(string), onErr func
 		}
 	}()
 	return func() { close(stop) }
+}
+
+// ---- Store over REST ----
+
+func toFS(v any) map[string]any {
+	switch x := v.(type) {
+	case string:
+		return fsStr(x)
+	case bool:
+		return fsBool(x)
+	case int:
+		return fsInt(int64(x))
+	case int64:
+		return fsInt(x)
+	case float64:
+		if x == float64(int64(x)) && x > -9e15 && x < 9e15 {
+			return fsInt(int64(x))
+		}
+		return map[string]any{"doubleValue": x}
+	}
+	return map[string]any{"nullValue": nil}
+}
+
+func fromFS(f map[string]any) any {
+	if s, ok := f["stringValue"].(string); ok {
+		return s
+	}
+	if s, ok := f["integerValue"].(string); ok {
+		var n int64
+		fmt.Sscan(s, &n)
+		return float64(n)
+	}
+	if d, ok := f["doubleValue"].(float64); ok {
+		return d
+	}
+	if b, ok := f["booleanValue"].(bool); ok {
+		return b
+	}
+	return nil
+}
+
+func docOf(d *fsDoc) Doc {
+	out := Doc{}
+	if d == nil {
+		return out
+	}
+	for k, v := range d.Fields {
+		out[k] = fromFS(v)
+	}
+	return out
+}
+
+type restStore struct{ f *fbRest }
+
+func (s restStore) UID() string { s.f.mu.Lock(); defer s.f.mu.Unlock(); return s.f.uid }
+
+func (s restStore) Get(path string, cb func(Doc, bool, string)) {
+	go func() {
+		d, st, err := s.f.get("/" + path)
+		switch {
+		case err != nil:
+			cb(nil, false, err.Error())
+		case st == 404:
+			cb(nil, false, "")
+		case st != 200:
+			cb(nil, false, fmt.Sprintf("firestore %d", st))
+		default:
+			cb(docOf(d), true, "")
+		}
+	}()
+}
+
+func (s restStore) Set(path string, d Doc, merge bool, cb func(string)) {
+	go func() {
+		fields := map[string]map[string]any{}
+		for k, v := range d {
+			fields[k] = toFS(v)
+		}
+		var err error
+		if merge {
+			err = s.f.patch("/"+path, fields)
+		} else {
+			st, b, e := s.f.call("PATCH", "/"+path, "", fsDoc{Fields: fields})
+			if e != nil {
+				err = e
+			} else if st != 200 {
+				err = fmt.Errorf("firestore %d: %s", st, trim(string(b)))
+			}
+		}
+		if cb != nil {
+			if err != nil {
+				cb(err.Error())
+			} else {
+				cb("")
+			}
+		}
+	}()
+}
+
+func (s restStore) Delete(path string, cb func(string)) {
+	go func() {
+		st, b, err := s.f.call("DELETE", "/"+path, "", nil)
+		if cb == nil {
+			return
+		}
+		switch {
+		case err != nil:
+			cb(err.Error())
+		case st != 200 && st != 404:
+			cb(fmt.Sprintf("firestore %d: %s", st, trim(string(b))))
+		default:
+			cb("")
+		}
+	}()
+}
+
+func (s restStore) List(path string, cb func(map[string]Doc, string)) {
+	go func() {
+		st, b, err := s.f.call("GET", "/"+path, "?pageSize=300", nil)
+		if err != nil {
+			cb(nil, err.Error())
+			return
+		}
+		if st != 200 {
+			cb(nil, fmt.Sprintf("firestore %d", st))
+			return
+		}
+		var r struct{ Documents []fsDoc }
+		json.Unmarshal(b, &r)
+		out := map[string]Doc{}
+		for i := range r.Documents {
+			out[r.Documents[i].id()] = docOf(&r.Documents[i])
+		}
+		cb(out, "")
+	}()
 }

@@ -130,6 +130,7 @@ const (
 	gDownload
 	gTriUp
 	gTriDown
+	gPeople
 )
 
 // drawGlyph draws a glyph centred at (x, y) fitting a box of the given size.
@@ -280,6 +281,11 @@ func drawGlyph(dst *ebiten.Image, gl glyph, x, y, s float64, col color.NRGBA) {
 		p.QuadTo(float32(x+h*.75), float32(y), float32(x), float32(y+h*.9))
 		p.QuadTo(float32(x-h*.75), float32(y), float32(x), float32(y-h*.9))
 		strokePath(dst, &p, w, col)
+	case gPeople: // two trainers (Friends)
+		disc(dst, x+h*.38, y-h*.42, h*.32, alpha(col, .75))
+		roundRect(dst, x+h*.02, y-h*.05, h*.75, h*.75, h*.3, alpha(col, .75))
+		disc(dst, x-h*.25, y-h*.32, h*.38, col)
+		roundRect(dst, x-h*.7, y+h*.1, h*.9, h*.8, h*.35, col)
 	case gGift:
 		rect(dst, x-h*.85, y-h*.25, h*1.7, h*1.1, c(220, 70, 70, 255))
 		rect(dst, x-h, y-h*.55, h*2, h*.38, c(240, 90, 90, 255))

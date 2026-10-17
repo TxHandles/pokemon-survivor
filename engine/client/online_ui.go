@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -40,6 +41,7 @@ type onlineState struct {
 	name      string
 	loginBusy bool
 	loginErr  string
+	loginAt   time.Time
 	mu        sync.Mutex
 	events    []func()
 	started   *net.StartMsg // the start we already acted on
@@ -86,9 +88,10 @@ func (g *Game) onlineNet() net.Net {
 
 // onlineLogin resolves our uid / name once (async); the screen shows progress until it is done.
 func (g *Game) onlineLogin() {
-	if g.on.uid != "" || g.on.loginBusy {
+	if g.on.uid != "" || g.on.loginBusy || (g.on.loginErr != "" && time.Since(g.on.loginAt) < 30*time.Second) {
 		return
 	}
+	g.on.loginAt = time.Now()
 	n := g.onlineNet()
 	if ok, why := n.Available(); !ok {
 		g.on.loginErr = why
@@ -345,9 +348,13 @@ func (g *Game) menuRoomLobby() {
 			col := playerCols[i]
 			if i >= len(r.Players) {
 				roundRect(dst, x, y, cw, h, 14, c(20, 25, 38, 160))
-				drawText(dst, "Open seat", x+cw/2, y+h/2-10, 18, true, alpha(dim, .6), text.AlignCenter, false)
+				ty := y + h/2
+				if r.Host && i == len(r.Players) {
+					ty = y + h - 70 // the friends list sits above
+				}
+				drawText(dst, "Open seat", x+cw/2, ty-10, 18, true, alpha(dim, .6), text.AlignCenter, false)
 				if r.Host && r.Code != "" {
-					drawText(dst, "Share the code "+r.Code, x+cw/2, y+h/2+16, 12, false, alpha(dim, .6), text.AlignCenter, false)
+					drawText(dst, "Share the code "+r.Code, x+cw/2, ty+16, 12, false, alpha(dim, .6), text.AlignCenter, false)
 				}
 				return
 			}
@@ -400,6 +407,9 @@ func (g *Game) menuRoomLobby() {
 				drawText(dst, ln, x+cw/2, y+h-50+float64(j)*16, 12, true, sc, text.AlignCenter, false)
 			}
 		})
+	}
+	if r.Host && r.Code != "" && len(r.Players) < 4 { // invite friends into the first open seat
+		g.lobbyInvites(x0+float64(len(r.Players))*(cw+10), 150, cw, click)
 	}
 	// bottom: run setup label + start / ready
 	u.label([4]float64{0, sh - 108, sw, 20}, false, textDraw("Run setup (host): "+r.Label, 13, false, dim, text.AlignCenter))

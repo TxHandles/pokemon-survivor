@@ -114,6 +114,11 @@ func (g *Game) buildMenu() {
 		g.menuColl()
 	case scLife:
 		g.menuLife()
+	case scFriends:
+		g.menuFriends()
+	}
+	if g.scr != scPlay && g.scr != scPause {
+		g.invitePopup()
 	}
 }
 
@@ -522,6 +527,8 @@ func (g *Game) OpenScreen(name string) {
 		g.lbFetch()
 	case "lobby":
 		g.scr = scLobby
+	case "friends":
+		g.scr = scFriends
 	case "coll":
 		g.scr = scColl
 	case "life":
