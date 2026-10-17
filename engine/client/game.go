@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"github.com/TxHandles/pokemon-survivor/engine/lockstep"
 	"io/fs"
 	"math"
 	"math/rand"
@@ -79,6 +80,9 @@ type Game struct {
 	devs      []device
 	coop      bool
 	pas       map[int]*playerAnim
+	on        onlineState
+	nodraw    bool
+	dataIDv   string
 	stickPrev map[ebiten.GamepadID]int
 }
 
@@ -92,6 +96,7 @@ func New(dataFS fs.FS, db *content.DB) *Game {
 	g.scr = scMenu
 	g.audio = NewAudio(g.opt)
 	g.cloud = newCloud()
+	g.dataIDv = dataID(dataFS)
 	for _, p := range db.Pokemon { // first forms: the roster you pick from in this build
 		if p.EvolvesFrom == "" && p.RegionalOf == "" && !p.Legendary {
 			g.roster = append(g.roster, p.ID)
@@ -133,6 +138,9 @@ func (g *Game) startCfg(id, biome string, seed int64, cfg sim.Config) {
 
 // Demo makes the bot play (used for screenshots and an attract mode).
 func (g *Game) Demo(on bool) { g.auto = on }
+
+// NoDraw disables rendering (testing).
+func (g *Game) NoDraw(on bool) { g.nodraw = on }
 
 var bioNames = map[string]string{"normal": "Meadow Plains", "fire": "Volcano", "water": "Lagoon", "electric": "Storm Plateau", "grass": "Deep Forest",
 	"ice": "Glacier", "fighting": "Dojo Ruins", "poison": "Toxic Swamp", "ground": "Canyon", "flying": "Sky Cliffs", "psychic": "Dream Fields",
@@ -304,7 +312,7 @@ func (g *Game) Update() error {
 		g.scr = scMenu
 	case scLobby:
 		g.updateLobby()
-	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings, scDex, scHist, scDaily, scBoards:
+	case scMenu, scChars, scSetup, scShop, scLine, scChal, scXfer, scResult, scSettings, scDex, scHist, scDaily, scBoards, scOnline:
 		g.buildMenu()
 		g.ui.update()
 		if g.ui.clicked {
@@ -313,6 +321,15 @@ func (g *Game) Update() error {
 	case scPlay:
 		g.updatePlay()
 	case scPause:
+		if g.online() {
+			g.onlineStep(sim.Input{})
+			if g.W.State == sim.StateDead {
+				g.finishRun()
+				g.scr = scOver
+				g.overT = 0
+				return nil
+			}
+		}
 		g.touchInput()
 		if keyJust(ebiten.KeyEscape, ebiten.KeyP) || padBtn(ebiten.StandardGamepadButtonCenterRight) || confirm() || g.touch.pauseTapped {
 			g.scr = scPlay
@@ -323,6 +340,7 @@ func (g *Game) Update() error {
 			g.ui.focus = ""
 		}
 		if keyJust(ebiten.KeyQ) || padBtn(ebiten.StandardGamepadButtonRightRight) {
+			g.leaveRoom()
 			g.scr = scMenu // abandon: no rewards (same as the web game)
 			g.ui.focus = ""
 		}
@@ -334,6 +352,7 @@ func (g *Game) Update() error {
 				g.settingsFrom = scPause
 				g.scr = scSettings
 			case 3:
+				g.leaveRoom()
 				g.scr = scMenu
 			}
 		}
@@ -399,6 +418,10 @@ func (g *Game) startSel() {
 
 func (g *Game) updatePlay() {
 	w := g.W
+	if g.online() {
+		g.updateOnlinePlay()
+		return
+	}
 	tin, tactive := g.touchInput()
 	if keyJust(ebiten.KeyEscape, ebiten.KeyP) || padBtn(ebiten.StandardGamepadButtonCenterRight) || (g.touch.pauseTapped && !w.Waiting()) {
 		g.scr = scPause
@@ -414,44 +437,7 @@ func (g *Game) updatePlay() {
 			}
 			return
 		}
-		if w.State == sim.StateLevelUp {
-			if keyJust(ebiten.KeyR) || padBtn(ebiten.StandardGamepadButtonRightLeft) {
-				w.Reroll()
-				g.banMode = false
-			}
-			if (keyJust(ebiten.KeyX) || padBtn(ebiten.StandardGamepadButtonRightTop)) && w.Banishes > 0 {
-				g.banMode = !g.banMode
-			}
-		} else {
-			g.banMode = false
-		}
-		n := g.choiceCount()
-		if n == 0 {
-			return
-		}
-		dx, dy := nav()
-		g.lvSel = (g.lvSel + dx + dy + n) % n
-		for i := 0; i < n; i++ {
-			if keyJust(ebiten.Key1+ebiten.Key(i)) || keyJust(ebiten.KeyNumpad1+ebiten.Key(i)) {
-				g.pick(i)
-				return
-			}
-		}
-		if mx, my := ebiten.CursorPosition(); inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-			if i := g.cardHit(mx, my); i >= 0 {
-				g.pick(i)
-				return
-			}
-		}
-		if tx, ty, ok := g.touchTap(); ok && g.lvDelay > .25 {
-			if i := g.cardHit(int(tx), int(ty)); i >= 0 {
-				g.pick(i)
-				return
-			}
-		}
-		if g.lvDelay > .35 && confirm() {
-			g.pick(g.lvSel)
-		}
+		g.choiceKeys()
 		return
 	case sim.StateDead:
 		g.finishRun()
@@ -491,6 +477,53 @@ func (g *Game) updatePlay() {
 	w.Notes = nil
 }
 
+// choiceKeys handles the keys, clicks and taps on a choice screen (level-up, route, shrine).
+func (g *Game) choiceKeys() {
+	w := g.W
+	if w.State == sim.StateLevelUp {
+		if keyJust(ebiten.KeyR) || padBtn(ebiten.StandardGamepadButtonRightLeft) {
+			if g.online() {
+				g.onlineCmd(lockstep.CmdReroll, 0)
+			} else {
+				w.Reroll()
+			}
+			g.banMode = false
+		}
+		if (keyJust(ebiten.KeyX) || padBtn(ebiten.StandardGamepadButtonRightTop)) && w.Banishes > 0 {
+			g.banMode = !g.banMode
+		}
+	} else {
+		g.banMode = false
+	}
+	n := g.choiceCount()
+	if n == 0 {
+		return
+	}
+	dx, dy := nav()
+	g.lvSel = (g.lvSel + dx + dy + n) % n
+	for i := 0; i < n; i++ {
+		if keyJust(ebiten.Key1+ebiten.Key(i)) || keyJust(ebiten.KeyNumpad1+ebiten.Key(i)) {
+			g.pick(i)
+			return
+		}
+	}
+	if mx, my := ebiten.CursorPosition(); inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
+		if i := g.cardHit(mx, my); i >= 0 {
+			g.pick(i)
+			return
+		}
+	}
+	if tx, ty, ok := g.touchTap(); ok && g.lvDelay > .25 {
+		if i := g.cardHit(int(tx), int(ty)); i >= 0 {
+			g.pick(i)
+			return
+		}
+	}
+	if g.lvDelay > .35 && confirm() {
+		g.pick(g.lvSel)
+	}
+}
+
 // choiceCount: cards on the current choice screen (shrines add "Leave it").
 func (g *Game) choiceCount() int {
 	switch g.W.State {
@@ -503,6 +536,24 @@ func (g *Game) choiceCount() int {
 }
 
 func (g *Game) pick(i int) {
+	if g.online() {
+		switch g.W.State {
+		case sim.StateRoute:
+			g.onlineCmd(lockstep.CmdRoute, i)
+		case sim.StateShrine:
+			g.onlineCmd(lockstep.CmdBoon, i)
+		default:
+			if g.banMode {
+				g.onlineCmd(lockstep.CmdBanish, i)
+				g.banMode = false
+			} else {
+				g.onlineCmd(lockstep.CmdChoose, i)
+			}
+		}
+		g.lvSel = 0
+		g.lvDelay = 0
+		return
+	}
 	switch g.W.State {
 	case sim.StateRoute:
 		g.W.ChooseRoute(i)
@@ -521,6 +572,12 @@ func (g *Game) pick(i int) {
 }
 
 func (g *Game) Draw(dst *ebiten.Image) {
+	if g.nodraw { // testing: skip rendering (headless browsers emulate the GPU slowly)
+		if g.W != nil {
+			drawText(dst, fmt.Sprintf("nodraw  t=%.1f  tick=%d", g.W.T, g.tick), 10, 10, 14, true, white, text.AlignStart, false)
+		}
+		return
+	}
 	switch g.scr {
 	case scTitle:
 		g.drawTitle(dst)
@@ -535,6 +592,7 @@ func (g *Game) Draw(dst *ebiten.Image) {
 		case sim.StateShrine:
 			g.drawShrine(dst)
 		}
+		g.drawOnlineOverlay(dst)
 		if g.scr == scPlay && !g.W.Waiting() {
 			g.drawTouch(dst)
 		}

@@ -453,3 +453,23 @@ func (w *World) freeLevel() {
 
 // UseLocal switches the World's player fields to player i (clients call it before reading P / Slots).
 func (w *World) UseLocal(i int) { w.useP(i) }
+
+// Drop marks player i as gone (disconnected): they stop playing, their pending choices are
+// skipped and, if everyone else is down, the run ends.
+func (w *World) Drop(i int) {
+	if i < 0 || i >= len(w.PL) || w.PL[i].Gone {
+		return
+	}
+	c := w.PL[i]
+	c.Gone = true
+	c.Queue = nil
+	c.In = Input{}
+	if w.Chooser == i && (w.State == StateLevelUp || w.State == StateShrine) {
+		w.Opts, w.Boons = nil, nil
+		w.State = StatePlay
+		w.prompt()
+	}
+	if len(w.aliveIdx()) == 0 && w.State != StateDead {
+		w.State = StateDead
+	}
+}

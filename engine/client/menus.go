@@ -107,6 +107,8 @@ func (g *Game) buildMenu() {
 		g.menuDaily()
 	case scBoards:
 		g.menuBoards()
+	case scOnline:
+		g.menuOnline()
 	}
 }
 
@@ -160,9 +162,7 @@ func (g *Game) menuMain() {
 			u.button("acct", [4]float64{sw - 260, sh - 72, 240, 34}, false, false, btnDraw("Sign in with Google", "", c(159, 232, 255, 255), false), func() { g.cloud.SignIn() })
 		}
 	}
-	bw, bh := 320.0, 46.0
-	x := sw/2 - bw/2
-	y := 192.0
+	bw, bh := 300.0, 46.0
 	ready := g.prof.ReadyChallenges()
 	items := []struct {
 		k, label, sub string
@@ -172,14 +172,15 @@ func (g *Game) menuMain() {
 		{"setup", "Run setup", g.setupSummary(), scSetup},
 		{"shop", "Shop", "Global upgrades: rerolls, banishes, slots, choices", scShop},
 		{"chal", "Challenges", fmt.Sprintf("%d ready to claim", ready), scChal},
-		{"xfer", "Save transfer", "Move progress to and from the web version", scXfer},
-		{"coop", "Local co-op", "Up to 4 players on one screen (keyboard + gamepads, or bots)", scLobby},
+		{"coop", "Local co-op", "Up to 4 on one screen: keyboard, gamepads, bots", scLobby},
+		{"online", "Online co-op", "Host or join a room with a code", scOnline},
 		{"dex", "Pokédex", "Every Pokémon, evolutions and how to unlock them", scDex},
 		{"daily", "Daily run", "Today's shared challenge and the leaderboards", scDaily},
 		{"hist", "Run history", "Your last runs and how each move performed", scHist},
+		{"xfer", "Save transfer", "Move progress to and from the web version", scXfer},
 		{"settings", "Settings", "Volume, music, screen shake, touch controls", scSettings},
 	}
-	for _, it := range items {
+	for i, it := range items {
 		it := it
 		col := c(159, 232, 255, 255)
 		if it.k == "play" {
@@ -188,16 +189,22 @@ func (g *Game) menuMain() {
 		if it.k == "chal" && ready > 0 {
 			col = c(120, 255, 140, 255)
 		}
+		x, y := sw/2-bw-10, 192.0+float64(i)*(bh+8)
+		if i >= 6 {
+			x, y = sw/2+10, 192.0+float64(i-6)*(bh+8)
+		}
 		u.button(it.k, [4]float64{x, y, bw, bh}, false, false, btnDraw(it.label, it.sub, col, false), func() {
 			g.settingsFrom = scMenu
 			if it.to == scLobby {
 				g.seats = nil
 			}
+			if it.to == scOnline && g.on.room == nil {
+				g.on.mode = "menu"
+			}
 			g.scr = it.to
 			g.ui.focus = ""
 			g.ui.scroll = 0
 		})
-		y += bh + 8
 	}
 	u.label([4]float64{0, sh - 36, sw, 20}, false, textDraw("Arrows / stick to move  ·  Enter / A to choose  ·  Esc / B to go back  ·  Saved to "+meta.SavePath(), 12, false, alpha(dim, .8), text.AlignCenter))
 }
@@ -923,6 +930,14 @@ func (g *Game) menuResult() {
 		})
 		y = yy + 30 + 20*float64(len(w.PL))
 	}
+	if g.online() || (g.coop && g.on.room != nil) {
+		if g.on.note != "" {
+			u.label([4]float64{0, y - 4, sw, 20}, false, textDraw(g.on.note, 13, true, c(255, 179, 179, 255), text.AlignCenter))
+		}
+		u.button("again", [4]float64{sw/2 - 250, y + 20, 240, 50}, false, false, btnDraw("Back to the room", "Play again with the same people", gold, false), func() { g.endOnlineRun() })
+		u.button("menu", [4]float64{sw/2 + 10, y + 20, 240, 50}, false, false, btnDraw("Leave", "Main menu", c(159, 232, 255, 255), false), func() { g.leaveRoom(); g.scr = scMenu; g.ui.focus = "" })
+		return
+	}
 	u.button("again", [4]float64{sw/2 - 250, y + 20, 240, 50}, false, false, btnDraw("Play again", "Same Pokémon and setup", gold, false), func() {
 		if g.coop {
 			g.startCoop()
@@ -975,7 +990,11 @@ func (g *Game) finishRun() {
 	g.finished = true
 	w := g.W
 	pr := g.prof
-	w.UseLocal(0)
+	me := 0
+	if g.online() {
+		me = g.on.room.Me
+	}
+	w.UseLocal(me)
 	root := pr.LineRoot(w.P.ID)
 	r0, _, _ := pr.Mastery(root)
 	var moves [][3]any
@@ -997,7 +1016,7 @@ func (g *Game) finishRun() {
 	}
 	kills := w.Kills
 	if g.coop {
-		kills = w.PL[0].Kills
+		kills = w.PL[me].Kills
 	}
 	res := meta.RunResult{CID: w.P.ID, T: w.T, Kills: kills, Lv: w.P.Lv, Win: w.Won, Coins: w.Coins, Tickets: w.Tickets,
 		Elites: w.Stats.Elites, MiniBosses: w.Stats.Minis, EliteTk: w.Stats.EliteTk, Cursed: w.Stats.Cursed, Curses: w.Stats.Curses,
@@ -1043,6 +1062,9 @@ func (g *Game) OpenScreen(name string) {
 		g.lbFetch()
 	case "lobby":
 		g.scr = scLobby
+	case "online":
+		g.scr = scOnline
+		g.on.mode = "menu"
 	default:
 		g.scr = scMenu
 	}

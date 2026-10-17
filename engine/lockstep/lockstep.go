@@ -79,12 +79,13 @@ type Session struct {
 	Err      error
 	NoRemote bool // true when no remote input has ever arrived (shown as "waiting for players")
 	gotAny   bool
-	credit   int // ticks owed to real time (one per Update, capped at MaxCatch)
+	credit   int         // ticks owed to real time (one per Update, capped at MaxCatch)
+	gone     map[int]int // player -> tick from which they are gone (no input expected)
 }
 
 // New starts a session over w (a co-op world with n players) for local player me.
 func New(w *sim.World, n, me, delay int, t Transport) *Session {
-	s := &Session{W: w, N: n, Me: me, Delay: delay, T: t, frames: map[int][]*Frame{}, hashes: map[int]uint64{}, theirs: map[int][]uint64{}, sentTo: -1, Latest: make([]int, n)}
+	s := &Session{W: w, N: n, Me: me, Delay: delay, T: t, frames: map[int][]*Frame{}, hashes: map[int]uint64{}, theirs: map[int][]uint64{}, sentTo: -1, Latest: make([]int, n), gone: map[int]int{}}
 	for i := range s.Latest {
 		s.Latest[i] = -1
 	}
@@ -159,21 +160,62 @@ func (s *Session) Update(local Frame) int {
 func (s *Session) ready(t int) bool {
 	r := s.frames[t]
 	if r == nil {
-		return false
+		if len(s.gone) == s.N {
+			return false
+		}
+		r = s.row(t)
 	}
-	for _, f := range r {
+	for p, f := range r {
 		if f == nil {
+			if gt, ok := s.gone[p]; ok && t >= gt {
+				r[p] = &Frame{}
+				continue
+			}
 			return false
 		}
 	}
 	return true
 }
 
+// Gone marks player p as disconnected from tick t on: their input is empty from then and the sim
+// drops them at that tick. The host decides t (one past the last input it relayed) and tells the
+// others, so every peer drops the player at the same tick.
+func (s *Session) Gone(p, t int) {
+	if p < 0 || p >= s.N || p == s.Me {
+		return
+	}
+	if t < s.Tick {
+		t = s.Tick
+	}
+	if old, ok := s.gone[p]; ok && old <= t {
+		return
+	}
+	s.gone[p] = t
+}
+
+// DropPlayer (host) announces that player p is gone and schedules the drop locally.
+func (s *Session) DropPlayer(p int) {
+	t := s.Latest[p] + 1
+	if t < s.Tick {
+		t = s.Tick
+	}
+	s.Gone(p, t)
+	if s.T != nil {
+		s.T.Send(encodeGone(t, p))
+	}
+}
+
+// IsGone reports whether player p has been dropped.
+func (s *Session) IsGone(p int) bool { _, ok := s.gone[p]; return ok }
+
 // WaitingOn lists the players whose input for the next tick is missing.
 func (s *Session) WaitingOn() []int {
 	var out []int
 	r := s.frames[s.Tick]
 	for p := 0; p < s.N; p++ {
+		if _, g := s.gone[p]; g {
+			continue
+		}
 		if r == nil || r[p] == nil {
 			out = append(out, p)
 		}
@@ -192,6 +234,11 @@ func (s *Session) step() {
 	}
 	for p, f := range r {
 		w.SetInput(p, f.input())
+	}
+	for p, gt := range s.gone {
+		if gt == s.Tick {
+			w.Drop(p)
+		}
 	}
 	w.Step(Tick, r[0].input())
 	delete(s.frames, s.Tick)
@@ -273,6 +320,8 @@ func (s *Session) recv() {
 			s.put(t, p, f, false)
 		case msgHash:
 			s.check(t, h, p)
+		case msgGone:
+			s.Gone(p, t)
 		}
 	}
 }
@@ -282,7 +331,16 @@ func (s *Session) recv() {
 const (
 	msgInput = 1
 	msgHash  = 2
+	msgGone  = 3
 )
+
+// gone: [3][tick u32][player u8]
+func encodeGone(t, p int) []byte {
+	b := make([]byte, 0, 6)
+	b = append(b, msgGone)
+	b = binary.LittleEndian.AppendUint32(b, uint32(t))
+	return append(b, byte(p))
+}
 
 // input: [1][tick u32][player u8][mx i8][my i8][dash u8][ncmd u8]([kind u8][arg i8])*
 func encodeInput(t, p int, f *Frame) []byte {
@@ -330,6 +388,7 @@ func decode(b []byte) (kind, t, p int, f *Frame, h uint64, err error) {
 			return 0, 0, 0, nil, 0, errBad
 		}
 		h = binary.LittleEndian.Uint64(b[6:14])
+	case msgGone:
 	default:
 		return 0, 0, 0, nil, 0, errBad
 	}

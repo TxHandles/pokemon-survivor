@@ -30,6 +30,18 @@ func main() {
 	if opts["touch"] != "" { // force the touch overlay on (screenshots / testing)
 		g.ForceTouch()
 	}
+	if opts["nodraw"] == "1" { // testing: no rendering
+		g.NoDraw(true)
+	}
+	if m := opts["signal"]; m != "" { // test signalling for online rooms: local (tabs) or http (page origin)
+		g.SignalMode(m)
+	}
+	if c := opts["host"]; c != "" { // host an online room with this code right away (testing; &auto=1 starts by itself)
+		g.AutoHost(c, opts["auto"] == "1")
+	}
+	if c := opts["join"]; c != "" { // join an online room right away (testing; &auto=1 readies up by itself)
+		g.AutoJoin(c, opts["auto"] == "1")
+	}
 	if sc := opts["screen"]; sc != "" { // open a menu screen directly (screenshots / testing)
 		g.OpenScreen(sc)
 	}
