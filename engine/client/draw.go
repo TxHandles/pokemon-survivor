@@ -13,12 +13,13 @@ import (
 
 // playerAnim keeps the player sprite's view / facing / animation clock between frames.
 type playerAnim struct {
-	view  string // front | back
-	fx    float64
-	ani   float64
-	rate  float64
-	mvEnd float64
-	lastT float64
+	view   string // front | back
+	fx     float64
+	ani    float64
+	rate   float64
+	mvEnd  float64
+	lastT  float64
+	pxView string // pixel-art preview: front / back / left / right
 }
 
 // drawItem: one depth-sorted thing (no closures, so a crowded frame allocates nothing).
@@ -371,6 +372,9 @@ func (g *Game) drawPlayerI(dst *ebiten.Image, i int, pc *sim.PlayerCtx, x, y flo
 		drawText(dst, "fainted", x, y+16, 10, true, c(255, 140, 140, 255), text.AlignCenter, true)
 		return
 	}
+	if g.drawPxPlayer(dst, a, P, x, y) {
+		return
+	}
 	s := g.assets.Sprite(P.ID)
 	if s == nil {
 		disc(dst, x, y, 12, tc(P.Types[0]))
@@ -506,7 +510,8 @@ func (g *Game) drawEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) {
 	if e.Boss {
 		g.drawBossWindup(dst, e, x, y)
 	}
-	if s == nil {
+	if g.drawPxEnemy(dst, e, x, y) {
+	} else if s == nil {
 		disc(dst, x, y, e.R, tc(e.Type))
 	} else {
 		sh := s.Front
