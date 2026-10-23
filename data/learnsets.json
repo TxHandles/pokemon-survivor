@@ -13,7 +13,30 @@
     "grass_seedbomb",
     "grass_petalblizzard",
     "grass_solarbeam",
-    "grass_frenzyplant"
+    "grass_frenzyplant",
+    "grass_sleeppowder",
+    "grass_spore",
+    "grass_needlearm",
+    "grass_grasswhistle",
+    "grass_leafblade",
+    "grass_woodhammer",
+    "grass_grasspledge",
+    "grass_hornleech",
+    "grass_solarblade",
+    "grass_tropkick",
+    "grass_sappyseed",
+    "grass_drumbeating",
+    "grass_snaptrap",
+    "grass_branchpoke",
+    "grass_appleacid",
+    "grass_gravapple",
+    "grass_grassyglide",
+    "grass_chloroblast",
+    "grass_flowertrick",
+    "grass_trailblaze",
+    "grass_matchagotcha",
+    "grass_syrupbomb",
+    "grass_ivycudgel"
    ],
    "secondType": {
     "poison": [
@@ -26,7 +49,13 @@
      "poison_sludgebomb",
      "poison_venoshock",
      "poison_toxicspikes",
-     "poison_sludgewave"
+     "poison_sludgewave",
+     "poison_poisonpowder",
+     "poison_acidspray",
+     "poison_shellsidearm",
+     "poison_direclaw",
+     "poison_noxioustorque",
+     "poison_malignantchain"
     ]
    }
   },
@@ -42,7 +71,30 @@
     "grass_petalblizzard",
     "grass_energyball",
     "grass_seedflare",
-    "grass_leafstorm"
+    "grass_leafstorm",
+    "grass_sleeppowder",
+    "grass_spore",
+    "grass_needlearm",
+    "grass_grasswhistle",
+    "grass_leafblade",
+    "grass_woodhammer",
+    "grass_grasspledge",
+    "grass_hornleech",
+    "grass_solarblade",
+    "grass_tropkick",
+    "grass_sappyseed",
+    "grass_drumbeating",
+    "grass_snaptrap",
+    "grass_branchpoke",
+    "grass_appleacid",
+    "grass_gravapple",
+    "grass_grassyglide",
+    "grass_chloroblast",
+    "grass_flowertrick",
+    "grass_trailblaze",
+    "grass_matchagotcha",
+    "grass_syrupbomb",
+    "grass_ivycudgel"
    ],
    "secondType": {
     "poison": [
@@ -55,7 +107,13 @@
      "poison_sludgebomb",
      "poison_venoshock",
      "poison_toxicspikes",
-     "poison_sludgewave"
+     "poison_sludgewave",
+     "poison_poisonpowder",
+     "poison_acidspray",
+     "poison_shellsidearm",
+     "poison_direclaw",
+     "poison_noxioustorque",
+     "poison_malignantchain"
     ]
    }
   },
@@ -71,7 +129,29 @@
     "fire_blazekick",
     "fire_inferno",
     "fire_fireblast",
-    "fire_flareblitz"
+    "fire_flareblitz",
+    "fire_blastburn",
+    "fire_magmastorm",
+    "fire_flameburst",
+    "fire_firepledge",
+    "fire_searingshot",
+    "fire_blueflare",
+    "fire_fierydance",
+    "fire_vcreate",
+    "fire_fusionflare",
+    "fire_mysticalfire",
+    "fire_burnup",
+    "fire_shelltrap",
+    "fire_mindblown",
+    "fire_sizzlyslide",
+    "fire_pyroball",
+    "fire_burningjealousy",
+    "fire_ragingfury",
+    "fire_torchsong",
+    "fire_armorcannon",
+    "fire_bitterblade",
+    "fire_blazingtorque",
+    "fire_temperflare"
    ],
    "secondType": {
     "flying": [
@@ -84,7 +164,14 @@
      "flying_fly",
      "flying_tailwind",
      "flying_hurricane",
-     "flying_bravebird"
+     "flying_bravebird",
+     "flying_chatter",
+     "flying_skydrop",
+     "flying_dragonascent",
+     "flying_beakblast",
+     "flying_floatyfall",
+     "flying_dualwingbeat",
+     "flying_bleakwindstorm"
     ]
    }
   },
@@ -103,7 +190,29 @@
     "fire_fireblast",
     "fire_eruption",
     "fire_overheat",
-    "fire_sacredfire"
+    "fire_sacredfire",
+    "fire_blastburn",
+    "fire_magmastorm",
+    "fire_flameburst",
+    "fire_firepledge",
+    "fire_searingshot",
+    "fire_blueflare",
+    "fire_fierydance",
+    "fire_vcreate",
+    "fire_fusionflare",
+    "fire_mysticalfire",
+    "fire_burnup",
+    "fire_shelltrap",
+    "fire_mindblown",
+    "fire_sizzlyslide",
+    "fire_pyroball",
+    "fire_burningjealousy",
+    "fire_ragingfury",
+    "fire_torchsong",
+    "fire_armorcannon",
+    "fire_bitterblade",
+    "fire_blazingtorque",
+    "fire_temperflare"
    ]
   },
   "growl": {
@@ -121,7 +230,29 @@
     "fire_inferno",
     "fire_fireblast",
     "fire_flareblitz",
-    "fire_sacredfire"
+    "fire_sacredfire",
+    "fire_blastburn",
+    "fire_magmastorm",
+    "fire_flameburst",
+    "fire_firepledge",
+    "fire_searingshot",
+    "fire_blueflare",
+    "fire_fierydance",
+    "fire_vcreate",
+    "fire_fusionflare",
+    "fire_mysticalfire",
+    "fire_burnup",
+    "fire_shelltrap",
+    "fire_mindblown",
+    "fire_sizzlyslide",
+    "fire_pyroball",
+    "fire_burningjealousy",
+    "fire_ragingfury",
+    "fire_torchsong",
+    "fire_armorcannon",
+    "fire_bitterblade",
+    "fire_blazingtorque",
+    "fire_temperflare"
    ]
   },
   "fireleg": {
@@ -136,7 +267,29 @@
     "fire_fireblast",
     "fire_eruption",
     "fire_overheat",
-    "fire_sacredfire"
+    "fire_sacredfire",
+    "fire_blastburn",
+    "fire_magmastorm",
+    "fire_flameburst",
+    "fire_firepledge",
+    "fire_searingshot",
+    "fire_blueflare",
+    "fire_fierydance",
+    "fire_vcreate",
+    "fire_fusionflare",
+    "fire_mysticalfire",
+    "fire_burnup",
+    "fire_shelltrap",
+    "fire_mindblown",
+    "fire_sizzlyslide",
+    "fire_pyroball",
+    "fire_burningjealousy",
+    "fire_ragingfury",
+    "fire_torchsong",
+    "fire_armorcannon",
+    "fire_bitterblade",
+    "fire_blazingtorque",
+    "fire_temperflare"
    ],
    "secondType": {
     "flying": [
@@ -149,7 +302,14 @@
      "flying_hurricane",
      "flying_bravebird",
      "flying_skyattack",
-     "flying_aeroblast"
+     "flying_aeroblast",
+     "flying_chatter",
+     "flying_skydrop",
+     "flying_dragonascent",
+     "flying_beakblast",
+     "flying_floatyfall",
+     "flying_dualwingbeat",
+     "flying_bleakwindstorm"
     ]
    }
   },
@@ -168,7 +328,25 @@
     "water_waterfall",
     "water_hydropump",
     "water_hydrocannon",
-    "water_wavecrash"
+    "water_wavecrash",
+    "water_clamp",
+    "water_crabhammer",
+    "water_octazooka",
+    "water_dive",
+    "water_waterpledge",
+    "water_razorshell",
+    "water_steameruption",
+    "water_originpulse",
+    "water_sparklingaria",
+    "water_splishysplash",
+    "water_bouncybubble",
+    "water_flipturn",
+    "water_surgingstrikes",
+    "water_jetpunch",
+    "water_tripledive",
+    "water_hydrosteam",
+    "water_chillingwater",
+    "water_aquacutter"
    ]
   },
   "psy": {
@@ -186,7 +364,25 @@
     "water_muddywater",
     "water_aquatail",
     "water_hydropump",
-    "water_waterspout"
+    "water_waterspout",
+    "water_clamp",
+    "water_crabhammer",
+    "water_octazooka",
+    "water_dive",
+    "water_waterpledge",
+    "water_razorshell",
+    "water_steameruption",
+    "water_originpulse",
+    "water_sparklingaria",
+    "water_splishysplash",
+    "water_bouncybubble",
+    "water_flipturn",
+    "water_surgingstrikes",
+    "water_jetpunch",
+    "water_tripledive",
+    "water_hydrosteam",
+    "water_chillingwater",
+    "water_aquacutter"
    ]
   },
   "poli": {
@@ -201,7 +397,25 @@
     "water_surf",
     "water_waterfall",
     "water_liquidation",
-    "water_hydropump"
+    "water_hydropump",
+    "water_clamp",
+    "water_crabhammer",
+    "water_octazooka",
+    "water_dive",
+    "water_waterpledge",
+    "water_razorshell",
+    "water_steameruption",
+    "water_originpulse",
+    "water_sparklingaria",
+    "water_splishysplash",
+    "water_bouncybubble",
+    "water_flipturn",
+    "water_surgingstrikes",
+    "water_jetpunch",
+    "water_tripledive",
+    "water_hydrosteam",
+    "water_chillingwater",
+    "water_aquacutter"
    ],
    "secondType": {
     "fighting": [
@@ -214,7 +428,32 @@
      "fighting_submission",
      "fighting_closecombat",
      "fighting_dynamicpunch",
-     "fighting_focusblast"
+     "fighting_focusblast",
+     "fighting_jumpkick",
+     "fighting_highjumpkick",
+     "fighting_triplekick",
+     "fighting_vitalthrow",
+     "fighting_focuspunch",
+     "fighting_revenge",
+     "fighting_armthrust",
+     "fighting_skyuppercut",
+     "fighting_wakeupslap",
+     "fighting_hammerarm",
+     "fighting_stormthrow",
+     "fighting_lowsweep",
+     "fighting_circlethrow",
+     "fighting_sacredsword",
+     "fighting_secretsword",
+     "fighting_flyingpress",
+     "fighting_poweruppunch",
+     "fighting_bodypress",
+     "fighting_meteorassault",
+     "fighting_thunderouskick",
+     "fighting_triplearrows",
+     "fighting_axekick",
+     "fighting_collisioncourse",
+     "fighting_combattorque",
+     "fighting_upperhand"
     ]
    }
   },
@@ -233,7 +472,22 @@
     "electric_discharge",
     "electric_wildcharge",
     "electric_thunder",
-    "electric_volttackle"
+    "electric_volttackle",
+    "electric_boltstrike",
+    "electric_fusionbolt",
+    "electric_zingzap",
+    "electric_plasmafists",
+    "electric_zippyzap",
+    "electric_buzzybuzz",
+    "electric_aurawheel",
+    "electric_overdrive",
+    "electric_thundercage",
+    "electric_wildboltstorm",
+    "electric_electrodrift",
+    "electric_doubleshock",
+    "electric_electroshot",
+    "electric_thunderclap",
+    "electric_supercellslam"
    ]
   },
   "normal": {
@@ -251,7 +505,64 @@
     "normal_doubleedge",
     "normal_uproar",
     "normal_hyperbeam",
-    "normal_gigaimpact"
+    "normal_gigaimpact",
+    "normal_pound",
+    "normal_cometpunch",
+    "normal_megapunch",
+    "normal_scratch",
+    "normal_visegrip",
+    "normal_razorwind",
+    "normal_cut",
+    "normal_bind",
+    "normal_slam",
+    "normal_stomp",
+    "normal_megakick",
+    "normal_headbutt",
+    "normal_hornattack",
+    "normal_furyattack",
+    "normal_wrap",
+    "normal_takedown",
+    "normal_thrash",
+    "normal_supersonic",
+    "normal_strength",
+    "normal_rage",
+    "normal_selfdestruct",
+    "normal_eggbomb",
+    "normal_skullbash",
+    "normal_spikecannon",
+    "normal_constrict",
+    "normal_glare",
+    "normal_barrage",
+    "normal_lovelykiss",
+    "normal_dizzypunch",
+    "normal_slash",
+    "normal_snore",
+    "normal_falseswipe",
+    "normal_attract",
+    "normal_extremespeed",
+    "normal_fakeout",
+    "normal_facade",
+    "normal_smellingsalts",
+    "normal_yawn",
+    "normal_teeterdance",
+    "normal_crushclaw",
+    "normal_covet",
+    "normal_feint",
+    "normal_lastresort",
+    "normal_rockclimb",
+    "normal_doublehit",
+    "normal_echoedvoice",
+    "normal_chipaway",
+    "normal_retaliate",
+    "normal_tailslap",
+    "normal_headcharge",
+    "normal_relicsong",
+    "normal_holdback",
+    "normal_populationbomb",
+    "normal_ragingbull",
+    "normal_hyperdrill",
+    "normal_bloodmoon",
+    "normal_terastarstorm"
    ]
   },
   "igg": {
@@ -266,7 +577,64 @@
     "normal_uproar",
     "normal_doubleedge",
     "normal_boomburst",
-    "normal_hyperbeam"
+    "normal_hyperbeam",
+    "normal_pound",
+    "normal_cometpunch",
+    "normal_megapunch",
+    "normal_scratch",
+    "normal_visegrip",
+    "normal_razorwind",
+    "normal_cut",
+    "normal_bind",
+    "normal_slam",
+    "normal_stomp",
+    "normal_megakick",
+    "normal_headbutt",
+    "normal_hornattack",
+    "normal_furyattack",
+    "normal_wrap",
+    "normal_takedown",
+    "normal_thrash",
+    "normal_supersonic",
+    "normal_strength",
+    "normal_rage",
+    "normal_selfdestruct",
+    "normal_eggbomb",
+    "normal_skullbash",
+    "normal_spikecannon",
+    "normal_constrict",
+    "normal_glare",
+    "normal_barrage",
+    "normal_lovelykiss",
+    "normal_dizzypunch",
+    "normal_slash",
+    "normal_snore",
+    "normal_falseswipe",
+    "normal_attract",
+    "normal_extremespeed",
+    "normal_fakeout",
+    "normal_facade",
+    "normal_smellingsalts",
+    "normal_yawn",
+    "normal_teeterdance",
+    "normal_crushclaw",
+    "normal_covet",
+    "normal_feint",
+    "normal_lastresort",
+    "normal_rockclimb",
+    "normal_doublehit",
+    "normal_echoedvoice",
+    "normal_chipaway",
+    "normal_retaliate",
+    "normal_tailslap",
+    "normal_headcharge",
+    "normal_relicsong",
+    "normal_holdback",
+    "normal_populationbomb",
+    "normal_ragingbull",
+    "normal_hyperdrill",
+    "normal_bloodmoon",
+    "normal_terastarstorm"
    ],
    "secondType": {
     "fairy": [
@@ -298,7 +666,64 @@
     "normal_uproar",
     "normal_hypervoice",
     "normal_hyperbeam",
-    "normal_explosion"
+    "normal_explosion",
+    "normal_pound",
+    "normal_cometpunch",
+    "normal_megapunch",
+    "normal_scratch",
+    "normal_visegrip",
+    "normal_razorwind",
+    "normal_cut",
+    "normal_bind",
+    "normal_slam",
+    "normal_stomp",
+    "normal_megakick",
+    "normal_headbutt",
+    "normal_hornattack",
+    "normal_furyattack",
+    "normal_wrap",
+    "normal_takedown",
+    "normal_thrash",
+    "normal_supersonic",
+    "normal_strength",
+    "normal_rage",
+    "normal_selfdestruct",
+    "normal_eggbomb",
+    "normal_skullbash",
+    "normal_spikecannon",
+    "normal_constrict",
+    "normal_glare",
+    "normal_barrage",
+    "normal_lovelykiss",
+    "normal_dizzypunch",
+    "normal_slash",
+    "normal_snore",
+    "normal_falseswipe",
+    "normal_attract",
+    "normal_extremespeed",
+    "normal_fakeout",
+    "normal_facade",
+    "normal_smellingsalts",
+    "normal_yawn",
+    "normal_teeterdance",
+    "normal_crushclaw",
+    "normal_covet",
+    "normal_feint",
+    "normal_lastresort",
+    "normal_rockclimb",
+    "normal_doublehit",
+    "normal_echoedvoice",
+    "normal_chipaway",
+    "normal_retaliate",
+    "normal_tailslap",
+    "normal_headcharge",
+    "normal_relicsong",
+    "normal_holdback",
+    "normal_populationbomb",
+    "normal_ragingbull",
+    "normal_hyperdrill",
+    "normal_bloodmoon",
+    "normal_terastarstorm"
    ]
   },
   "cater": {
@@ -313,7 +738,13 @@
     "bug_silverwind",
     "bug_pollenpuff",
     "bug_bugbuzz",
-    "bug_quiverdance"
+    "bug_quiverdance",
+    "bug_steamroller",
+    "bug_fellstinger",
+    "bug_firstimpression",
+    "bug_lunge",
+    "bug_skittersmack",
+    "bug_pounce"
    ],
    "secondType": {
     "flying": [
@@ -326,7 +757,14 @@
      "flying_tailwind",
      "flying_oblivionwing",
      "flying_hurricane",
-     "flying_skyattack"
+     "flying_skyattack",
+     "flying_chatter",
+     "flying_skydrop",
+     "flying_dragonascent",
+     "flying_beakblast",
+     "flying_floatyfall",
+     "flying_dualwingbeat",
+     "flying_bleakwindstorm"
     ]
    }
   },
@@ -342,7 +780,13 @@
     "bug_uturn",
     "bug_stickyweb",
     "bug_megahorn",
-    "bug_attackorder"
+    "bug_attackorder",
+    "bug_steamroller",
+    "bug_fellstinger",
+    "bug_firstimpression",
+    "bug_lunge",
+    "bug_skittersmack",
+    "bug_pounce"
    ],
    "secondType": {
     "poison": [
@@ -355,7 +799,13 @@
      "poison_crosspoison",
      "poison_venoshock",
      "poison_sludgebomb",
-     "poison_gunkshot"
+     "poison_gunkshot",
+     "poison_poisonpowder",
+     "poison_acidspray",
+     "poison_shellsidearm",
+     "poison_direclaw",
+     "poison_noxioustorque",
+     "poison_malignantchain"
     ]
    }
   },
@@ -371,7 +821,13 @@
     "bug_pollenpuff",
     "bug_silverwind",
     "bug_attackorder",
-    "bug_megahorn"
+    "bug_megahorn",
+    "bug_steamroller",
+    "bug_fellstinger",
+    "bug_firstimpression",
+    "bug_lunge",
+    "bug_skittersmack",
+    "bug_pounce"
    ],
    "secondType": {
     "grass": [
@@ -384,7 +840,30 @@
      "grass_seedbomb",
      "grass_seedflare",
      "grass_energyball",
-     "grass_solarbeam"
+     "grass_solarbeam",
+     "grass_sleeppowder",
+     "grass_spore",
+     "grass_needlearm",
+     "grass_grasswhistle",
+     "grass_leafblade",
+     "grass_woodhammer",
+     "grass_grasspledge",
+     "grass_hornleech",
+     "grass_solarblade",
+     "grass_tropkick",
+     "grass_sappyseed",
+     "grass_drumbeating",
+     "grass_snaptrap",
+     "grass_branchpoke",
+     "grass_appleacid",
+     "grass_gravapple",
+     "grass_grassyglide",
+     "grass_chloroblast",
+     "grass_flowertrick",
+     "grass_trailblaze",
+     "grass_matchagotcha",
+     "grass_syrupbomb",
+     "grass_ivycudgel"
     ]
    }
   },
@@ -400,7 +879,13 @@
     "bug_silverwind",
     "bug_pollenpuff",
     "bug_bugbuzz",
-    "bug_quiverdance"
+    "bug_quiverdance",
+    "bug_steamroller",
+    "bug_fellstinger",
+    "bug_firstimpression",
+    "bug_lunge",
+    "bug_skittersmack",
+    "bug_pounce"
    ],
    "secondType": {
     "poison": [
@@ -413,7 +898,13 @@
      "poison_sludgebomb",
      "poison_venoshock",
      "poison_toxicspikes",
-     "poison_sludgewave"
+     "poison_sludgewave",
+     "poison_poisonpowder",
+     "poison_acidspray",
+     "poison_shellsidearm",
+     "poison_direclaw",
+     "poison_noxioustorque",
+     "poison_malignantchain"
     ]
    }
   },
@@ -432,7 +923,14 @@
     "flying_fly",
     "flying_hurricane",
     "flying_bravebird",
-    "flying_aeroblast"
+    "flying_aeroblast",
+    "flying_chatter",
+    "flying_skydrop",
+    "flying_dragonascent",
+    "flying_beakblast",
+    "flying_floatyfall",
+    "flying_dualwingbeat",
+    "flying_bleakwindstorm"
    ]
   },
   "spear": {
@@ -447,7 +945,14 @@
     "flying_fly",
     "flying_bounce",
     "flying_bravebird",
-    "flying_skyattack"
+    "flying_skyattack",
+    "flying_chatter",
+    "flying_skydrop",
+    "flying_dragonascent",
+    "flying_beakblast",
+    "flying_floatyfall",
+    "flying_dualwingbeat",
+    "flying_bleakwindstorm"
    ],
    "secondType": {
     "normal": [
@@ -460,7 +965,64 @@
      "normal_doubleedge",
      "normal_uproar",
      "normal_hyperbeam",
-     "normal_gigaimpact"
+     "normal_gigaimpact",
+     "normal_pound",
+     "normal_cometpunch",
+     "normal_megapunch",
+     "normal_scratch",
+     "normal_visegrip",
+     "normal_razorwind",
+     "normal_cut",
+     "normal_bind",
+     "normal_slam",
+     "normal_stomp",
+     "normal_megakick",
+     "normal_headbutt",
+     "normal_hornattack",
+     "normal_furyattack",
+     "normal_wrap",
+     "normal_takedown",
+     "normal_thrash",
+     "normal_supersonic",
+     "normal_strength",
+     "normal_rage",
+     "normal_selfdestruct",
+     "normal_eggbomb",
+     "normal_skullbash",
+     "normal_spikecannon",
+     "normal_constrict",
+     "normal_glare",
+     "normal_barrage",
+     "normal_lovelykiss",
+     "normal_dizzypunch",
+     "normal_slash",
+     "normal_snore",
+     "normal_falseswipe",
+     "normal_attract",
+     "normal_extremespeed",
+     "normal_fakeout",
+     "normal_facade",
+     "normal_smellingsalts",
+     "normal_yawn",
+     "normal_teeterdance",
+     "normal_crushclaw",
+     "normal_covet",
+     "normal_feint",
+     "normal_lastresort",
+     "normal_rockclimb",
+     "normal_doublehit",
+     "normal_echoedvoice",
+     "normal_chipaway",
+     "normal_retaliate",
+     "normal_tailslap",
+     "normal_headcharge",
+     "normal_relicsong",
+     "normal_holdback",
+     "normal_populationbomb",
+     "normal_ragingbull",
+     "normal_hyperdrill",
+     "normal_bloodmoon",
+     "normal_terastarstorm"
     ]
    }
   },
@@ -479,7 +1041,13 @@
     "poison_mortalspin",
     "poison_venoshock",
     "poison_gunkshot",
-    "poison_belch"
+    "poison_belch",
+    "poison_poisonpowder",
+    "poison_acidspray",
+    "poison_shellsidearm",
+    "poison_direclaw",
+    "poison_noxioustorque",
+    "poison_malignantchain"
    ]
   },
   "nidof": {
@@ -494,7 +1062,13 @@
     "poison_poisonjab",
     "poison_sludgebomb",
     "poison_venoshock",
-    "poison_sludgewave"
+    "poison_sludgewave",
+    "poison_poisonpowder",
+    "poison_acidspray",
+    "poison_shellsidearm",
+    "poison_direclaw",
+    "poison_noxioustorque",
+    "poison_malignantchain"
    ],
    "secondType": {
     "ground": [
@@ -507,7 +1081,13 @@
      "ground_stompingtantrum",
      "ground_highhorsepower",
      "ground_earthquake",
-     "ground_precipiceblades"
+     "ground_precipiceblades",
+     "ground_bonerush",
+     "ground_mudbomb",
+     "ground_thousandarrows",
+     "ground_thousandwaves",
+     "ground_landswrath",
+     "ground_sandsearstorm"
     ]
    }
   },
@@ -523,7 +1103,13 @@
     "poison_toxicspikes",
     "poison_mortalspin",
     "poison_sludgebomb",
-    "poison_gunkshot"
+    "poison_gunkshot",
+    "poison_poisonpowder",
+    "poison_acidspray",
+    "poison_shellsidearm",
+    "poison_direclaw",
+    "poison_noxioustorque",
+    "poison_malignantchain"
    ],
    "secondType": {
     "ground": [
@@ -536,7 +1122,13 @@
      "ground_highhorsepower",
      "ground_spikes",
      "ground_earthquake",
-     "ground_headlongrush"
+     "ground_headlongrush",
+     "ground_bonerush",
+     "ground_mudbomb",
+     "ground_thousandarrows",
+     "ground_thousandwaves",
+     "ground_landswrath",
+     "ground_sandsearstorm"
     ]
    }
   },
@@ -552,7 +1144,13 @@
     "poison_crosspoison",
     "poison_venoshock",
     "poison_sludgebomb",
-    "poison_gunkshot"
+    "poison_gunkshot",
+    "poison_poisonpowder",
+    "poison_acidspray",
+    "poison_shellsidearm",
+    "poison_direclaw",
+    "poison_noxioustorque",
+    "poison_malignantchain"
    ],
    "secondType": {
     "flying": [
@@ -565,7 +1163,14 @@
      "flying_oblivionwing",
      "flying_tailwind",
      "flying_bravebird",
-     "flying_skyattack"
+     "flying_skyattack",
+     "flying_chatter",
+     "flying_skydrop",
+     "flying_dragonascent",
+     "flying_beakblast",
+     "flying_floatyfall",
+     "flying_dualwingbeat",
+     "flying_bleakwindstorm"
     ]
    }
   },
@@ -584,7 +1189,13 @@
     "poison_venoshock",
     "poison_gunkshot",
     "poison_sludgewave",
-    "poison_belch"
+    "poison_belch",
+    "poison_poisonpowder",
+    "poison_acidspray",
+    "poison_shellsidearm",
+    "poison_direclaw",
+    "poison_noxioustorque",
+    "poison_malignantchain"
    ]
   },
   "sand": {
@@ -602,7 +1213,13 @@
     "ground_spikes",
     "ground_stompingtantrum",
     "ground_earthquake",
-    "ground_precipiceblades"
+    "ground_precipiceblades",
+    "ground_bonerush",
+    "ground_mudbomb",
+    "ground_thousandarrows",
+    "ground_thousandwaves",
+    "ground_landswrath",
+    "ground_sandsearstorm"
    ]
   },
   "ground": {
@@ -620,7 +1237,13 @@
     "ground_stompingtantrum",
     "ground_earthquake",
     "ground_precipiceblades",
-    "ground_headlongrush"
+    "ground_headlongrush",
+    "ground_bonerush",
+    "ground_mudbomb",
+    "ground_thousandarrows",
+    "ground_thousandwaves",
+    "ground_landswrath",
+    "ground_sandsearstorm"
    ]
   },
   "asand": {
@@ -635,7 +1258,11 @@
     "ice_tripleaxel",
     "ice_avalanche",
     "ice_iciclecrash",
-    "ice_blizzard"
+    "ice_blizzard",
+    "ice_glaciate",
+    "ice_freezeshock",
+    "ice_iceburn",
+    "ice_freezyfrost"
    ],
    "secondType": {
     "steel": [
@@ -648,7 +1275,15 @@
      "steel_irontail",
      "steel_smartstrike",
      "steel_heavyslam",
-     "steel_meteormash"
+     "steel_meteormash",
+     "steel_anchorshot",
+     "steel_sunsteelstrike",
+     "steel_doubleironbash",
+     "steel_behemothblade",
+     "steel_behemothbash",
+     "steel_steelroller",
+     "steel_gigatonhammer",
+     "steel_tachyoncutter"
     ]
    }
   },
@@ -664,7 +1299,11 @@
     "ice_freezedry",
     "ice_icehammer",
     "ice_blizzard",
-    "ice_glaciallance"
+    "ice_glaciallance",
+    "ice_glaciate",
+    "ice_freezeshock",
+    "ice_iceburn",
+    "ice_freezyfrost"
    ],
    "secondType": {
     "fairy": [
@@ -693,7 +1332,13 @@
     "ground_earthpower",
     "ground_stompingtantrum",
     "ground_earthquake",
-    "ground_headlongrush"
+    "ground_headlongrush",
+    "ground_bonerush",
+    "ground_mudbomb",
+    "ground_thousandarrows",
+    "ground_thousandwaves",
+    "ground_landswrath",
+    "ground_sandsearstorm"
    ],
    "secondType": {
     "steel": [
@@ -706,7 +1351,15 @@
      "steel_flashcannon",
      "steel_steelbeam",
      "steel_meteormash",
-     "steel_doomdesire"
+     "steel_doomdesire",
+     "steel_anchorshot",
+     "steel_sunsteelstrike",
+     "steel_doubleironbash",
+     "steel_behemothblade",
+     "steel_behemothbash",
+     "steel_steelroller",
+     "steel_gigatonhammer",
+     "steel_tachyoncutter"
     ]
    }
   },
@@ -743,7 +1396,32 @@
     "fighting_submission",
     "fighting_closecombat",
     "fighting_dynamicpunch",
-    "fighting_superpower"
+    "fighting_superpower",
+    "fighting_jumpkick",
+    "fighting_highjumpkick",
+    "fighting_triplekick",
+    "fighting_vitalthrow",
+    "fighting_focuspunch",
+    "fighting_revenge",
+    "fighting_armthrust",
+    "fighting_skyuppercut",
+    "fighting_wakeupslap",
+    "fighting_hammerarm",
+    "fighting_stormthrow",
+    "fighting_lowsweep",
+    "fighting_circlethrow",
+    "fighting_sacredsword",
+    "fighting_secretsword",
+    "fighting_flyingpress",
+    "fighting_poweruppunch",
+    "fighting_bodypress",
+    "fighting_meteorassault",
+    "fighting_thunderouskick",
+    "fighting_triplearrows",
+    "fighting_axekick",
+    "fighting_collisioncourse",
+    "fighting_combattorque",
+    "fighting_upperhand"
    ]
   },
   "fighting": {
@@ -761,7 +1439,32 @@
     "fighting_drainpunch",
     "fighting_dynamicpunch",
     "fighting_closecombat",
-    "fighting_superpower"
+    "fighting_superpower",
+    "fighting_jumpkick",
+    "fighting_highjumpkick",
+    "fighting_triplekick",
+    "fighting_vitalthrow",
+    "fighting_focuspunch",
+    "fighting_revenge",
+    "fighting_armthrust",
+    "fighting_skyuppercut",
+    "fighting_wakeupslap",
+    "fighting_hammerarm",
+    "fighting_stormthrow",
+    "fighting_lowsweep",
+    "fighting_circlethrow",
+    "fighting_sacredsword",
+    "fighting_secretsword",
+    "fighting_flyingpress",
+    "fighting_poweruppunch",
+    "fighting_bodypress",
+    "fighting_meteorassault",
+    "fighting_thunderouskick",
+    "fighting_triplearrows",
+    "fighting_axekick",
+    "fighting_collisioncourse",
+    "fighting_combattorque",
+    "fighting_upperhand"
    ]
   },
   "psychic": {
@@ -779,7 +1482,24 @@
     "psychic_psychicterrain",
     "psychic_expandingforce",
     "psychic_dreameater",
-    "psychic_prismaticlaser"
+    "psychic_prismaticlaser",
+    "psychic_lusterpurge",
+    "psychic_mistball",
+    "psychic_psychoboost",
+    "psychic_synchronoise",
+    "psychic_storedpower",
+    "psychic_hyperspacehole",
+    "psychic_psychicfangs",
+    "psychic_photongeyser",
+    "psychic_glitzyglow",
+    "psychic_freezingglare",
+    "psychic_eeriespell",
+    "psychic_mysticalpower",
+    "psychic_esperwing",
+    "psychic_luminacrash",
+    "psychic_psyblade",
+    "psychic_twinbeam",
+    "psychic_psychicnoise"
    ]
   },
   "rock": {
@@ -815,7 +1535,11 @@
     "ice_icehammer",
     "ice_blizzard",
     "ice_glaciallance",
-    "ice_mountaingale"
+    "ice_mountaingale",
+    "ice_glaciate",
+    "ice_freezeshock",
+    "ice_iceburn",
+    "ice_freezyfrost"
    ]
   },
   "dark": {
@@ -833,7 +1557,17 @@
     "dark_suckerpunch",
     "dark_lashout",
     "dark_foulplay",
-    "dark_fierywrath"
+    "dark_fierywrath",
+    "dark_payback",
+    "dark_darkvoid",
+    "dark_darkestlariat",
+    "dark_powertrip",
+    "dark_baddybad",
+    "dark_falsesurrender",
+    "dark_wickedblow",
+    "dark_ceaselessedge",
+    "dark_kowtowcleave",
+    "dark_wickedtorque"
    ]
   },
   "steel": {
@@ -851,7 +1585,15 @@
     "steel_smartstrike",
     "steel_meteormash",
     "steel_steelbeam",
-    "steel_doomdesire"
+    "steel_doomdesire",
+    "steel_anchorshot",
+    "steel_sunsteelstrike",
+    "steel_doubleironbash",
+    "steel_behemothblade",
+    "steel_behemothbash",
+    "steel_steelroller",
+    "steel_gigatonhammer",
+    "steel_tachyoncutter"
    ]
   },
   "ghost": {
@@ -869,7 +1611,11 @@
     "ghost_bittermalice",
     "ghost_infernalparade",
     "ghost_poltergeist",
-    "ghost_astralbarrage"
+    "ghost_astralbarrage",
+    "ghost_spiritshackle",
+    "ghost_shadowbone",
+    "ghost_spectralthief",
+    "ghost_lastrespects"
    ]
   },
   "dragon": {
@@ -887,7 +1633,13 @@
     "dragon_dragonclaw",
     "dragon_dracometeor",
     "dragon_dragonenergy",
-    "dragon_dynamaxcannon"
+    "dragon_dynamaxcannon",
+    "dragon_roaroftime",
+    "dragon_coreenforcer",
+    "dragon_eternabeam",
+    "dragon_orderup",
+    "dragon_glaiverush",
+    "dragon_ficklebeam"
    ]
   },
   "bell": {
@@ -905,7 +1657,30 @@
     "grass_leafstorm",
     "grass_petaldance",
     "grass_leaftornado",
-    "grass_powerwhip"
+    "grass_powerwhip",
+    "grass_sleeppowder",
+    "grass_spore",
+    "grass_needlearm",
+    "grass_grasswhistle",
+    "grass_leafblade",
+    "grass_woodhammer",
+    "grass_grasspledge",
+    "grass_hornleech",
+    "grass_solarblade",
+    "grass_tropkick",
+    "grass_sappyseed",
+    "grass_drumbeating",
+    "grass_snaptrap",
+    "grass_branchpoke",
+    "grass_appleacid",
+    "grass_gravapple",
+    "grass_grassyglide",
+    "grass_chloroblast",
+    "grass_flowertrick",
+    "grass_trailblaze",
+    "grass_matchagotcha",
+    "grass_syrupbomb",
+    "grass_ivycudgel"
    ]
   }
  }

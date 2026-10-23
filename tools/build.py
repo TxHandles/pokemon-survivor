@@ -9,7 +9,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DD = os.path.join(ROOT, 'data')
 def J(n): return json.load(open(os.path.join(DD, n)))
 def fail(msg): raise SystemExit('DATA ERROR: ' + msg)
-pk = J('pokemon.json')['pokemon']; mv = J('moves.json')['moves']; ls = J('learnsets.json')['learnsets']
+pk = [p for p in J('pokemon.json')['pokemon'] if not p.get('px')];  # pixel-only Pokémon are Go-build only
+mv = J('moves.json')['moves']; ls = J('learnsets.json')['learnsets']
 ab = J('abilities.json')['abilities']; bal = J('balance.json'); world = J('world.json'); spr = J('sprites/sprites.json')['sprites']
 TYPES = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy']
 ids = [p['id'] for p in pk]

@@ -26,6 +26,8 @@ type Pokemon struct {
 	StatsFrom   string          `json:"statsFrom"`
 	StatMult    float64         `json:"statMult"`
 	BaseStats   *Stats          `json:"baseStats"`
+	StatShape   *Stats          `json:"statShape"` // per-stat flavour from the real base stats (Gen 1-3 additions)
+	PX          bool            `json:"px"`        // has only pixel-art sprites (no classic portrait/sheets)
 	Tickets     int             `json:"tickets"`
 	Unlock      json.RawMessage `json:"unlock"`
 	UnlockText  string          `json:"unlockText"`
@@ -216,7 +218,11 @@ func Load(f fs.FS) (*DB, error) {
 				return nil, fmt.Errorf("%s: statsFrom %q has no base stats", p.ID, p.StatsFrom)
 			}
 			m := p.StatMult
-			db.Stats[p.ID] = Stats{b.HP * m, b.Atk * m, b.Def * m, b.Spd * m}
+			s := Stats{b.HP * m, b.Atk * m, b.Def * m, b.Spd * m}
+			if k := p.StatShape; k != nil {
+				s = Stats{s.HP * k.HP, s.Atk * k.Atk, s.Def * k.Def, s.Spd * k.Spd}
+			}
+			db.Stats[p.ID] = s
 		}
 	}
 	return db, nil
@@ -341,6 +347,10 @@ func (db *DB) LearnList(id string) []string {
 // StartMove is the line's starting move.
 func (db *DB) StartMove(id string) string {
 	if ls := db.Learnsets[db.learnRoot(id)]; ls != nil && (db.Moves[ls.Start] == nil || !db.Moves[ls.Start].NoStart) {
+		return ls.Start
+	}
+	// lines without a learnset (the Gen 1-3 additions) open with their type's signature starter move
+	if ls := db.Learnsets[db.ByID[id].Types[0]]; ls != nil && db.Moves[ls.Start] != nil && !db.Moves[ls.Start].NoStart {
 		return ls.Start
 	}
 	for _, m := range db.MoveList {

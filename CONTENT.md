@@ -16,7 +16,7 @@ missing sprites, a learnset naming a move that doesn't exist, an evolution point
 |---|---|
 | `data/pokemon.json` | Every playable Pokémon, in roster order |
 | `data/learnsets.json` | Moves each evolution line can learn |
-| `data/moves.json` | All 345 moves |
+| `data/moves.json` | All moves |
 | `data/abilities.json` | Abilities per type (3 starting, 3 hidden, 1 legendary) |
 | `data/balance.json` | Numbers from the bot balance sweeps (type stat multipliers, per-move damage multipliers) |
 | `data/world.json` | Location names (3 per biome) and location music with loop points |
@@ -71,6 +71,8 @@ missing sprites, a learnset naming a move that doesn't exist, an evolution point
 | `abilities` | First forms only: `{"starting": 0-2, "hidden": 0-2}` — index into its primary type's abilities |
 | `spriteScale` | Size multiplier for big evolutions |
 | `legendary` | `true` for legendaries |
+| `statShape` | Per-stat flavour `{hp, atk, def, spd}` applied on top of `statsFrom` × `statMult` (from the real base stats) |
+| `px` | `true` for Pokémon that only have the overworld pixel sprites (`engine/client/pxart`, keyed by dex number). The Go build plays them; the single-file web build skips them |
 
 ### Unlock rules
 

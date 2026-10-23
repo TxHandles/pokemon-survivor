@@ -5,6 +5,7 @@ import (
 	"image"
 	_ "image/png"
 	"io/fs"
+	"strconv"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -167,6 +168,56 @@ func (a *Assets) Sprite(id string) *SpriteSet {
 			s.Back = s.Front
 		}
 	}
+	if s == nil {
+		s = a.pxSet(id)
+	}
 	a.set[id] = s
 	return s
+}
+
+// pxSet: menus and cards for a Pokémon that only has pixel-art sprites use its front and back
+// overworld frames as the portrait sheets.
+func (a *Assets) pxSet(id string) *SpriteSet {
+	p := a.db.ByID[id]
+	if p == nil || p.Dex <= 0 || p.Form != "" {
+		return nil
+	}
+	ps := pxByDex["d"+strconv.Itoa(p.Dex)]
+	if ps == nil {
+		return nil
+	}
+	sheet := func(v *pxView) *Sheet {
+		if v == nil {
+			return nil
+		}
+		raw, err := pxFS.ReadFile("pxart/" + v.File)
+		if err != nil {
+			return nil
+		}
+		im, _, err := image.Decode(bytes.NewReader(raw))
+		if err != nil {
+			return nil
+		}
+		sv := &content.SpriteView{File: v.File, CW: v.CW, CH: v.CH, OX: -float64(v.CW) / 2, OY: -float64(v.CH),
+			Idle: []int{0, 2}, Idur: []int{600, 600}, Act: []int{3, 4, 4, 5}, Adur: v.Adur, Faces: "right"}
+		img := ebiten.NewImageFromImage(im)
+		sh := &Sheet{V: sv, Img: img, tot: 1200}
+		for i := 0; i < img.Bounds().Dx()/v.CW; i++ {
+			r := image.Rect(i*v.CW, 0, (i+1)*v.CW, v.CH)
+			sh.frames = append(sh.frames, img.SubImage(r).(*ebiten.Image))
+			sh.boxes = append(sh.boxes, alphaBox(im, r))
+		}
+		for _, d := range sv.Adur {
+			sh.atot += d
+		}
+		return sh
+	}
+	f, b := sheet(ps.Views["front"]), sheet(ps.Views["back"])
+	if f == nil {
+		return nil
+	}
+	if b == nil {
+		b = f
+	}
+	return &SpriteSet{Scale: ps.Scale, Front: f, Back: b}
 }

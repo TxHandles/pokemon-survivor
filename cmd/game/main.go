@@ -45,6 +45,9 @@ func main() {
 	if a, ok := opts["fradd"], opts["fraccept"] == "1"; a != "" || ok { // testing: send a friend request / accept requests
 		g.TestFriends(a, ok, opts["name"])
 	}
+	if opts["unlockall"] == "1" { // testing: every Pokémon unlocked
+		g.TestUnlockAll()
+	}
 	if sel := opts["sel"]; sel != "" { // testing: pre-select a Pokémon in the Pokédex
 		g.DexSelect(sel)
 	}

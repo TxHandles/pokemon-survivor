@@ -39,7 +39,7 @@ var modBonus = map[string]float64{"swift": .10, "tough": .15, "brutal": .10, "ho
 func makeRun(c Config) Run {
 	k := float64(c.Tier)
 	hasM := func(m string) bool { return has(c.Mods, m) }
-	r := Run{Tier: c.Tier, Mods: c.Mods, HM: 1 + .12*k, DM: 1 + .08*k, SM: 1 + .02*k, RT: 1 + .05*k, BH: 1, XM: 1, Mult: 1 + .12*k, Lock: c.Lock}
+	r := Run{Tier: c.Tier, Mods: c.Mods, HM: 1.16 + .12*k, DM: 1 + .08*k, SM: 1 + .02*k, RT: 1 + .05*k, BH: 1, XM: 1, Mult: 1 + .12*k, Lock: c.Lock}
 	if hasM("tough") {
 		r.HM *= 1.4
 	}

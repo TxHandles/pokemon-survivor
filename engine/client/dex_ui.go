@@ -716,6 +716,8 @@ func (g *Game) menuDex() {
 	}
 	rows2 := (len(L) + cols - 1) / cols
 	y += float64(rows2)*(ch+8) + 10
+	u.label([4]float64{0, y + 4, sw, 18}, true, textDraw("Overworld sprites: Kanto & Johto ripped by Dragoon, Hoenn by redblueyellow (The Spriters Resource). Pokémon © Nintendo / Game Freak.", 12, false, alpha(webFg, .55), text.AlignCenter))
+	y += 30
 	u.scrollMax = math.Max(0, y-u.area[3])
 	if g.dexTyOpen {
 		opts := append([]string{"all"}, typeOrder...)
@@ -748,3 +750,10 @@ func (g *Game) DexSelect(id string) {
 }
 
 func (g *Game) ScrollTo(y float64) { g.ui.scroll = y; g.ui.scrollMax = y }
+
+// TestUnlockAll (testing only, ?unlockall=1): every Pokémon playable, for screenshots of the roster.
+func (g *Game) TestUnlockAll() {
+	for _, p := range g.db.Pokemon {
+		g.prof.S.SetUnlocked(p.ID)
+	}
+}
