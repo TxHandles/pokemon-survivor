@@ -7,14 +7,17 @@ import (
 	"image"
 	_ "image/png"
 	"math"
+	"strconv"
+	"strings"
 
 	"github.com/TxHandles/pokemon-survivor/engine/sim"
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-// PREVIEW: pixel-art sprites (a new art style being tried on Charmander). Each Pokémon in
-// pxart/px.json has front, back, left and right views with idle, walk and attack frames, drawn
-// with nearest-neighbour scaling so the pixels stay crisp.
+// Overworld pixel sprites (Gens 1-3, HeartGold/SoulSilver style; Kanto and Johto sheets ripped
+// by Dragoon, Hoenn by redblueyellow, via The Spriters Resource). pxart/px.json is keyed by
+// national dex number ("d4") and has front, back, left and right views with idle, walk and
+// attack frames, drawn with nearest-neighbour scaling. Images load on first use.
 
 //go:embed pxart
 var pxFS embed.FS
@@ -27,6 +30,7 @@ type pxView struct {
 	Walk, Wdur []int
 	Act, Adur  []int
 	frames     []*ebiten.Image
+	tried      bool
 }
 
 type pxSprite struct {
@@ -34,30 +38,43 @@ type pxSprite struct {
 	Views map[string]*pxView `json:"views"`
 }
 
-var pxSprites = func() map[string]*pxSprite {
+var pxByDex = func() map[string]*pxSprite {
 	m := map[string]*pxSprite{}
 	b, err := pxFS.ReadFile("pxart/px.json")
 	if err != nil || json.Unmarshal(b, &m) != nil {
 		return map[string]*pxSprite{}
 	}
-	for _, s := range m {
-		for _, v := range s.Views {
-			raw, err := pxFS.ReadFile("pxart/" + v.File)
-			if err != nil {
-				continue
-			}
-			im, _, err := image.Decode(bytes.NewReader(raw))
-			if err != nil {
-				continue
-			}
-			img := ebiten.NewImageFromImage(im)
-			for i := 0; i < im.Bounds().Dx()/v.CW; i++ {
-				v.frames = append(v.frames, img.SubImage(image.Rect(i*v.CW, 0, (i+1)*v.CW, v.CH)).(*ebiten.Image))
-			}
-		}
-	}
 	return m
 }()
+
+// load decodes the view's strip the first time it is drawn.
+func (v *pxView) load() {
+	if v.tried {
+		return
+	}
+	v.tried = true
+	raw, err := pxFS.ReadFile("pxart/" + v.File)
+	if err != nil {
+		return
+	}
+	im, _, err := image.Decode(bytes.NewReader(raw))
+	if err != nil {
+		return
+	}
+	img := ebiten.NewImageFromImage(im)
+	for i := 0; i < im.Bounds().Dx()/v.CW; i++ {
+		v.frames = append(v.frames, img.SubImage(image.Rect(i*v.CW, 0, (i+1)*v.CW, v.CH)).(*ebiten.Image))
+	}
+}
+
+// pxFor: the pixel sprite for a Pokémon id, by its dex number (regional forms keep their own art).
+func (g *Game) pxFor(id string) *pxSprite {
+	p := g.db.ByID[id]
+	if p == nil || p.Dex <= 0 || strings.HasPrefix(p.Name, "Alolan") {
+		return nil
+	}
+	return pxByDex["d"+strconv.Itoa(p.Dex)]
+}
 
 // pxPick: the frame of list (durations durs, ms) at time t (ms), looping.
 func pxPick(list, durs []int, t int) int {
@@ -78,6 +95,7 @@ func (v *pxView) actMs() int {
 
 // pxDraw draws frame fr of view v with its feet at (x, y).
 func pxDraw(dst *ebiten.Image, v *pxView, fr int, x, y, sc, a float64, flash bool) {
+	v.load()
 	if fr < 0 || fr >= len(v.frames) {
 		return
 	}
@@ -98,7 +116,7 @@ func pxDraw(dst *ebiten.Image, v *pxView, fr int, x, y, sc, a float64, flash boo
 
 // drawPxPlayer: a player whose Pokémon has pixel-art sprites. True if it drew.
 func (g *Game) drawPxPlayer(dst *ebiten.Image, a *playerAnim, P *sim.Player, x, y float64) bool {
-	ps := pxSprites[P.ID]
+	ps := g.pxFor(P.ID)
 	if ps == nil {
 		return false
 	}
@@ -140,7 +158,7 @@ func (g *Game) drawPxPlayer(dst *ebiten.Image, a *playerAnim, P *sim.Player, x, 
 
 // drawPxEnemy: an enemy with pixel-art sprites walks in profile towards you.
 func (g *Game) drawPxEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) bool {
-	ps := pxSprites[e.PokeID]
+	ps := g.pxFor(e.PokeID)
 	if ps == nil {
 		return false
 	}
