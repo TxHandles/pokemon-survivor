@@ -43,6 +43,9 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 		k := math.Min(1, w.Shake) * 7 * g.opt("shake")
 		shx, shy = (hash01(int(w.T*60), 1, 3)-.5)*k, (hash01(int(w.T*60), 2, 5)-.5)*k
 	}
+	g.fxStep()
+	shx += g.fxs.kickX
+	shy += g.fxs.kickY
 	ccx, ccy := g.camCenter()
 	camX, camY := math.Round(ccx-sw/2+shx), math.Round(ccy-sh/2+shy)
 	sx := func(x float64) float64 { return x - camX }
@@ -283,6 +286,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	for _, f := range w.FX {
 		g.drawFX(dst, f, sx, sy)
 	}
+	g.drawParts(dst, sx, sy)
 	g.drawPlayerOverlays(dst, sx, sy)
 	// floating damage numbers on top (newest first, capped: outlined text is costly in big fights)
 	dnum := g.opt("dnum") != 0

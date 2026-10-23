@@ -30,6 +30,7 @@ const (
 
 // Game implements ebiten.Game.
 type Game struct {
+	fxs fxState // battle particles (fxparts.go)
 	lobbyRet bool   // browsing Shop / Pokémon / Pokédex from a co-op lobby
 	lobbyTo  screen // that lobby (scOnline or scLobby)
 	fr       friendsState
@@ -697,6 +698,7 @@ func (g *Game) Draw(dst *ebiten.Image) {
 	case scPlay, scPause, scOver:
 		g.W.UseLocal(g.viewIdx())
 		g.drawWorld(dst)
+		g.drawScreenFlash(dst)
 		g.drawHUD(dst)
 		switch g.choiceKind() {
 		case "lv":
@@ -722,6 +724,7 @@ func (g *Game) Draw(dst *ebiten.Image) {
 		g.drawLobby(dst)
 	case scResult:
 		g.drawWorld(dst)
+		g.drawScreenFlash(dst)
 		rect(dst, 0, 0, float64(g.sw), float64(g.sh), c(5, 8, 15, 215))
 		g.ui.draw(dst)
 	default: // menus

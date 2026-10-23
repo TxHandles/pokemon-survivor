@@ -15,7 +15,7 @@ import (
 const scSettings screen = 120
 
 // Settings live in the save under "opt" (same keys and values as the web game).
-var optDefaults = map[string]float64{"vol": .3, "sfxv": .7, "musv": .6, "shake": 1, "dnum": 1, "flash": 1, "touch": 2, "eq": 1, "autop": 1, "hud": 0, "fx": 1}
+var optDefaults = map[string]float64{"vol": .3, "sfxv": .7, "musv": .6, "shake": 1, "dnum": 1, "flash": 1, "touch": 2, "eq": 1, "autop": 1, "hud": 0, "fx": 2}
 
 func (g *Game) opt(k string) float64 {
 	if g.prof != nil {
@@ -53,7 +53,7 @@ var optRows = []optRow{
 	{"musv", "Music", "Location tracks where they exist, a placeholder loop elsewhere", []optChoice{{"Off", 0}, {"Low", .3}, {"Med", .6}, {"High", 1}}},
 	{"shake", "Screen shake", "Camera shake on hits, bosses and explosions", []optChoice{{"Off", 0}, {"Reduced", .4}, {"Full", 1}}},
 	{"dnum", "Damage numbers", "Floating numbers when you hit enemies", []optChoice{{"Off", 0}, {"On", 1}}},
-	{"fx", "Attack effects", "Full: each move has its own drawn effect. Simple: plain shapes (faster)", []optChoice{{"Simple", 0}, {"Full", 1}}},
+	{"fx", "Attack effects", "Extreme: drawn effects plus particles, shockwaves and flashes. Full: drawn effects only. Simple: plain shapes (fastest)", []optChoice{{"Simple", 0}, {"Full", 1}, {"Extreme", 2}}},
 	{"flash", "Flashing", "Screen flashes, enemy hit flashes and the low-health pulse", []optChoice{{"Reduced", 0}, {"Normal", 1}}},
 	{"hud", "HUD layout", "New: party on the left, attacks and items bottom-left. Web: everything along the top", []optChoice{{"New", 0}, {"Web", 1}}},
 	{"eq", "Equipped bar", "Show your attacks and items on screen during a run", []optChoice{{"Hide", 0}, {"Show", 1}}},

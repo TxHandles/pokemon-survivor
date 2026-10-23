@@ -103,6 +103,9 @@ func (g *Game) visProj(dst *ebiten.Image, v *mvis, p *sim.Proj, x, y float64) {
 	if p.Ex > 0 {
 		sz *= 1.15
 	}
+	sz *= 1.2
+	glowAdd(dst, x, y, sz*.95, v.c1, .42)
+	glowAdd(dst, x, y, sz*.38, v.c2, .7)
 	glow(dst, x, y, sz*.62, v.c1, .18)
 	switch v.sty {
 	case 0:
@@ -132,6 +135,23 @@ func (g *Game) visProj(dst *ebiten.Image, v *mvis, p *sim.Proj, x, y float64) {
 	} else {
 		v.G(dst, "p", x, y, sz*1.5, a, 1)
 	}
+	glowAdd(dst, x+ca*sz*.2, y+sa*sz*.2, sz*.22, white, .55)
+}
+
+// ringAdd: an additive soft ring (the bloom around shockwaves).
+func ringAdd(dst *ebiten.Image, x, y, r float64, col color.NRGBA, a float64) {
+	if r < 2 || a <= 0 {
+		return
+	}
+	b := texRing.Bounds()
+	R := r / .86
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Scale(2*R/float64(b.Dx()), 2*R/float64(b.Dy()))
+	op.GeoM.Translate(x-R, y-R)
+	op.ColorScale.ScaleWithColor(alpha(col, math.Min(1, a)))
+	op.Filter = ebiten.FilterLinear
+	op.Blend = ebiten.BlendLighter
+	dst.DrawImage(texRing, op)
 }
 
 // ---- orbs ----
@@ -145,6 +165,7 @@ func (g *Game) visOrb(dst *ebiten.Image, v *mvis, o sim.Orb, x, y, ox, oy float6
 		return
 	}
 	glow(dst, x, y, o.R*1.8, v.c1, .22)
+	glowAdd(dst, x, y, o.R*2.4, v.c1, .4+.15*math.Sin(T*9+o.X))
 	rot := math.Atan2(y-oy, x-ox) + math.Pi/2
 	if v.spin {
 		rot = T * 6
@@ -171,6 +192,7 @@ func (g *Game) visZone(dst *ebiten.Image, v *mvis, z *sim.Zone, x, y float64) {
 		return
 	}
 	A := math.Min(1, z.L*2)
+	glowAdd(dst, x, y, z.R*.95, v.c1, math.Min(.3, z.L)*(.75+.25*math.Sin(T*6+z.X)))
 	glow(dst, x, y, z.R*.9, v.c1, math.Min(.26, z.L))
 	glow(dst, x, y, z.R*.45, v.c2, math.Min(.2, z.L))
 	sd := int(math.Floor(z.X*.37 + z.Y*.13))
@@ -229,6 +251,9 @@ func (g *Game) visFX(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64)
 	case "ring":
 		al := math.Max(0, math.Min(1, f.Life*2.4))
 		if v.kind == "erupt" || v.kind == "blast" {
+			glowAdd(dst, x, y, f.R*1.3, v.c1, al*.55)
+			glowAdd(dst, x, y, f.R*.55, white, al*.5)
+			ringAdd(dst, x, y, f.R*1.05, v.c2, al*.8)
 			glow(dst, x, y, f.R*.9, v.c1, al*.6)
 			glow(dst, x, y, f.R*.45, v.c2, al*.6)
 			v.G(dst, "d", x, y, math.Min(160, f.R*1.4), h, al*.8)
@@ -240,10 +265,20 @@ func (g *Game) visFX(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64)
 			}
 			return true
 		}
-		lw := 6.0
-		if f.Fat {
-			lw = 9
+		if moveFam(f.Slot) == "sound" { // sound moves: rippling waves of sound
+			for i := 0; i < 3; i++ {
+				r := f.R * (1 - .18*float64(i))
+				ringAdd(dst, x, y, r, v.c1, al*(.9-.25*float64(i)))
+				strokeEllipse(dst, x, y, r, r, h+T*2+float64(i), h+T*2+float64(i)+4.2, 3, alpha(v.c2, al*.8))
+			}
+			return true
 		}
+		lw := 8.0
+		if f.Fat {
+			lw = 12
+		}
+		ringAdd(dst, x, y, f.R*1.04, v.c1, al*.9)
+		ringAdd(dst, x, y, f.R*.92, v.c2, al*.5)
 		ring(dst, x, y, f.R, lw, alpha(v.c1, al))
 		ring(dst, x, y, math.Max(1, f.R-3), 2.5, alpha(v.c2, al))
 		n := 0
@@ -278,10 +313,17 @@ func (g *Game) visFX(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64)
 		al := math.Min(1, f.Life*5)
 		co, si := math.Cos(f.A), math.Sin(f.A)
 		ex, ey := x+co*f.Ln, y+si*f.Ln
+		pul := 1 + .18*math.Sin(T*48+h)
+		for d := 0.0; d <= f.Ln; d += 26 { // bloom along the whole beam
+			glowAdd(dst, x+co*d, y+si*d, f.Wd*2.6*pul, v.c1, al*.32)
+		}
+		glowAdd(dst, x, y, f.Wd*4+24, v.c1, al*.7)
+		glowAdd(dst, x, y, f.Wd*2+10, white, al*.8)
+		glowAdd(dst, ex, ey, f.Wd*3.5+20, v.c2, al*.6)
 		for _, st := range []struct {
 			w float64
 			c color.NRGBA
-		}{{f.Wd*2 + 3, v.c0}, {f.Wd * 2, v.c1}, {f.Wd * .8, v.c2}} {
+		}{{(f.Wd*2.8 + 5) * pul, v.c0}, {f.Wd * 2.5 * pul, v.c1}, {f.Wd * 1.2 * pul, v.c2}, {math.Max(2, f.Wd*.45), white}} {
 			line(dst, x, y, ex, ey, st.w, alpha(st.c, al))
 			disc(dst, x, y, st.w/2, alpha(st.c, al))
 			disc(dst, ex, ey, st.w/2, alpha(st.c, al))
@@ -301,8 +343,10 @@ func (g *Game) visFX(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64)
 			c := mix(v.c1, v.c2, t1)
 			line(dst, x, y-460+460*t0, x, y-460+460*t1, 8, alpha(c, al*t1))
 		}
-		v.G(dst, "p", x, y-300*fall, 44, math.Pi/2, 1)
+		v.G(dst, "p", x, y-300*fall, 56, math.Pi/2, 1)
+		glowAdd(dst, x, y-300*fall, 30, v.c1, .7)
 		if fall < .35 {
+			glowAdd(dst, x, y, 70*(1-fall*2), v.c2, .8)
 			v.G(dst, "d", x, y, 70, h, 1-fall*2)
 		}
 		return true
@@ -310,6 +354,7 @@ func (g *Game) visFX(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64)
 		k := f.Life / math.Max(f.Life0, 1e-6)
 		al := math.Max(0, k)
 		glow(dst, x, y, f.R*(1-.4*k)*.85, v.c2, al*.45)
+		glowAdd(dst, x, y, f.R*(1.2-.4*k), v.c1, al*.45)
 		v.G(dst, "d", x, y, math.Min(110, f.R*1.5), h+T, al*.8)
 		for i := 0; i < 4; i++ {
 			a := float64(i)*1.57 + h
@@ -336,13 +381,30 @@ func (g *Game) visFX(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float64)
 			pts = append(pts, [2]float64{ax + dx*float64(i)/float64(n) + nx*o, ay + dy*float64(i)/float64(n) + ny*o})
 		}
 		pts = append(pts, [2]float64{bx, by})
+		for _, q := range pts {
+			glowAdd(dst, q[0], q[1], 16, v.c1, .35)
+		}
 		for _, st := range []struct {
 			w float64
 			c color.NRGBA
-		}{{7, v.c0}, {5, v.c1}, {2, v.c2}} {
+		}{{11, v.c0}, {7, v.c1}, {3, v.c2}, {1.5, white}} {
 			polyline(dst, pts, st.w, st.c)
 		}
-		v.G(dst, "b", bx, by, 28, T*8, .95)
+		for fk := 0; fk < 2 && len(pts) > 2; fk++ { // forks off the main bolt
+			i0 := 1 + int(hsh(float64(fk)+math.Floor(T*30)+h)*float64(len(pts)-2))
+			q := pts[i0]
+			fa := math.Atan2(dy, dx) + (hsh(float64(fk)*7+math.Floor(T*30))-.5)*2.2
+			br := [][2]float64{q}
+			for j := 1; j <= 3; j++ {
+				o := (hsh(float64(j+fk*5)+math.Floor(T*30)) - .5) * jag
+				br = append(br, [2]float64{q[0] + math.Cos(fa)*float64(j)*14 - math.Sin(fa)*o, q[1] + math.Sin(fa)*float64(j)*14 + math.Cos(fa)*o})
+			}
+			polyline(dst, br, 3, v.c1)
+			polyline(dst, br, 1.2, white)
+		}
+		glowAdd(dst, bx, by, 34, v.c2, .8)
+		glowAdd(dst, ax, ay, 22, v.c1, .5)
+		v.G(dst, "b", bx, by, 34, T*8, .95)
 		return true
 	}
 	return false
@@ -643,6 +705,12 @@ func (g *Game) visSwipe(dst *ebiten.Image, v *mvis, f *sim.FX, x, y float64) {
 	cw := v.h%2 == 0
 	head, tail := swipeSpan(f, p, cw)
 	R := f.R
+	crescent(dst, x, y, R*1.14, R*.8, tail-(head-tail)*.15, head, v.c1, al*.22) // afterimage
+	for i := 0; i < 4; i++ {                                                    // bloom on the blade
+		a := head - (head-tail)*float64(i)*.22
+		glowAdd(dst, x+math.Cos(a)*R*.85, y+math.Sin(a)*R*.85, R*(.42-.07*float64(i)), v.c1, al*.5)
+	}
+	glowAdd(dst, x+math.Cos(head)*R, y+math.Sin(head)*R, R*.28, white, al*.7)
 	crescent(dst, x, y, R*1.02, R*.62, tail, head, v.c0, al*.45)
 	crescent(dst, x, y, R, R*.5, tail, head, v.c1, al*.8)
 	crescent(dst, x, y, R*.98, R*.26, tail+(head-tail)*.3, head, v.c2, al)
@@ -723,6 +791,7 @@ func (g *Game) visSpin(dst *ebiten.Image, v *mvis, f *sim.FX, sx, sy func(float6
 		polyline(dst, pts[:N/2+1], 2.5, alpha(v.c2, .9))
 		hx, hy := x+math.Cos(h)*rr, y+math.Sin(h)*rr*.75
 		glow(dst, hx, hy, math.Min(16, R*.15), v.c2, .75)
+		glowAdd(dst, hx, hy, math.Min(34, R*.32), v.c1, .7)
 		disc(dst, hx, hy, 3.5, c(255, 255, 255, 235))
 		for i := 0; i < 3; i++ { // sparks flung off the heel
 			fi := float64(i)
@@ -775,6 +844,9 @@ func (g *Game) visLash(dst *ebiten.Image, v *mvis, f *sim.FX, x, y float64) {
 		poly(dst, append(l, r...), col)
 	}
 	glow(dst, pts[N/2][0], pts[N/2][1], f.Ln*.35, v.c1, .12*al)
+	for i := 0; i <= N; i += 3 {
+		glowAdd(dst, pts[i][0], pts[i][1], f.Wd*1.6+6, v.c1, .35*al)
+	}
 	strip(1.35, alpha(v.c0, al))
 	strip(1, alpha(v.c1, al))
 	strip(.45, alpha(v.c2, al))
@@ -831,6 +903,11 @@ func (g *Game) visSweep(dst *ebiten.Image, v *mvis, f *sim.FX, x, y float64) {
 	// body: a soft band behind the crest
 	for _, q := range crest {
 		glow(dst, q[0], q[1], f.Wd*1.1, v.c1, .16*al)
+	}
+	for i, q := range crest {
+		if i%2 == 0 {
+			glowAdd(dst, q[0], q[1], f.Wd*1.5, v.c1, .3*al)
+		}
 	}
 	polyline(dst, crest, f.Wd*.9, alpha(v.c1, .55*al))
 	polyline(dst, crest, math.Max(3, f.Wd*.35), alpha(v.c2, .85*al))

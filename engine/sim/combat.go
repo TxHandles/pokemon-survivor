@@ -307,7 +307,7 @@ func (w *World) damage(e *Enemy, d, em float64, crit bool) {
 		col = "crit"
 	}
 	if len(w.FX) < 90 || w.rng.Float64() < .3 {
-		w.addFX(&FX{Kind: "txt", X: e.X, Y: e.Y - e.R, Life: .6, Text: itoa(int(d)), Col: col})
+		w.addFX(&FX{Kind: "txt", X: e.X, Y: e.Y - e.R, Life: .6, Text: itoa(int(d)), Col: col, Slot: w.curSlot}) // Slot: for the client's hit particles
 	}
 }
 
