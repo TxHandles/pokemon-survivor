@@ -55,7 +55,7 @@ func (s *Save) JSON() []byte {
 func (s *Save) normalize() {
 	m := s.M
 	m["wv"] = float64(SaveVersion)
-	for _, k := range []string{"u", "cu", "gu", "cl", "col", "ci", "ms", "bu", "pu", "pp", "fl", "unl", "cs", "mx", "locb"} {
+	for _, k := range []string{"u", "cu", "gu", "cl", "col", "ci", "ms", "bu", "pu", "pp", "fl", "unl", "cs", "mx", "locb", "pst", "mxb", "smv"} {
 		if _, ok := m[k].(map[string]any); !ok {
 			m[k] = map[string]any{}
 		}

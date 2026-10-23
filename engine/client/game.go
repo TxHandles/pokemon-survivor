@@ -30,22 +30,23 @@ const (
 
 // Game implements ebiten.Game.
 type Game struct {
-	fxs      fxState // battle particles (fxparts.go)
-	lobbyRet bool    // browsing Shop / Pokémon / Pokédex from a co-op lobby
-	lobbyTo  screen  // that lobby (scOnline or scLobby)
-	fr       friendsState
-	rstArm   bool // Reset progress pressed once
-	histCopy string
-	amb      ambState
-	vigImg   *ebiten.Image
-	vigV     float64
-	db       *content.DB
-	assets   *Assets
-	W        *sim.World
-	floor    *Floor
-	pa       playerAnim
-	scr      screen
-	sw, sh   int
+	fxs         fxState // battle particles (fxparts.go)
+	prestigeAsk string  // line awaiting a second tap to confirm prestige
+	lobbyRet    bool    // browsing Shop / Pokémon / Pokédex from a co-op lobby
+	lobbyTo     screen  // that lobby (scOnline or scLobby)
+	fr          friendsState
+	rstArm      bool // Reset progress pressed once
+	histCopy    string
+	amb         ambState
+	vigImg      *ebiten.Image
+	vigV        float64
+	db          *content.DB
+	assets      *Assets
+	W           *sim.World
+	floor       *Floor
+	pa          playerAnim
+	scr         screen
+	sw, sh      int
 
 	// title
 	roster  []string
@@ -498,6 +499,10 @@ func (g *Game) updatePlay() {
 	}
 	switch w.State {
 	case sim.StateLevelUp, sim.StateRoute, sim.StateShrine:
+		if w.State == sim.StateRoute && w.RouteGo >= 0 { // a destination is picked: play the travel, then load it
+			w.Step(1.0/60, sim.Input{})
+			return
+		}
 		g.lvDelay += 1.0 / 60
 		if g.auto && !g.Hold {
 			if g.lvDelay > .6 {

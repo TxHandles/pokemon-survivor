@@ -531,6 +531,13 @@ func (g *Game) fxImpact(p projSeen) {
 	if p.t == "" {
 		return
 	}
+	if p.slot != nil && p.slot.ID == "rock_tarshot" { // splat
+		for i := 0; i < 7; i++ {
+			s.add(fxPart{x: p.x, y: p.y, vx: rr(-140, 140), vy: rr(-160, 20), life: rr(.35, .6), sz: rr(3, 5.5), sz1: 2, grav: 600, drag: 1, col: hexC("#2a1e18"), col1: alpha(hexC("#1a1210"), 0), k: pDisc})
+		}
+		s.add(fxPart{x: p.x, y: p.y + 4, life: .9, sz: 14, sz1: 22, col: alpha(hexC("#140e0a"), .7), col1: alpha(hexC("#140e0a"), 0), k: pSmoke})
+		return
+	}
 	fam := moveFam(p.slot)
 	L := lookOf(p.t)
 	if fam == "explode" || p.r >= 11 {

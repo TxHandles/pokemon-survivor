@@ -72,7 +72,7 @@ func (w *World) cdM() float64 {
 
 // dmgM: player damage multiplier (.66 x items x attack stat; shop/mastery bonuses come with the meta phase).
 func (w *World) dmgM() float64 {
-	return .66 * (1 + .08*w.up("dmg")) * (1 + .01*float64(w.Cfg.Training)) * b2f(w.P.Bel > 0, 1.25, 1) * (1 + .12*w.pe("band")) * (1 + .1*w.pe("lifeorb")) * b2f(w.P.Pm > 0, 1.3, 1) * b2f(w.P.Pbl > 0, 1.5, 1) * w.psD() * (1 + fuseGenericK*float64(w.genericFusions())) * b2f(w.rare("souldew"), 1.2, 1) * b2f(w.rare("policy") && w.P.polT > w.T, 1.35, 1) * w.P.Stats.Atk
+	return .66 * (1 + .08*w.up("dmg")) * (1 + .01*float64(w.Cfg.Training)) * (1 + w.Cfg.Mastery) * b2f(w.P.Bel > 0, 1.25, 1) * (1 + .12*w.pe("band")) * (1 + .1*w.pe("lifeorb")) * b2f(w.P.Pm > 0, 1.3, 1) * b2f(w.P.Pbl > 0, 1.5, 1) * w.psD() * (1 + fuseGenericK*float64(w.genericFusions())) * b2f(w.rare("souldew"), 1.2, 1) * b2f(w.rare("policy") && w.P.polT > w.T, 1.35, 1) * w.P.Stats.Atk
 }
 
 // itMv: per-move item multipliers (Muscle Band, Wise Glasses, Choice Band, Metronome).

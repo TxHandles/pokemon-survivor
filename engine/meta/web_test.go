@@ -112,3 +112,33 @@ func TestBossKillMatchesWeb(t *testing.T) {
 	}
 	t.Logf("%d sequences compared, %d mismatching steps", len(d.Seqs), bad)
 }
+
+// Mastery past the last evolution: rewards every 5 ranks, capped at 100, prestige for a star.
+func TestMasteryRewards(t *testing.T) {
+	db, err := content.Load(data.FS)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewProfile(&Save{M: map[string]any{}}, db)
+	rw := p.MasteryRewards("fire")
+	if len(rw) == 0 || rw[0].Rank != 40 || rw[0].Kind != "move" || rw[len(rw)-1].Rank != 100 {
+		t.Fatalf("rewards %+v", rw)
+	}
+	p.S.obj("mx")["fire"] = 1e9
+	if r := p.MasteryRank("fire"); r != MasteryMax {
+		t.Fatalf("rank %d", r)
+	}
+	b := p.MasteryBonus("fire")
+	if len(p.StartMoves("fire")) < 2 || b <= 0 {
+		t.Fatalf("start moves %v bonus %v", p.StartMoves("fire"), b)
+	}
+	if !p.Prestige("fire3") || p.Stars("fire2") != 1 || p.MasteryRank("fire") != 1 {
+		t.Fatalf("prestige: stars %d rank %d", p.Stars("fire2"), p.MasteryRank("fire"))
+	}
+	if len(p.StartMoves("fire")) < 2 || p.MasteryBonus("fire") != MrStarBoost {
+		t.Fatalf("after prestige: moves %v bonus %v", p.StartMoves("fire"), p.MasteryBonus("fire"))
+	}
+	if p.BestRank("fire") != MasteryMax {
+		t.Fatal("best rank lost")
+	}
+}

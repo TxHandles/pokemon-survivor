@@ -57,3 +57,38 @@ func TestSoloStillWorks(t *testing.T) {
 		t.Fatalf("lv %d players %d chooser %d", w.P.Lv, len(w.PL), w.Chooser)
 	}
 }
+
+// Each player has MaxLives lives: after the last faint nobody can revive them.
+func TestCoopLives(t *testing.T) {
+	db := loadDB(t)
+	specs := []PlayerSpec{{Name: "A", ID: "fire", Kind: "human"}, {Name: "B", ID: "water", Kind: "human"}}
+	w, err := NewCoop(db, specs, "fire", 5, Config{LI: -1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for life := 1; life <= MaxLives; life++ {
+		w.useP(1)
+		w.P.HP = 1
+		w.hurt(1e6, "normal")
+		if !w.P.Dead {
+			t.Fatalf("life %d: didn't faint", life)
+		}
+		if life < MaxLives {
+			if w.PCN == nil {
+				t.Fatalf("life %d: no Pokémon Center", life)
+			}
+			w.PCN.X, w.PCN.Y = w.PL[0].P.X, w.PL[0].P.Y
+			w.useP(0)
+			w.pcTick(2)
+			if w.PL[1].P.Dead {
+				t.Fatalf("life %d: not revived", life)
+			}
+		}
+	}
+	if w.PCN != nil || revivable(w.PL[1]) {
+		t.Fatal("a player out of lives can still be revived")
+	}
+	if w.State == StateDead {
+		t.Fatal("run ended while a player is still alive")
+	}
+}

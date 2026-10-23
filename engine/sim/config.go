@@ -13,6 +13,8 @@ type Config struct {
 	LI       int            // starting location index (-1 = random)
 	Up       map[string]int // shop levels: dmg spd hp reg arm mag xpg cg rr bn m3 m4 h3 h4 ch rt
 	Training int            // training rank (+1% HP and +1% damage per rank)
+	Mastery  float64        // Mastery reward bonus (HP and damage), from rank rewards and prestige stars
+	Start    string         // chosen starting move ("" = the line's default)
 	Tier     int            // difficulty tier 0-10
 	Mods     []string       // swift tough brutal horde famine glass titans drought
 	Stage    int            // 1-3: 15 / 30 / 45 minute runs (3 / 6 / 9 bosses)
@@ -39,7 +41,7 @@ var modBonus = map[string]float64{"swift": .10, "tough": .15, "brutal": .10, "ho
 func makeRun(c Config) Run {
 	k := float64(c.Tier)
 	hasM := func(m string) bool { return has(c.Mods, m) }
-	r := Run{Tier: c.Tier, Mods: c.Mods, HM: 1.16 + .12*k, DM: 1 + .08*k, SM: 1 + .02*k, RT: 1 + .05*k, BH: 1, XM: 1, Mult: 1 + .12*k, Lock: c.Lock}
+	r := Run{Tier: c.Tier, Mods: c.Mods, HM: 1.26 + .12*k, DM: 1 + .08*k, SM: 1 + .02*k, RT: 1 + .05*k, BH: 1, XM: 1, Mult: 1 + .12*k, Lock: c.Lock}
 	if hasM("tough") {
 		r.HM *= 1.4
 	}

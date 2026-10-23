@@ -654,7 +654,7 @@ func init() {
 		},
 		"spin": func(w *World, c mc) {
 			q := c.q
-			R := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * (1 + .1*w.pe("wide")) * b2f(c.ev, 1.25, 1)
+			R := (q.F("r", 0) + q.F("rp", 0)*c.sl) * w.rgm() * (1 + .1*w.pe("wide")) * b2f(c.ev, 1.25, 1) * b2f(c.cap, 1.12, 1)
 			legs := c.s.BonusCount() // each extra leg adds hits
 			d := (q.F("d", 0) + q.F("dp", 0)*c.sld) * c.em * (1 + .3*float64(legs))
 			du := q.F("du", 1.4) * .82 * c.s.BonusDurMul() * b2f(c.ev, 1.3, 1)
@@ -686,9 +686,7 @@ func init() {
 					}
 				})
 			}
-			if c.cap {
-				w.at(c, du, func() { f := w.ring(c, w.P.X, w.P.Y, R*1.55, 0, d*2, .35, true, 2); f.R = 8 })
-			}
+			// (the capstone's finishing burst was removed: a capstone spin is just wider, see above)
 		},
 		"mine": func(w *World, c mc) {
 			q := c.q

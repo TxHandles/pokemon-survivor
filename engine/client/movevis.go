@@ -91,6 +91,14 @@ func (g *Game) visProj(dst *ebiten.Image, v *mvis, p *sim.Proj, x, y float64) {
 	case "electric_electroball":
 		electroball(dst, p, x, y, T)
 		return
+	case "rock_tarshot":
+		tarGlob(dst, p, x, y, T)
+		return
+	}
+	if isBone(v.id) { // Bonemerang and friends throw an actual bone
+		glowAdd(dst, x, y, 22, v.c1, .3)
+		drawBone(dst, x, y, math.Max(26, p.R*3.4), T*16, v.t == "ghost")
+		return
 	}
 	a := math.Atan2(p.VY, p.VX)
 	r := p.R
@@ -705,6 +713,9 @@ func (g *Game) visSwipe(dst *ebiten.Image, v *mvis, f *sim.FX, x, y float64) {
 	cw := v.h%2 == 0
 	head, tail := swipeSpan(f, p, cw)
 	R := f.R
+	if isBone(v.id) { // the club is a bone: draw it at the head of the swing
+		defer drawBone(dst, x+math.Cos(head)*R*.72, y+math.Sin(head)*R*.72, math.Max(30, R*.62), head+math.Pi/2, v.t == "ghost")
+	}
 	crescent(dst, x, y, R*1.14, R*.8, tail-(head-tail)*.15, head, v.c1, al*.22) // afterimage
 	for i := 0; i < 4; i++ {                                                    // bloom on the blade
 		a := head - (head-tail)*float64(i)*.22
@@ -919,4 +930,52 @@ func (g *Game) visSweep(dst *ebiten.Image, v *mvis, f *sim.FX, x, y float64) {
 			v.G(dst, "d", q[0], q[1], 34, T*2+float64(i), al*.6)
 		}
 	}
+}
+
+func isBone(id string) bool {
+	return id == "ground_bonemerang" || id == "ground_boneclub" || id == "ground_bonerush" || id == "ghost_shadowbone"
+}
+
+// drawBone: a cartoon bone (knobbly ends, pale shaft, dark outline), L long, rotated by rot.
+// Shadow Bone's is wreathed in ghostly purple.
+func drawBone(dst *ebiten.Image, x, y, L, rot float64, ghost bool) {
+	ca, sa := math.Cos(rot), math.Sin(rot)
+	hx, hy := ca*L*.38, sa*L*.38
+	nx, ny := -sa*L*.09, ca*L*.09
+	body, rim := hexC("#f4ead2"), hexC("#5a4630")
+	if ghost {
+		glowAdd(dst, x, y, L*.7, hexC("#9a5aff"), .55)
+		body, rim = hexC("#e8dcff"), hexC("#3a1a6a")
+	}
+	w := L * .16
+	line(dst, x-hx, y-hy, x+hx, y+hy, w+3, rim)
+	for _, s := range []float64{-1, 1} {
+		for _, t := range []float64{-1, 1} {
+			disc(dst, x+s*hx+t*nx, y+s*hy+t*ny, L*.12+1.5, rim)
+		}
+	}
+	line(dst, x-hx, y-hy, x+hx, y+hy, w, body)
+	for _, s := range []float64{-1, 1} {
+		for _, t := range []float64{-1, 1} {
+			disc(dst, x+s*hx+t*nx, y+s*hy+t*ny, L*.12, body)
+		}
+	}
+	line(dst, x-hx*.8+nx*.3, y-hy*.8+ny*.3, x+hx*.8+nx*.3, y+hy*.8+ny*.3, math.Max(1, w*.3), alpha(white, .7))
+}
+
+// tarGlob: a gloopy black glob of tar with a wet highlight and dripping strands behind it.
+func tarGlob(dst *ebiten.Image, p *sim.Proj, x, y, T float64) {
+	r := math.Max(6, p.R*1.4)
+	a := math.Atan2(p.VY, p.VX)
+	ca, sa := math.Cos(a), math.Sin(a)
+	for i := 1; i <= 4; i++ {
+		fi := float64(i)
+		disc(dst, x-ca*r*fi*.7+math.Sin(T*9+fi+p.X)*1.5, y-sa*r*fi*.7+fi*1.5, r*(1-fi*.18), hexC("#1a1210"))
+	}
+	soft(dst, x, y+r*.6, r*1.6, r*.7, alpha(hexC("#000000"), .35))
+	disc(dst, x, y, r+1.5, hexC("#0a0806"))
+	disc(dst, x, y, r, hexC("#2a1e18"))
+	disc(dst, x-r*.25, y-r*.1, r*.7, hexC("#3a2a20"))
+	disc(dst, x-r*.38, y-r*.38, r*.26, alpha(hexC("#d8c8b0"), .85))
+	disc(dst, x+r*.3, y+r*.75+math.Mod(T*4+p.X, 1)*r*.6, r*.22, hexC("#1a1210")) // a drip
 }

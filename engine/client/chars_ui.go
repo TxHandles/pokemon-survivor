@@ -280,6 +280,9 @@ func (g *Game) charCard(dst *ebiten.Image, lc *lineCard, x, y float64) (float64,
 		g.drawPortrait(dst, id, in, yy, 76, false, sel, true)
 		tx := in + 86
 		drawText(dst, p.Name, tx, yy+10, 17, true, col, text.AlignStart, false)
+		if ns := pr.Stars(id); ns > 0 { // prestige stars
+			drawStars(dst, tx+textW(p.Name, 17, true)+8, yy+19, ns)
+		}
 		ty := ""
 		for i, t := range p.Types {
 			if i > 0 {
@@ -288,9 +291,34 @@ func (g *Game) charCard(dst *ebiten.Image, lc *lineCard, x, y float64) (float64,
 			ty += cap1s(t)
 		}
 		drawText(dst, fitText(ty+" type"+tagText(p), 12, false, cw-86), tx, yy+34, 12, false, alpha(webFg, .75), text.AlignStart, false)
-		drawText(dst, fitText("Starts with "+g.db.Moves[g.db.StartMove(id)].Name, 12, false, cw-86), tx, yy+52, 12, false, alpha(webFg, .75), text.AlignStart, false)
 		sm := g.db.StartMove(id)
+		if c := pr.StartMove(id); c != "" {
+			sm = c
+		}
+		label := "Starts with " + g.db.Moves[sm].Name
+		if n := len(pr.StartMoves(id)); n > 1 {
+			label += fmt.Sprintf(" · tap to change (%d)", n)
+		}
+		drawText(dst, fitText(label, 12, false, cw-86), tx, yy+52, 12, false, b2c(len(pr.StartMoves(id)) > 1, webAcc, alpha(webFg, .75)), text.AlignStart, false)
 		g.hoverTip([4]float64{tx, yy + 50, cw - 86, 18}, func() *tipData { return g.moveTip(sm, nil) })
+	}
+	if opts := pr.StartMoves(id); len(opts) > 1 { // tap to switch between unlocked starting moves
+		hits = append(hits, cardHit{key: "sm:" + id, r: [4]float64{in + 86, yy + 48, cw - 86, 22}, act: func() {
+			cur := pr.StartMove(id)
+			if cur == "" {
+				cur = opts[0]
+			}
+			nx := opts[0]
+			for i, o := range opts {
+				if o == cur {
+					nx = opts[(i+1)%len(opts)]
+				}
+			}
+			pr.SetStartMove(id, nx)
+			g.csel = id
+			g.toast("Starting move: " + g.db.Moves[nx].Name)
+			g.save()
+		}})
 	}
 	yy += 76 + 6
 	// mastery
@@ -309,9 +337,64 @@ func (g *Game) charCard(dst *ebiten.Image, lc *lineCard, x, y float64) (float64,
 		}
 		richLine(dst, in, yy, 12, false, webFg, append([]any{webAcc}, append([]any{parts[0], webFg}, parts[1:]...)...)...)
 		pbar(dst, in, yy+19, cw, 6, float64(into)/float64(max(1, need)), webAcc)
-		drawText(dst, fmt.Sprintf("%s / %s XP to rank %d", commas(into), commas(need), rk+1), in, yy+29, 12, false, alpha(webFg, .7), text.AlignStart, false)
+		if rk >= meta.MasteryMax {
+			drawText(dst, "Max rank — prestige for a star", in, yy+29, 12, false, hexC("#ffd84a"), text.AlignStart, false)
+		} else {
+			drawText(dst, fmt.Sprintf("%s / %s XP to rank %d", commas(into), commas(need), rk+1), in, yy+29, 12, false, alpha(webFg, .7), text.AlignStart, false)
+		}
 	}
 	yy += 50
+	// mastery rewards: what's next, the bonus so far, and the prestige button at rank 100
+	{
+		next := ""
+		for _, r := range pr.MasteryRewards(root) {
+			if r.Rank > rk {
+				if r.Kind == "move" {
+					next = fmt.Sprintf("Rank %d: new starting move (%s)", r.Rank, g.db.Moves[r.Move].Name)
+				} else {
+					next = fmt.Sprintf("Rank %d: +%d%% HP and damage", r.Rank, int(meta.MrStatBoost*100))
+				}
+				break
+			}
+		}
+		bonus := pr.MasteryBonus(id)
+		if dst != nil {
+			if bonus > 0 {
+				drawText(dst, fmt.Sprintf("Mastery bonus: +%d%% HP and damage", int(math.Round(bonus*100))), in, yy, 12, false, webGreen, text.AlignStart, false)
+				yy += 16
+			}
+			if next != "" {
+				drawText(dst, fitText("Next reward · "+next, 12, false, cw), in, yy, 12, false, alpha(webFg, .75), text.AlignStart, false)
+				yy += 16
+			}
+		} else {
+			yy += 16*b2f(bonus > 0, 1, 0) + 16*b2f(next != "", 1, 0)
+		}
+		if pr.CanPrestige(id) {
+			btn := [4]float64{in, yy + 2, cw, 28}
+			hits = append(hits, cardHit{key: "pst:" + root, r: btn, act: func() {
+				if g.prestigeAsk != root {
+					g.prestigeAsk = root
+					g.toast("Tap Prestige again to reset Mastery to rank 1 for a star")
+					return
+				}
+				g.prestigeAsk = ""
+				if pr.Prestige(root) {
+					g.toast(fmt.Sprintf("%s line prestiged! Stars: %d", g.db.ByID[root].Name, pr.Stars(root)))
+					g.save()
+				}
+			}})
+			if dst != nil {
+				if g.prestigeAsk == root {
+					smallBtn(dst, btn, "Tap again to confirm prestige", g.ui.focus == "pst:"+root, false)
+				} else {
+					smallBtn(dst, btn, "", g.ui.focus == "pst:"+root, false, "Prestige: back to rank 1 for a ", gStar, fmt.Sprintf(" (+%d%%)", int(meta.MrStarBoost*100)))
+				}
+			}
+			yy += 34
+		}
+		yy += 4
+	}
 	// matchups
 	yy += 2
 	yy += g.matchupRows(dst, p.Types, in, yy, cw, false)
@@ -324,8 +407,8 @@ func (g *Game) charCard(dst *ebiten.Image, lc *lineCard, x, y float64) (float64,
 		v, max float64
 		col    color.NRGBA
 	}{
-		{"HP", math.Round((80 + 14*ul("hp")) * (1 + .01*float64(pr.Training(f))) * st.HP), 150, webGreen},
-		{"ATK", math.Round(100 * st.Atk * (1 + .08*ul("dmg")) * (1 + .01*float64(pr.Training(f)))), 150, hexC("#ff7a4d")},
+		{"HP", math.Round((80 + 14*ul("hp")) * (1 + .01*float64(pr.Training(f))) * (1 + pr.MasteryBonus(id)) * st.HP), 150, webGreen},
+		{"ATK", math.Round(100 * st.Atk * (1 + .08*ul("dmg")) * (1 + .01*float64(pr.Training(f))) * (1 + pr.MasteryBonus(id))), 150, hexC("#ff7a4d")},
 		{"DEF", math.Round(100 * st.Def / math.Pow(.96, ul("arm"))), 150, hexC("#6fb5ff")},
 		{"SPD", math.Round(125 * st.Spd * (1 + .03*ul("spd"))), 170, webAcc},
 	}
@@ -646,4 +729,28 @@ func (g *Game) charCardMeasure(lc *lineCard) (float64, []cardHit) {
 	lc.h = save
 	g.cardH[k] = h
 	return h, hits
+}
+
+// drawStars: n little gold prestige stars starting at (x, y) (centre line); more than 5 shows "★ n".
+func drawStars(dst *ebiten.Image, x, y float64, n int) {
+	star := func(cx, cy, r float64) {
+		var pts [][2]float64
+		for i := 0; i < 10; i++ {
+			a := -math.Pi/2 + float64(i)*math.Pi/5
+			rr := r
+			if i%2 == 1 {
+				rr = r * .45
+			}
+			pts = append(pts, [2]float64{cx + math.Cos(a)*rr, cy + math.Sin(a)*rr})
+		}
+		poly(dst, pts, hexC("#ffd84a"))
+	}
+	if n > 5 {
+		star(x+6, y, 7)
+		drawText(dst, strconv.Itoa(n), x+15, y-8, 13, true, hexC("#ffd84a"), text.AlignStart, true)
+		return
+	}
+	for i := 0; i < n; i++ {
+		star(x+6+float64(i)*14, y, 7)
+	}
 }

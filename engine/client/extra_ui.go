@@ -366,7 +366,7 @@ func (g *Game) startDaily() {
 	for _, k := range meta.Upgrades {
 		up[k.Key] = pr.UL(k.Key, fam)
 	}
-	cfg := sim.Config{Ability: pr.AbilityIdx(id), LI: 0, Up: up, Training: pr.Training(fam), Tier: D.Tier, Mods: D.Mods, Stage: 1}
+	cfg := sim.Config{Ability: pr.AbilityIdx(id), LI: 0, Up: up, Training: pr.Training(fam), Mastery: pr.MasteryBonus(id), Start: pr.StartMove(id), Tier: D.Tier, Mods: D.Mods, Stage: 1}
 	cfg.OnBoss = func(b, et string, l int, fin bool, visited []string) []string {
 		m := pr.BossKill(b, et, l, fin, 1, id, visited)
 		g.save()

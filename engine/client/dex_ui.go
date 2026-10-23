@@ -211,6 +211,9 @@ func (g *Game) dexDetail(dst *ebiten.Image, x, y, w float64) (float64, []cardHit
 			col, name = hexC("#aaaaaa"), "???"
 		}
 		drawText(dst, "#"+g.dexNo(id)+" "+name, in+94, yy+22, 18, true, col, text.AlignStart, false)
+		if ns := g.prof.Stars(id); ns > 0 && g.prof.Unl(id) {
+			drawStars(dst, in+94+textW("#"+g.dexNo(id)+" "+name, 18, true)+8, yy+32, ns)
+		}
 		_, _, _, tag := g.unlockInfo(id)
 		ty := "Undiscovered"
 		if !lk {
@@ -757,3 +760,6 @@ func (g *Game) TestUnlockAll() {
 		g.prof.S.SetUnlocked(p.ID)
 	}
 }
+
+// TestMastery (testing only, ?mx=XP): give every line this much Mastery XP.
+func (g *Game) TestMastery(xp float64) { g.prof.TestSetMastery(xp) }

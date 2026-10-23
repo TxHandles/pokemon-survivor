@@ -142,7 +142,7 @@ func (p *Profile) urOK(r rule) bool {
 	case r.Tickets != nil:
 		return false
 	case r.Mastery != nil:
-		return p.MasteryRank(r.Line) >= *r.Mastery
+		return p.BestRank(r.Line) >= *r.Mastery
 	case r.ClearTier != nil:
 		return p.BiomeStars(r.Biome) >= *r.ClearTier
 	}
@@ -169,7 +169,7 @@ func (p *Profile) urProg(r rule) (int, int) {
 	case r.Tickets != nil:
 		return 0, *r.Tickets
 	case r.Mastery != nil:
-		return p.MasteryRank(r.Line), *r.Mastery
+		return min(p.BestRank(r.Line), *r.Mastery), *r.Mastery
 	case r.ClearTier != nil:
 		return min(*r.ClearTier, p.BiomeStars(r.Biome)), *r.ClearTier
 	}
@@ -254,9 +254,12 @@ func MrGain(t, kills float64, win bool) int {
 func (p *Profile) Mastery(root string) (rank, into, need int) {
 	x := int(math.Floor(num(p.S.obj("mx")[root])))
 	r := 1
-	for x >= mrNeed(r) {
+	for x >= mrNeed(r) && r < MasteryMax {
 		x -= mrNeed(r)
 		r++
+	}
+	if r >= MasteryMax {
+		return MasteryMax, mrNeed(r), mrNeed(r)
 	}
 	return r, x, mrNeed(r)
 }
@@ -832,6 +835,7 @@ func (p *Profile) Finish(r RunResult) (gain int, mxGain int, unlocked []string) 
 	mxGain = int(math.Round(float64(MrGain(r.T, float64(r.Kills), r.Win)) * (1 + .1*float64(p.UL("mxg", p.Fam(r.CID))))))
 	mx := s.obj("mx")
 	mx[root] = num(mx[root]) + float64(mxGain)
+	p.noteBest(root)
 	w := 0.0
 	if r.Win {
 		w = 100

@@ -18,6 +18,8 @@ type PlayerSpec struct {
 	Ability  int
 	Up       map[string]int
 	Training int
+	Mastery  float64 `json:",omitempty"` // Mastery reward bonus (HP and damage)
+	Start    string  `json:",omitempty"` // chosen starting move
 }
 
 // Prompt is a pending choice for one player.
@@ -44,6 +46,7 @@ type PlayerCtx struct {
 	Orbs                       []Orb
 	Up                         map[string]int
 	Training, Ability          int
+	Mastery                    float64
 	Bot                        *Bot
 	In                         Input
 	Queue                      []*Prompt
@@ -111,6 +114,7 @@ func (w *World) useP(i int) {
 	w.Opts, w.Boons, w.SwapPick = c.Opts, c.Boons, c.SwapPick
 	w.Rare, w.RareOrder = c.Rare, c.RareOrder
 	w.Cfg.Up, w.Cfg.Training, w.Ability = c.Up, c.Training, c.Ability
+	w.Cfg.Mastery = c.Mastery
 	// each player's own shop upgrades decide their attack and held-item slots
 	w.MoveSlots = 2 + int(w.up("m3")) + int(w.up("m4"))
 	w.HeldSlots = 2 + int(w.up("h3")) + int(w.up("h4"))
@@ -190,7 +194,7 @@ func (w *World) addPlayer(db *content.DB, spec PlayerSpec) (*PlayerCtx, error) {
 	}
 	st := db.Stats[spec.ID]
 	c := &PlayerCtx{Idx: len(w.PL), Name: spec.Name, Kind: spec.Kind, Held: map[string]int{}, DMG: map[string]float64{}, Ban: map[string]bool{},
-		Learned: map[string]bool{}, Evolved: map[string]bool{}, Capstone: map[string]bool{}, Rare: map[string]bool{}, Up: spec.Up, Training: spec.Training, Ability: spec.Ability & 1}
+		Learned: map[string]bool{}, Evolved: map[string]bool{}, Capstone: map[string]bool{}, Rare: map[string]bool{}, Up: spec.Up, Training: spec.Training, Mastery: spec.Mastery, Ability: spec.Ability & 1}
 	if c.Up == nil {
 		c.Up = map[string]int{}
 	}
@@ -206,9 +210,12 @@ func (w *World) addPlayer(db *content.DB, spec PlayerSpec) (*PlayerCtx, error) {
 	if pl := c.PS.L("pulse"); len(pl) == 3 {
 		c.ab.pt = pl[0]
 	}
-	mh := math.Round((80 + 14*up("hp")) * b2f(w.Run.Glass, .5, 1) * (1 + c.PS.F("hpM")) * (1 + .01*float64(spec.Training)) * st.HP)
+	mh := math.Round((80 + 14*up("hp")) * b2f(w.Run.Glass, .5, 1) * (1 + c.PS.F("hpM")) * (1 + .01*float64(spec.Training)) * (1 + spec.Mastery) * st.HP)
 	c.P = &Player{ID: spec.ID, Name: p.Name, Types: p.Types, Stats: st, HP: mh, MHP: mh, Sp: 125 * st.Spd * (1 + .03*up("spd")), Lv: 1, NX: 5, FX: 1, DQ: -1, DQ2: -1, AtkT: -9}
 	sm := db.StartMove(spec.ID)
+	if m := db.Moves[spec.Start]; m != nil && Implemented[m.Shape] && has(db.LearnList(spec.ID), spec.Start) {
+		sm = spec.Start // a starting move unlocked through Mastery
+	}
 	c.Slots = []*Slot{{ID: sm, Move: db.Moves[sm], Kind: db.Moves[sm].Shape, Type: db.Moves[sm].Type, Lv: 1, Q: BuildQ(db.Moves[sm]), Owner: len(w.PL)}}
 	c.Learned[sm] = true
 	c.Rerolls, c.Banishes = c.Up["rr"], c.Up["bn"]
@@ -228,6 +235,12 @@ func (w *World) SetInput(i int, in Input) {
 
 // ---- deaths and revives ----
 
+// MaxLives: each player can faint this many times in a run; after the last they stay out.
+const MaxLives = 3
+
+// revivable: fainted, still in the run, and with lives left.
+func revivable(c *PlayerCtx) bool { return c.P.Dead && !c.Gone && c.Deaths < MaxLives }
+
 // pdie: the current player fainted. Returns true when the run is over.
 func (w *World) pdie() bool {
 	P := w.P
@@ -242,11 +255,24 @@ func (w *World) pdie() bool {
 	c.Deaths++
 	c.DT = w.T
 	w.Orbs = nil
-	w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 50, Life: 3, Text: c.Name + " fainted!", Col: "crit"})
+	msg := c.Name + " fainted!"
+	if left := MaxLives - c.Deaths; left <= 0 {
+		msg = c.Name + " is out of lives!"
+	} else if left == 1 {
+		msg += " (last life)"
+	} else {
+		msg += " (" + itoa(left) + " lives left)"
+	}
+	w.addFX(&FX{Kind: "txt", X: P.X, Y: P.Y - 50, Life: 3, Text: msg, Col: "crit"})
 	if len(w.aliveIdx()) == 0 {
 		return true
 	}
-	w.pcSpawn()
+	for _, o := range w.PL {
+		if revivable(o) {
+			w.pcSpawn()
+			break
+		}
+	}
 	return false
 }
 
@@ -266,7 +292,7 @@ func (w *World) pcSpawn() {
 	}
 	names := ""
 	for _, c := range w.PL {
-		if c.P.Dead && !c.Gone {
+		if revivable(c) {
 			if names != "" {
 				names += " & "
 			}
@@ -285,7 +311,7 @@ func (w *World) pcTick(dt float64) {
 	pc.T += dt
 	anyDead := false
 	for _, c := range w.PL {
-		anyDead = anyDead || (c.P.Dead && !c.Gone)
+		anyDead = anyDead || revivable(c)
 	}
 	if !anyDead {
 		if pc.Guard != nil {
@@ -305,7 +331,7 @@ func (w *World) pcTick(dt float64) {
 		names := ""
 		n := 0
 		for _, c := range w.PL {
-			if !c.P.Dead || c.Gone {
+			if !revivable(c) {
 				continue
 			}
 			p := c.P

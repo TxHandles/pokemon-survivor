@@ -112,8 +112,24 @@ func (g *Game) drawParty(dst *ebiten.Image, x, y float64) {
 		if P.Dead {
 			nc = c(150, 156, 170, 255)
 			tag = "fainted"
+			if pc.Deaths >= sim.MaxLives {
+				tag = "out"
+			}
 		}
-		drawText(dst, fitText(name, 13, true, cw-60-textW(tag, 11, true)-12), x+50, y+5, 13, true, nc, text.AlignStart, true)
+		if g.coop { // lives left, as little hearts before the tag
+			hx := x + cw - 14 - textW(tag, 11, true)
+			for k := 0; k < sim.MaxLives; k++ {
+				col := hexC("#ff5a6a")
+				if k >= sim.MaxLives-pc.Deaths {
+					col = c(70, 74, 86, 255)
+				}
+				cx := hx - float64(k)*10
+				disc(dst, cx-2, y+11, 2.6, col)
+				disc(dst, cx+2, y+11, 2.6, col)
+				poly(dst, [][2]float64{{cx - 4.4, y + 12}, {cx + 4.4, y + 12}, {cx, y + 16.5}}, col)
+			}
+		}
+		drawText(dst, fitText(name, 13, true, cw-60-textW(tag, 11, true)-12-b2f(g.coop, 32, 0)), x+50, y+5, 13, true, nc, text.AlignStart, true)
 		drawText(dst, tag, x+cw-8, y+6, 11, true, b2c(g.coop && !P.Dead, border, alpha(webFg, .7)), text.AlignEnd, true)
 		// health bar
 		bx, by, bw, bh := x+50, y+25, cw-58, 15.0

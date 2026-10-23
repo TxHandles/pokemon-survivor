@@ -65,7 +65,7 @@ func (g *Game) mySpec() sim.PlayerSpec {
 	for _, k := range meta.Upgrades {
 		up[k.Key] = pr.UL(k.Key, fam)
 	}
-	return sim.PlayerSpec{ID: id, Ability: g.on.ability & 1, Up: up, Training: pr.Training(fam)}
+	return sim.PlayerSpec{ID: id, Ability: g.on.ability & 1, Up: up, Training: pr.Training(fam), Mastery: pr.MasteryBonus(id), Start: pr.StartMove(id)}
 }
 
 func (g *Game) onlineName() string { return nonEmptyStr(g.on.name, "Player") }

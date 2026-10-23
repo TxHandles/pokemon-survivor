@@ -48,6 +48,9 @@ func main() {
 	if opts["unlockall"] == "1" { // testing: every Pokémon unlocked
 		g.TestUnlockAll()
 	}
+	if v, _ := strconv.ParseFloat(opts["mx"], 64); v > 0 { // testing: Mastery XP for every line
+		g.TestMastery(v)
+	}
 	if sel := opts["sel"]; sel != "" { // testing: pre-select a Pokémon in the Pokédex
 		g.DexSelect(sel)
 	}

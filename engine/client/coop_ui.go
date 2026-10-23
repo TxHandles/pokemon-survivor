@@ -352,7 +352,7 @@ func (g *Game) startCoop() {
 		if s.dev.kind == "bot" {
 			kind = "bot"
 		}
-		specs = append(specs, sim.PlayerSpec{ID: s.id, Name: fmt.Sprintf("P%d %s", i+1, g.db.ByID[s.id].Name), Kind: kind, Ability: s.ability, Up: up, Training: pr.Training(fam)})
+		specs = append(specs, sim.PlayerSpec{ID: s.id, Name: fmt.Sprintf("P%d %s", i+1, g.db.ByID[s.id].Name), Kind: kind, Ability: s.ability, Up: up, Training: pr.Training(fam), Mastery: pr.MasteryBonus(s.id), Start: pr.StartMove(s.id)})
 		g.devs = append(g.devs, s.dev)
 	}
 	lock, _ := rs["lock"].(bool)

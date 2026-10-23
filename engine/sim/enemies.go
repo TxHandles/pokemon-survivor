@@ -223,7 +223,7 @@ func (w *World) onDeath(e *Enemy) {
 		for i := 0; i < n; i++ {
 			w.Gems = append(w.Gems, &Gem{X: e.X + w.rnd(-24, 24), Y: e.Y + w.rnd(-24, 24), V: w.XPS.NX * .15})
 		}
-		if w.rng.Float64() < math.Max(.35, w.dropK()) {
+		if w.rng.Float64() < math.Max(.25, .7*w.dropK()) {
 			w.dropItem(e.X, e.Y)
 		}
 		if e.Mini {
@@ -231,7 +231,7 @@ func (w *World) onDeath(e *Enemy) {
 		}
 		w.addFX(&FX{Kind: "txt", X: e.X, Y: e.Y - 30, Life: 1.5, Text: b2s(e.Mini, "MINI-BOSS DEFEATED", "Elite defeated!"), Col: "gold"})
 	}
-	if !e.Boss && !e.Elite && !w.noDrop && w.rng.Float64() < b2f(e.Big, .008, .0015)*w.dropK() {
+	if !e.Boss && !e.Elite && !w.noDrop && w.rng.Float64() < b2f(e.Big, .005, .0009)*w.dropK() {
 		w.dropItem(e.X, e.Y)
 	}
 	if !e.Boss && w.rng.Float64() < b2f(e.Big, .0015, .00005) {
@@ -239,8 +239,8 @@ func (w *World) onDeath(e *Enemy) {
 	}
 }
 
-// dropK: power-up and bomb drops thin out as a run goes on (half at 10:00, a third at 20:00).
-func (w *World) dropK() float64 { return 1 / (1 + w.T/600) }
+// dropK: power-up and bomb drops thin out as a run goes on (half at 7:00, a third at 14:00).
+func (w *World) dropK() float64 { return 1 / (1 + w.T/420) }
 
 func (w *World) dropItem(x, y float64) {
 	r := w.rng.Float64()

@@ -206,32 +206,6 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	}
 	g.dItems = items[:0]
 
-	// enemy bullets
-	for _, b := range w.EB {
-		x, y := sx(b.X), sy(b.Y)
-		if x < -20 || y < -20 || x > sw+20 || y > sh+20 {
-			continue
-		}
-		col := tc(b.Type)
-		if b.Type == "" {
-			col = c(255, 120, 120, 255)
-		}
-		if b.Web {
-			g.drawWebShot(dst, b, x, y)
-			continue
-		}
-		if sp := math.Hypot(b.VX, b.VY); sp > 0 { // a short glowing tail so shots read at speed
-			ux, uy := b.VX/sp, b.VY/sp
-			for i := 1; i <= 3; i++ {
-				fi := float64(i)
-				disc(dst, x-ux*fi*b.R*1.1, y-uy*fi*b.R*1.1, b.R*(1-fi*.22), alpha(col, .45-fi*.12))
-			}
-		}
-		soft(dst, x, y, b.R*2.6, b.R*2.6, alpha(c(255, 40, 40, 255), .35))
-		disc(dst, x, y, b.R+1.5, c(40, 10, 10, 255))
-		disc(dst, x, y, b.R, col)
-		disc(dst, x, y, b.R*.4, c(255, 255, 255, 230))
-	}
 	// gust streaks
 	if gu := w.Gust; gu != nil && gu.T > 0 {
 		for i := 0; i < 24; i++ {
@@ -288,6 +262,36 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	}
 	g.drawBinds(dst, sx, sy)
 	g.drawParts(dst, sx, sy)
+	// enemy bullets: drawn on top of every effect, with a pulsing red halo and a dark rim, so they
+	// stay readable in a busy late-game screen
+	pulse := .75 + .25*math.Sin(w.T*14)
+	for _, b := range w.EB {
+		x, y := sx(b.X), sy(b.Y)
+		if x < -20 || y < -20 || x > sw+20 || y > sh+20 {
+			continue
+		}
+		col := tc(b.Type)
+		if b.Type == "" {
+			col = c(255, 120, 120, 255)
+		}
+		if b.Web {
+			g.drawWebShot(dst, b, x, y)
+			continue
+		}
+		if sp := math.Hypot(b.VX, b.VY); sp > 0 { // a short glowing tail so shots read at speed
+			ux, uy := b.VX/sp, b.VY/sp
+			for i := 1; i <= 3; i++ {
+				fi := float64(i)
+				disc(dst, x-ux*fi*b.R*1.1, y-uy*fi*b.R*1.1, b.R*(1-fi*.22), alpha(col, .45-fi*.12))
+			}
+		}
+		soft(dst, x, y, b.R*3.4, b.R*3.4, alpha(c(20, 0, 0, 255), .45)) // darken behind it so it pops on bright effects
+		glowAdd(dst, x, y, b.R*3, c(255, 40, 40, 255), .5*pulse)
+		ring(dst, x, y, b.R+4.5, 2, alpha(c(255, 80, 80, 255), .9*pulse))
+		disc(dst, x, y, b.R+1.5, c(40, 10, 10, 255))
+		disc(dst, x, y, b.R, col)
+		disc(dst, x, y, b.R*.4, c(255, 255, 255, 230))
+	}
 	g.drawPlayerOverlays(dst, sx, sy)
 	// floating damage numbers on top (newest first, capped: outlined text is costly in big fights)
 	dnum := g.opt("dnum") != 0

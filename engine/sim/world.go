@@ -20,7 +20,7 @@ func NewRun(db *content.DB, id, biome string, seed int64, ability int) (*World, 
 }
 
 func newWorld(db *content.DB, id, biome string, seed int64, cfg Config) (*World, error) {
-	return NewCoop(db, []PlayerSpec{{ID: id, Name: "You", Kind: "local", Ability: cfg.Ability, Up: cfg.Up, Training: cfg.Training}}, biome, seed, cfg)
+	return NewCoop(db, []PlayerSpec{{ID: id, Name: "You", Kind: "local", Ability: cfg.Ability, Up: cfg.Up, Training: cfg.Training, Mastery: cfg.Mastery, Start: cfg.Start}}, biome, seed, cfg)
 }
 
 // NewCoop starts a run for one to four players sharing the screen / simulation.

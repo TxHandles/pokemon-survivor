@@ -17,7 +17,7 @@ import (
 )
 
 // Protocol is bumped when the wire format or the simulation changes incompatibly.
-const Protocol = 12 // 4: enemy speed classes, swap pick
+const Protocol = 13 // 4: enemy speed classes, swap pick
 
 const MaxPlayers = 4
 
