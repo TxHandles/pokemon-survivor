@@ -93,6 +93,7 @@ type Slot struct {
 	orbA       float64
 	Owner      int            // player index
 	Bon        map[string]int // rolled level-up bonuses (bonus.go)
+	rampN      int            // ramp moves: consecutive landed uses
 }
 
 type DashState struct {
@@ -137,6 +138,11 @@ type Player struct {
 	protD, protR      float64
 	protNext          float64
 	protSlot          *Slot
+	Chg, ChgDu        float64 // charging a Charge move: seconds left / total
+	ChgType           string
+	Ctr               float64 // Counter: damage taken and stored (fades over time)
+	Van, VanDu        float64 // vanished (Dive, Dig…): seconds left / total
+	VanType           string
 }
 
 type Enemy struct {
@@ -292,6 +298,7 @@ type World struct {
 	Decoys       []*Decoy // Substitute
 	curHz        string   // attack name stamped on new hazards
 	Cracks       []*Crack // Earthquake fissures
+	Binds        []*Bind  // foes held by binding moves
 	Gems         []*Gem
 	Orbs         []Orb
 	Slots        []*Slot

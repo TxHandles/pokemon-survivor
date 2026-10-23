@@ -368,7 +368,7 @@ func (w *World) hurt(d float64, t string) { w.hurtS(d, hurtSrc{t: t}) }
 // last-chance saves (Focus Sash, Sturdy, Power Construct, revive).
 func (w *World) hurtS(d float64, s hurtSrc) {
 	P := w.P
-	if P.Dead || P.Fly != nil || w.protectBlock() {
+	if P.Dead || P.Fly != nil || P.Van > 0 || w.protectBlock() {
 		return
 	}
 	h0 := P.HP
@@ -387,6 +387,7 @@ func (w *World) hurtS(d float64, s hurtSrc) {
 		src = srcUnknown
 	}
 	dd := h0 - P.HP
+	P.Ctr += math.Max(0, dd)
 	w.dlog(dd, src)
 	w.abHurt(h0 - P.HP)
 	if h0-P.HP > .6 {

@@ -49,6 +49,7 @@ func (w *World) Hash() uint64 {
 	h.i(len(w.HZ))
 	h.i(len(w.FX))
 	h.i(len(w.ZN))
+	h.i(len(w.Binds))
 	h.i(len(w.DL))
 	h.i(len(w.MC))
 	h.i(len(w.Chests))

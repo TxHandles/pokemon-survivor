@@ -30,9 +30,9 @@ const (
 
 // Game implements ebiten.Game.
 type Game struct {
-	fxs fxState // battle particles (fxparts.go)
-	lobbyRet bool   // browsing Shop / Pokémon / Pokédex from a co-op lobby
-	lobbyTo  screen // that lobby (scOnline or scLobby)
+	fxs      fxState // battle particles (fxparts.go)
+	lobbyRet bool    // browsing Shop / Pokémon / Pokédex from a co-op lobby
+	lobbyTo  screen  // that lobby (scOnline or scLobby)
 	fr       friendsState
 	rstArm   bool // Reset progress pressed once
 	histCopy string

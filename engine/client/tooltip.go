@@ -37,6 +37,8 @@ var shapeKind = map[string]string{
 	"wave": "Status wave (no damage)", "screen": "Shield", "clone": "Clone", "toss": "Grab and throw",
 	"fly": "Flight · button move", "rollout": "Roll · button move", "protect": "Shield", "quake": "Earthquake",
 	"magnitude": "Random-strength quake", "seed": "Draining seeds", "sleep": "Sleep (no damage)", "sub": "Decoy",
+	"charge": "Charge-up blast", "counter": "Counter (stores damage taken)", "bind": "Bind (holds a foe)", "ramp": "Ramp-up (grows stronger)",
+	"sac": "Sacrifice (costs HP)", "vanish": "Vanish and strike",
 }
 
 func shapeLabel(k string) string {

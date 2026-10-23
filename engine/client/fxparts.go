@@ -490,6 +490,37 @@ func (g *Game) fxOn(f *sim.FX) {
 		g.kick(5)
 	case "flash":
 		g.screenFlash(white, .3)
+	case "chgx", "sacx", "vanx":
+		L := lookOf(f.Type)
+		s.flare(f.X, f.Y, f.R*.6, L.mid, .18)
+		s.shock(f.X, f.Y, f.R*.2, f.R*1.5, L.mid, .4)
+		n := 14
+		if f.Kind == "sacx" {
+			n = 24
+			g.screenFlash(L.hot, .2)
+			g.kick(10)
+			for i := 0; i < 6; i++ {
+				s.add(fxPart{x: f.X + rr(-20, 20), y: f.Y + rr(-20, 20), vx: rr(-60, 60), vy: rr(-80, -20), life: rr(.8, 1.2), sz: rr(16, 24), sz1: rr(40, 60), drag: 1.6, col: alpha(hexC("#3a2a2a"), .5), col1: alpha(hexC("#3a2a2a"), 0), k: pSmoke})
+			}
+		} else {
+			g.screenFlash(L.mid, .14)
+			g.kick(6)
+		}
+		if f.Kind == "vanx" {
+			s.burst("ground", f.X, f.Y, 8, 300, -math.Pi/2, 1.6)
+		}
+		s.burst(f.Type, f.X, f.Y, n, 340, 0, 2*math.Pi)
+	case "ctr":
+		L := lookOf(f.Type)
+		s.shock(f.X, f.Y, 10, f.R*1.2, hexC("#ff3a2a"), .35)
+		s.burst(f.Type, f.X, f.Y, 8+int(12*f.D), 280+200*f.D, 0, 2*math.Pi)
+		if f.D > .4 {
+			g.screenFlash(hexC("#ff3a2a"), .1+.15*f.D)
+			g.kick(4 + 6*f.D)
+		}
+		_ = L
+	case "ramp":
+		s.burst(f.Type, f.X, f.Y, 4+int(4*f.D), 200+80*f.D, 0, 2*math.Pi)
 	}
 }
 

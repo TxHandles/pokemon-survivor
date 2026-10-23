@@ -308,6 +308,7 @@ func (w *World) Step(dt float64, in Input) {
 	w.stepFX(dt)
 	w.stepZones(dt)
 	w.stepGoMoves(dt)
+	w.stepBinds(dt)
 	w.stepOrbits(dt)
 	w.compact()
 	w.stepGems(dt)
@@ -372,6 +373,7 @@ func (w *World) stepPlayer(dt float64, in Input) {
 	if P.Prot > 0 {
 		P.Prot -= dt
 	}
+	w.stepPlayerGo2(dt)
 	P.Inv = math.Max(0, P.Inv-dt)
 	if v := w.pe("lifeorb"); v > 0 && P.HP > P.MHP*.5 && !w.fz("secondwind") {
 		P.HP -= P.MHP * .0015 * v * dt

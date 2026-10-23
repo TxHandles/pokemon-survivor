@@ -146,13 +146,59 @@ func readJSON(f fs.FS, name string, v any) error {
 // Load reads every content file from f (the data/ directory).
 // goMoves: moves with a Go-only mechanic (shape, description); the web version keeps the data's.
 var goMoves = map[string][2]string{
-	"fighting_seismictoss": {"toss", "Grabs the nearest foes and throws them over your shoulder, hurting them and whatever they land on"},
-	"flying_fly":           {"fly", "Button: take off, steer your shadow, and dive onto it for a heavy landing"},
-	"rock_rollout":         {"rollout", "Button: curl up and roll through foes, speeding up with every hit until it ends or you crash"},
-	"ground_earthquake":    {"quake", "Shockwaves roll out from you and leave glowing fissures that keep hurting foes"},
-	"ground_magnitude":     {"magnitude", "A quake of random strength (4-10) centred on you; higher magnitudes hit wider and harder"},
-	"grass_leechseed":      {"seed", "Plants seeds that drain foes and heal you; a seed jumps to a nearby foe when its host faints"},
+	"fighting_seismictoss":   {"toss", "Grabs the nearest foes and throws them over your shoulder, hurting them and whatever they land on"},
+	"flying_fly":             {"fly", "Button: take off, steer your shadow, and dive onto it for a heavy landing"},
+	"rock_rollout":           {"rollout", "Button: curl up and roll through foes, speeding up with every hit until it ends or you crash"},
+	"ground_earthquake":      {"quake", "Shockwaves roll out from you and leave glowing fissures that keep hurting foes"},
+	"ground_magnitude":       {"magnitude", "A quake of random strength (4-10) centred on you; higher magnitudes hit wider and harder"},
+	"grass_leechseed":        {"seed", "Plants seeds that drain foes and heal you; a seed jumps to a nearby foe when its host faints"},
+	"fighting_focuspunch":    {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"normal_skullbash":       {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"grass_solarblade":       {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"electric_electroshot":   {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"fighting_meteorassault": {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"grass_solarbeam":        {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"flying_skyattack":       {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"normal_razorwind":       {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"rock_meteorbeam":        {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"ice_freezeshock":        {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"ice_iceburn":            {"charge", "Charge up for a moment, glowing brighter, then unleash one huge blast at the nearest foe"},
+	"fighting_revenge":       {"counter", "Stores the damage you take and fires it back as a shockwave; the more you've been hurt, the bigger it hits"},
+	"normal_retaliate":       {"counter", "Stores the damage you take and fires it back as a shockwave; the more you've been hurt, the bigger it hits"},
+	"dark_payback":           {"counter", "Stores the damage you take and fires it back as a shockwave; the more you've been hurt, the bigger it hits"},
+	"fire_shelltrap":         {"counter", "Stores the damage you take and fires it back as a shockwave; the more you've been hurt, the bigger it hits"},
+	"steel_metalburst":       {"counter", "Stores the damage you take and fires it back as a shockwave; the more you've been hurt, the bigger it hits"},
+	"ice_avalanche":          {"counter", "Stores the damage you take and fires it back as a shockwave; the more you've been hurt, the bigger it hits"},
+	"normal_bind":            {"bind", "Grabs the toughest foe nearby (bosses first), pins it in place and squeezes it for a few seconds"},
+	"normal_wrap":            {"bind", "Grabs the toughest foe nearby (bosses first), pins it in place and squeezes it for a few seconds"},
+	"normal_constrict":       {"bind", "Grabs the toughest foe nearby (bosses first), pins it in place and squeezes it for a few seconds"},
+	"water_clamp":            {"bind", "Grabs the toughest foe nearby (bosses first), pins it in place and squeezes it for a few seconds"},
+	"grass_snaptrap":         {"bind", "Grabs the toughest foe nearby (bosses first), pins it in place and squeezes it for a few seconds"},
+	"electric_thundercage":   {"bind", "Grabs the toughest foe nearby (bosses first), pins it in place and squeezes it for a few seconds"},
+	"fire_magmastorm":        {"bind", "Grabs the toughest foe nearby (bosses first), pins it in place and squeezes it for a few seconds"},
+	"normal_rage":            {"ramp", "Each use that lands hits harder than the last (up to 10 stacks); a miss resets it"},
+	"normal_echoedvoice":     {"ramp", "Each use that lands hits harder than the last (up to 10 stacks); a miss resets it"},
+	"fire_temperflare":       {"ramp", "Each use that lands hits harder than the last (up to 10 stacks); a miss resets it"},
+	"fighting_ragefist":      {"ramp", "Each use that lands hits harder than the last (up to 10 stacks); a miss resets it"},
+	"psychic_storedpower":    {"ramp", "Grows stronger with every foe knocked out this run (up to 3.5x damage)"},
+	"dark_powertrip":         {"ramp", "Grows stronger with every foe knocked out this run (up to 3.5x damage)"},
+	"ghost_lastrespects":     {"ramp", "Grows stronger with every foe knocked out this run (up to 3.5x damage)"},
+	"normal_selfdestruct":    {"sac", "A huge explosion around you that costs 12% of your max HP (it never knocks you out)"},
+	"fire_mindblown":         {"sac", "A huge explosion around you that costs 12% of your max HP (it never knocks you out)"},
+	"normal_explosion":       {"sac", "A huge explosion around you that costs 12% of your max HP (it never knocks you out)"},
+	"fairy_mistyexplosion":   {"sac", "A huge explosion around you that costs 12% of your max HP (it never knocks you out)"},
+	"steel_steelbeam":        {"sac", "A huge explosion around you that costs 12% of your max HP (it never knocks you out)"},
+	"water_dive":             {"vanish", "Vanish for a moment (nothing can touch you) and keep moving, then burst up under the foes around you"},
+	"ground_dig":             {"vanish", "Vanish for a moment (nothing can touch you) and keep moving, then burst up under the foes around you"},
+	"ghost_phantomforce":     {"vanish", "Vanish for a moment (nothing can touch you) and keep moving, then burst up under the foes around you"},
+	"ghost_shadowforce":      {"vanish", "Vanish for a moment (nothing can touch you) and keep moving, then burst up under the foes around you"},
+	"flying_bounce":          {"vanish", "Vanish for a moment (nothing can touch you) and keep moving, then burst up under the foes around you"},
 }
+
+// goFresh: shapes whose moves drop their web parameters (tuned for another archetype) and their
+// web balance multipliers; they use the shape's own defaults. KO-scaling ramp moves get "kos".
+var goFresh = map[string]bool{"charge": true, "counter": true, "bind": true, "ramp": true, "sac": true, "vanish": true}
+var goKOs = map[string]bool{"psychic_storedpower": true, "dark_powertrip": true, "ghost_lastrespects": true}
 
 // goNewMoves: moves only the Go version has (the web data doesn't list them).
 var goNewMoves = []*Move{
@@ -195,6 +241,18 @@ func Load(f fs.FS) (*DB, error) {
 		db.Moves[m.ID] = m
 		if o, ok := goMoves[m.ID]; ok { // moves the Go build plays with their own mechanic
 			m.Shape, m.Desc = o[0], o[1]
+			if goFresh[m.Shape] {
+				np := map[string]any{}
+				if st, ok := m.Params["st"]; ok {
+					np["st"] = st
+				}
+				if goKOs[m.ID] {
+					np["kos"] = 1.0
+				}
+				m.Params = np
+				delete(db.Balance.MoveDamage, m.ID)
+				delete(db.Balance.MoveDamageEvolved, m.ID)
+			}
 		}
 	}
 	// stats: type base forms get baseStats x type balance; others copy their statsFrom base x statMult

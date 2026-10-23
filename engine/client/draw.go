@@ -286,6 +286,7 @@ func (g *Game) drawWorld(dst *ebiten.Image) {
 	for _, f := range w.FX {
 		g.drawFX(dst, f, sx, sy)
 	}
+	g.drawBinds(dst, sx, sy)
 	g.drawParts(dst, sx, sy)
 	g.drawPlayerOverlays(dst, sx, sy)
 	// floating damage numbers on top (newest first, capped: outlined text is costly in big fights)
@@ -348,6 +349,13 @@ func (g *Game) drawPlayerI(dst *ebiten.Image, i int, pc *sim.PlayerCtx, x, y flo
 	}
 	dt := math.Max(0, math.Min(.1, w.T-a.lastT))
 	a.lastT = w.T
+	if P.Van > 0 && !P.Dead { // vanished under the ground / water / shadows
+		g.drawVanished(dst, P, x, y)
+		return
+	}
+	if P.Ctr > 0 && hasCounter(w, i) {
+		g.drawCounterAura(dst, P, x, y)
+	}
 	if P.Roll != nil && !P.Dead { // curled up into a ball
 		g.drawRollBall(dst, P, x, y)
 		return
@@ -587,7 +595,7 @@ func (g *Game) drawEnemy(dst *ebiten.Image, e *sim.Enemy, x, y float64) {
 }
 
 func (g *Game) drawFX(dst *ebiten.Image, f *sim.FX, sx, sy func(float64) float64) {
-	if g.drawGoFX(dst, f, sx, sy) {
+	if g.drawGo2FX(dst, f, sx, sy) || g.drawGoFX(dst, f, sx, sy) {
 		return
 	}
 	if f.Slot != nil {

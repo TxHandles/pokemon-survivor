@@ -126,7 +126,7 @@ func (w *World) ProbeMoveB(id string, lv int, ev bool, extra string) (r Probe) {
 		r.NL = "Shield charges"
 		return
 	}
-	if probeGo(w, &r, m.Shape, q, lv, sl, ev, bs) {
+	if probeGo(w, &r, m.Shape, q, lv, sl, ev, bs) || probeGo2(w, &r, m.Shape, q, lv, sl, ev, bs) {
 		return
 	}
 	defer func() { _ = recover() }() // a probe must never take the game down
@@ -136,7 +136,7 @@ func (w *World) ProbeMoveB(id string, lv int, ev bool, extra string) (r Probe) {
 	cp.rng = rand.New(rand.NewSource(int64(lv)*7919 + 17))
 	cp.PR, cp.FX, cp.ZN, cp.DL, cp.EB, cp.HZ, cp.Events = nil, nil, nil, nil, nil, nil, nil
 	cp.Items, cp.Gems = nil, nil
-	cp.Decoys, cp.Cracks = nil, nil
+	cp.Decoys, cp.Cracks, cp.Binds = nil, nil, nil
 	cp.DMG = map[string]float64{}
 	cp.Orbs = nil
 	hits := 0
